@@ -134,6 +134,18 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 840px) {
+  .app-container {
+    min-height: 100vh;
+    height: auto;
+    align-items: flex-start;
+    padding: 16px 0 36px 0;
+  }
 }
 
 /* Smooth Page Transitions */
