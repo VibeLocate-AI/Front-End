@@ -122,15 +122,19 @@
               </div>
 
               <!-- Submit Button (Pill Navy Reset Password) -->
-              <button type="submit" class="submit-btn reset-btn" id="resetBtn">
-                <span>Reset Password</span>
+              <button type="submit" class="submit-btn reset-btn" id="resetBtn" :disabled="isLoading">
+                <span v-if="!isLoading">Reset Password</span>
+                <span v-else class="btn-loading">
+                  <span class="spinner"></span>
+                  Resetting...
+                </span>
               </button>
 
             </form>
 
             <!-- Footer Text to switch back to Login -->
             <footer class="form-footer reset-footer">
-              <p class="footer-text">Remembered your password? <a href="#login" @click.prevent="$emit('switch-view', 'login')" class="signup-link">Log In</a></p>
+              <p class="footer-text">Remembered your password? <a href="#login" @click.prevent="$emit('switch-view', 'login'); $emit('go-to-login')" class="signup-link">Log In</a></p>
             </footer>
 
           </div>
@@ -153,12 +157,19 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { authService } from '../services/authService'
 
-const emit = defineEmits(['switch-view'])
+const props = defineProps({
+  email: { type: String, default: '' },
+  token: { type: String, default: '' }
+})
+
+const emit = defineEmits(['switch-view', 'reset-success', 'go-to-login'])
 
 // Form State
 const newPassword = ref('')
 const confirmNewPassword = ref('')
+const isLoading = ref(false)
 
 const isNewPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
@@ -190,17 +201,32 @@ const clearError = (field) => {
   errors[field] = false
 }
 
-const handleResetPassword = () => {
+const handleResetPassword = async () => {
   errors.newPassword = newPassword.value.trim().length < 6
   errors.confirmNewPassword = confirmNewPassword.value !== newPassword.value || !confirmNewPassword.value
 
-  if (!errors.newPassword && !errors.confirmNewPassword) {
-    showToast('Password reset successfully!', 'success')
-    setTimeout(() => {
-      emit('switch-view', 'resetSuccess')
-    }, 600)
-  } else {
+  if (errors.newPassword || errors.confirmNewPassword) {
     showToast('Please fix the highlighted errors.', 'error')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    const res = await authService.resetPassword({
+      email: props.email,
+      newPassword: newPassword.value,
+      confirmPassword: confirmNewPassword.value,
+      token: props.token
+    })
+    showToast(res?.message || 'Password reset successfully!', 'success')
+    setTimeout(() => {
+      emit('reset-success')
+      emit('switch-view', 'resetSuccess')
+    }, 1000)
+  } catch (err) {
+    showToast(err.message || 'Failed to reset password. Please try again.', 'error')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -212,6 +238,6 @@ const showToast = (message, type = 'success') => {
   if (toastTimeout) clearTimeout(toastTimeout)
   toastTimeout = setTimeout(() => {
     toast.visible = false
-  }, 3200)
+  }, 3500)
 }
 </script>

@@ -147,6 +147,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { authService } from '../services/authService'
 
 // Props & Emits
 const props = defineProps({
@@ -212,15 +213,22 @@ const handleVerify = async () => {
   const code = otpDigits.value.join('')
   if (code.length < 4) {
     errors.otp = true
-    // Shake animation
     return
   }
-  isLoading.value = true
-  await new Promise(r => setTimeout(r, 1400))
-  isLoading.value = false
-  isVerified.value = true
-  showToast('Code verified successfully!', 'success')
-  setTimeout(() => emit('verified'), 1800)
+
+  try {
+    isLoading.value = true
+    const res = await authService.verifyOtp(props.email, code)
+    isVerified.value = true
+    showToast(res?.message || 'Code verified successfully!', 'success')
+    const token = res?.token || res?.reset_token || ''
+    setTimeout(() => emit('verified', token), 1200)
+  } catch (err) {
+    errors.otp = true
+    showToast(err.message || 'Invalid or expired verification code.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Resend
@@ -234,13 +242,19 @@ const startResendTimer = () => {
 }
 
 const handleResend = async () => {
-  isLoading.value = true
-  otpDigits.value = ['', '', '', '']
-  await new Promise(r => setTimeout(r, 800))
-  isLoading.value = false
-  startResendTimer()
-  otpRefs.value[0]?.focus()
-  showToast('New code sent to your email!', 'success')
+  if (resendTimer.value > 0 || isLoading.value) return
+  try {
+    isLoading.value = true
+    await authService.resendOtp(props.email)
+    otpDigits.value = ['', '', '', '']
+    startResendTimer()
+    otpRefs.value[0]?.focus()
+    showToast('New code sent to your email!', 'success')
+  } catch (err) {
+    showToast(err.message || 'Failed to resend code.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const showToast = (message, type = 'success') => {
@@ -248,7 +262,7 @@ const showToast = (message, type = 'success') => {
   toast.type = type
   toast.visible = true
   if (toastTimeout) clearTimeout(toastTimeout)
-  toastTimeout = setTimeout(() => { toast.visible = false }, 3200)
+  toastTimeout = setTimeout(() => { toast.visible = false }, 3500)
 }
 </script>
 

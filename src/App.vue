@@ -41,7 +41,7 @@
         key="verify"
         :email="userEmail"
         @go-back="currentPage = 'forgot'"
-        @verified="currentPage = 'resetPassword'"
+        @verified="handleVerified"
         @switch-view="switchView"
       />
 
@@ -49,6 +49,8 @@
       <ResetPasswordPage
         v-else-if="currentPage === 'resetPassword'"
         key="resetPassword"
+        :email="userEmail"
+        :token="resetToken"
         @go-to-login="currentPage = 'login'"
         @reset-success="currentPage = 'resetSuccess'"
         @switch-view="switchView"
@@ -76,6 +78,7 @@ import ResetSuccessPage from './components/ResetSuccessPage.vue'
 
 const currentPage = ref('login')
 const userEmail = ref('')
+const resetToken = ref('')
 const bgVideo = ref(null)
 
 const switchView = (view) => {
@@ -83,8 +86,13 @@ const switchView = (view) => {
 }
 
 const goToVerify = (email) => {
-  userEmail.value = email
+  if (email) userEmail.value = email
   currentPage.value = 'verify'
+}
+
+const handleVerified = (token) => {
+  if (token) resetToken.value = token
+  currentPage.value = 'resetPassword'
 }
 
 onMounted(() => {

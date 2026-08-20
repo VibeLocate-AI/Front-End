@@ -269,6 +269,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { authService } from '../services/authService'
 
 // Emits
 const emit = defineEmits(['go-to-login', 'code-sent'])
@@ -276,6 +277,7 @@ const emit = defineEmits(['go-to-login', 'code-sent'])
 // Steps: 1 = email, 2 = OTP, 3 = new password
 const currentStep = ref(1)
 const isLoading = ref(false)
+const resetToken = ref('')
 
 // Step 1 — Email
 const email = ref('')
@@ -329,7 +331,7 @@ const showToast = (message, type = 'success') => {
   toast.type = type
   toast.visible = true
   if (toastTimeout) clearTimeout(toastTimeout)
-  toastTimeout = setTimeout(() => { toast.visible = false }, 3200)
+  toastTimeout = setTimeout(() => { toast.visible = false }, 3500)
 }
 
 // Step 1: Send verification code
@@ -339,10 +341,17 @@ const handleSendCode = async () => {
     showToast('Please enter a valid email address.', 'error')
     return
   }
-  isLoading.value = true
-  await new Promise(r => setTimeout(r, 1000))
-  isLoading.value = false
-  emit('code-sent', email.value)
+
+  try {
+    isLoading.value = true
+    const res = await authService.forgotPassword(email.value.trim())
+    showToast(res?.message || 'Verification code sent to your email!', 'success')
+    emit('code-sent', email.value)
+  } catch (err) {
+    showToast(err.message || 'Failed to send verification code. Please check your email.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Step 2: OTP Verification
@@ -353,11 +362,20 @@ const handleVerifyCode = async () => {
     showToast('Please enter the full 6-digit code.', 'error')
     return
   }
-  isLoading.value = true
-  await new Promise(r => setTimeout(r, 1400))
-  isLoading.value = false
-  currentStep.value = 3
-  showToast('Code verified! Set your new password.', 'success')
+
+  try {
+    isLoading.value = true
+    const res = await authService.verifyOtp(email.value.trim(), code)
+    if (res?.token || res?.reset_token) {
+      resetToken.value = res.token || res.reset_token
+    }
+    showToast(res?.message || 'Code verified! Set your new password.', 'success')
+    currentStep.value = 3
+  } catch (err) {
+    showToast(err.message || 'Invalid or expired verification code.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Step 3: Reset Password
@@ -368,11 +386,38 @@ const handleResetPassword = async () => {
     showToast('Please fix the errors before continuing.', 'error')
     return
   }
-  isLoading.value = true
-  await new Promise(r => setTimeout(r, 1600))
-  isLoading.value = false
-  showToast('Password reset successfully! Redirecting...', 'success')
-  setTimeout(() => emit('go-to-login'), 2000)
+
+  try {
+    isLoading.value = true
+    const res = await authService.resetPassword({
+      email: email.value.trim(),
+      newPassword: newPassword.value,
+      confirmPassword: confirmPassword.value,
+      token: resetToken.value
+    })
+    showToast(res?.message || 'Password reset successfully! Redirecting...', 'success')
+    setTimeout(() => emit('go-to-login'), 1800)
+  } catch (err) {
+    showToast(err.message || 'Failed to reset password. Please try again.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleResend = async () => {
+  if (resendTimer.value > 0) return
+  try {
+    await authService.resendOtp(email.value.trim())
+    showToast('A new code has been sent to your email.', 'success')
+    resendTimer.value = 60
+    if (resendInterval) clearInterval(resendInterval)
+    resendInterval = setInterval(() => {
+      if (resendTimer.value > 0) resendTimer.value--
+      else clearInterval(resendInterval)
+    }, 1000)
+  } catch (err) {
+    showToast(err.message || 'Failed to resend code.', 'error')
+  }
 }
 
 // OTP Input Handlers
@@ -409,14 +454,6 @@ const startResendTimer = () => {
     resendTimer.value--
     if (resendTimer.value <= 0) clearInterval(resendInterval)
   }, 1000)
-}
-
-const handleResend = async () => {
-  isLoading.value = true
-  await new Promise(r => setTimeout(r, 1000))
-  isLoading.value = false
-  startResendTimer()
-  showToast('New code sent! Check your inbox.', 'success')
 }
 </script>
 

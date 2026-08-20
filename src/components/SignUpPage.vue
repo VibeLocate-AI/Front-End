@@ -316,8 +316,12 @@
             <span v-if="errors.agreeTerms" class="error-msg terms-error">You must agree to the Terms of Use to proceed.</span>
 
             <!-- Submit Button (Navy Pill) -->
-            <button type="submit" class="submit-btn signup-btn" id="signUpBtn">
-              <span>SIGN UP</span>
+            <button type="submit" class="submit-btn signup-btn" id="signUpBtn" :disabled="isLoading">
+              <span v-if="!isLoading">SIGN UP</span>
+              <span v-else class="btn-loading">
+                <span class="spinner"></span>
+                Creating...
+              </span>
             </button>
 
           </form>
@@ -366,6 +370,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { authService } from '../services/authService'
 
 const emit = defineEmits(['switch-view', 'go-to-login'])
 
@@ -399,6 +404,7 @@ const confirmPassword = ref('')
 const phoneCode = ref('+971')
 const phoneNumber = ref('')
 const agreeTerms = ref(false)
+const isLoading = ref(false)
 
 const selectedCountry = ref(countries.value[0])
 const isCountryDropdownOpen = ref(false)
@@ -474,7 +480,7 @@ const isValidEmail = (val) => {
   return re.test(val.trim())
 }
 
-const handleSignUp = () => {
+const handleSignUp = async () => {
   errors.firstName = !firstName.value.trim()
   errors.lastName = !lastName.value.trim()
   errors.country = !country.value.trim()
@@ -487,10 +493,38 @@ const handleSignUp = () => {
 
   const hasErrors = Object.values(errors).some(val => val)
 
-  if (!hasErrors) {
-    showToast(`Account created successfully for ${firstName.value}!`, 'success')
-  } else {
+  if (hasErrors) {
     showToast('Please fix the highlighted errors before submitting.', 'error')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    const payload = {
+      name: `${firstName.value.trim()} ${lastName.value.trim()}`,
+      first_name: firstName.value.trim(),
+      last_name: lastName.value.trim(),
+      country: country.value.trim(),
+      city: city.value.trim(),
+      email: email.value.trim(),
+      password: password.value,
+      password_confirmation: confirmPassword.value,
+      phone: `${phoneCode.value}${phoneNumber.value.trim()}`,
+      phone_code: phoneCode.value,
+      phone_number: phoneNumber.value.trim()
+    }
+
+    const res = await authService.signup(payload)
+    showToast(res?.message || `Account created successfully for ${firstName.value}!`, 'success')
+    
+    setTimeout(() => {
+      emit('go-to-login')
+      emit('switch-view', 'login')
+    }, 1500)
+  } catch (err) {
+    showToast(err.message || 'Registration failed. Please check your information.', 'error')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -506,6 +540,6 @@ const showToast = (message, type = 'success') => {
   if (toastTimeout) clearTimeout(toastTimeout)
   toastTimeout = setTimeout(() => {
     toast.visible = false
-  }, 3200)
+  }, 3500)
 }
 </script>

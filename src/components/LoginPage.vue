@@ -120,8 +120,12 @@
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="submit-btn" id="submitBtn">
-              <span>LOG IN</span>
+            <button type="submit" class="submit-btn" id="submitBtn" :disabled="isLoading">
+              <span v-if="!isLoading">LOG IN</span>
+              <span v-else class="btn-loading">
+                <span class="spinner"></span>
+                Logging in...
+              </span>
             </button>
 
           </form>
@@ -168,7 +172,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
+import { authService } from '../services/authService'
 
 // Emits
 const emit = defineEmits(['go-to-forgot', 'go-to-signup', 'switch-view'])
@@ -178,6 +183,7 @@ const email = ref('')
 const password = ref('')
 const rememberMe = ref(true)
 const isPasswordVisible = ref(false)
+const isLoading = ref(false)
 
 // Features Bullet Points
 const features = ref([
@@ -215,14 +221,27 @@ const isValidEmail = (val) => {
   return re.test(val.trim())
 }
 
-const handleLogin = () => {
+const handleLogin = async () => {
   errors.email = !isValidEmail(email.value)
   errors.password = password.value.trim().length < 6
 
-  if (!errors.email && !errors.password) {
-    showToast('Login successful! Welcome to VibeLocate AI.', 'success')
-  } else {
+  if (errors.email || errors.password) {
     showToast('Please fix the highlighted errors in the form.', 'error')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    const res = await authService.login({
+      email: email.value.trim(),
+      password: password.value,
+      rememberMe: rememberMe.value
+    })
+    showToast(res?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
+  } catch (err) {
+    showToast(err.message || 'Login failed. Please check your credentials.', 'error')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -238,6 +257,6 @@ const showToast = (message, type = 'success') => {
   if (toastTimeout) clearTimeout(toastTimeout)
   toastTimeout = setTimeout(() => {
     toast.visible = false
-  }, 3200)
+  }, 3500)
 }
 </script>
