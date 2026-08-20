@@ -692,54 +692,199 @@ body {
 
 /* ==========================================
    RESPONSIVE DESIGN (Mobile & Tablet)
+   Unifies all authentication pages to match LoginPage on mobile
    ========================================== */
 @media (max-width: 840px) {
-    .login-card {
-        flex-direction: column;
+    .page-container,
+    .login-wrapper,
+    .signup-wrapper,
+    .reset-wrapper,
+    .success-wrapper {
+        padding: 16px;
         max-width: 450px;
-        min-height: auto;
+        width: 100%;
+        margin: 0 auto;
     }
 
-    .left-panel {
-        border-radius: 0;
-        border-top-left-radius: var(--radius-card);
-        border-top-right-radius: var(--radius-card);
-        padding: 40px 30px;
+    .login-card,
+    .signup-card,
+    .reset-card,
+    .success-card {
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+        border-radius: var(--radius-card) !important;
+        overflow: hidden;
     }
 
-    .left-content {
-        gap: 32px;
+    /* Top Navy Banner (Left Panel) */
+    .left-panel,
+    .signup-card .left-panel,
+    .reset-left-panel,
+    .success-left-panel {
+        border-radius: 0 !important;
+        border-top-left-radius: var(--radius-card) !important;
+        border-top-right-radius: var(--radius-card) !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        padding: 30px 24px !important;
+        flex: none !important;
+        width: 100% !important;
+        min-height: auto !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
 
-    /* إخفاء مربعات النصوص تحت اللوجو على الموبايل */
-    .feature-list {
-        display: none;
+    .left-content,
+    .signup-card .left-content,
+    .reset-left-content,
+    .success-left-content {
+        max-width: 100% !important;
+        gap: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: auto !important;
     }
 
-    .right-panel {
-        border-radius: 0;
-        border-bottom-left-radius: var(--radius-card);
-        border-bottom-right-radius: var(--radius-card);
-        padding: 40px 30px;
+    .brand-header {
+        margin: 0 auto;
+        gap: 0;
+    }
+
+    .transparent-logo-wrapper {
+        max-width: 180px !important;
+    }
+
+    .transparent-logo-img {
+        max-height: 80px !important;
+        width: auto !important;
+    }
+
+    /* Hide side-panel text, features & illustrations on mobile to keep top header clean & identical to Login */
+    .feature-list,
+    .left-legal-notice,
+    .robot-wrapper,
+    .recovery-info,
+    .verify-illustration-wrapper,
+    .verify-info,
+    .lock-illustration-container,
+    .reset-left-text,
+    .success-illustration-container,
+    .success-left-text {
+        display: none !important;
+    }
+
+    /* Bottom White Form Card (Right Panel) */
+    .right-panel,
+    .signup-card .right-panel,
+    .reset-right-panel,
+    .success-right-panel {
+        border-radius: 0 !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+        border-bottom-left-radius: var(--radius-card) !important;
+        border-bottom-right-radius: var(--radius-card) !important;
+        padding: 34px 28px !important;
+        flex: none !important;
+        width: 100% !important;
+    }
+
+    .right-content,
+    .signup-right-content,
+    .reset-right-content,
+    .success-right-content {
+        max-width: 100% !important;
+    }
+
+    .form-header,
+    .signup-card .form-header,
+    .reset-form-header,
+    .success-form-header {
+        margin-bottom: 22px !important;
+    }
+
+    .welcome-heading,
+    .signup-card .welcome-heading,
+    .reset-heading,
+    .success-heading {
+        font-size: 19px !important;
+    }
+
+    .form-row {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .submit-btn,
+    .signup-btn,
+    .reset-btn,
+    .success-btn,
+    .verify-btn {
+        width: 100% !important;
+        max-width: 280px;
+        margin: 16px auto 0 auto !important;
     }
 }
 
 @media (max-width: 480px) {
-    .login-wrapper {
-        padding: 14px;
+    .page-container,
+    .login-wrapper,
+    .signup-wrapper,
+    .reset-wrapper,
+    .success-wrapper {
+        padding: 12px !important;
     }
 
     .left-panel,
-    .right-panel {
-        padding: 32px 22px;
+    .signup-card .left-panel,
+    .reset-left-panel,
+    .success-left-panel {
+        padding: 24px 18px !important;
     }
 
-    .welcome-heading {
-        font-size: 18px;
+    .transparent-logo-wrapper {
+        max-width: 155px !important;
     }
 
-    .submit-btn {
-        width: 100%;
+    .transparent-logo-img {
+        max-height: 68px !important;
+    }
+
+    .right-panel,
+    .signup-card .right-panel,
+    .reset-right-panel,
+    .success-right-panel {
+        padding: 26px 18px !important;
+    }
+
+    .welcome-heading,
+    .signup-card .welcome-heading,
+    .reset-heading,
+    .success-heading {
+        font-size: 17.5px !important;
+    }
+
+    .otp-group {
+        gap: 8px !important;
+    }
+
+    .otp-box,
+    .otp-input {
+        width: 42px !important;
+        height: 48px !important;
+        font-size: 18px !important;
+    }
+
+    .submit-btn,
+    .signup-btn,
+    .reset-btn,
+    .success-btn,
+    .verify-btn {
+        width: 100% !important;
+        max-width: 100% !important;
     }
 }
 
