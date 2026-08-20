@@ -144,7 +144,6 @@ body {
     z-index: 2;
     width: 100%;
     max-width: 920px;
-    padding: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -906,7 +905,6 @@ body {
    ========================================== */
 .signup-wrapper {
     max-width: 840px;
-    padding: 16px;
 }
 
 .signup-card {
@@ -1028,30 +1026,75 @@ body {
     width: 100%;
 }
 
-.phone-code-select {
+/* Custom phone code wrapper — shows flag + dial code, hides native select arrow */
+.phone-code-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     height: 38px;
-    padding: 0 8px;
+    min-width: 88px;
+    padding: 0 26px 0 10px;
+    background-color: #f8fafc;
+    border: 1.5px solid var(--gray-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color var(--transition-smooth), background-color var(--transition-smooth);
+    flex-shrink: 0;
+}
+
+.phone-code-select-wrapper:focus-within {
+    background-color: #ffffff;
+    border-color: var(--blue-accent);
+}
+
+.selected-flag {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.phone-dial-code {
     font-family: var(--font-primary);
     font-size: 12px;
     font-weight: 700;
     color: var(--navy-primary);
-    background-color: #f8fafc;
-    border: 1.5px solid var(--gray-border);
-    border-radius: 8px;
-    outline: none;
-    cursor: pointer;
-    transition: border-color var(--transition-smooth), background-color var(--transition-smooth);
+    white-space: nowrap;
 }
 
-.phone-code-select:focus {
-    background-color: #ffffff;
-    border-color: var(--blue-accent);
+/* Native select is fully transparent, sits on top for click handling */
+.phone-code-select-wrapper .phone-code-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: transparent;
+    z-index: 2;
+}
+
+.select-chevron {
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    color: var(--gray-text-sub);
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 .phone-input-wrapper .phone-input {
     flex: 1;
     padding-left: 12px;
 }
+
+
 
 /* Terms Checkbox & Links */
 .terms-option {
@@ -1173,8 +1216,7 @@ body {
    RESET PASSWORD SPECIFIC STYLES
    ========================================== */
 .reset-wrapper {
-    max-width: 820px;
-    padding: 16px;
+    max-width: 820px;;
 }
 
 .reset-card {

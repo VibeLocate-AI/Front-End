@@ -162,7 +162,35 @@
               <span v-if="errors.email" class="error-msg">Please enter a valid email address.</span>
             </div>
 
-            <!-- Row 4: Password Input Group -->
+            <!-- Row 4: Phone Number with Country Code Dropdown -->
+            <div class="form-group" :class="{ error: errors.phoneNumber }">
+              <label for="phoneNumber" class="field-label">Phone Number</label>
+              <div class="phone-input-wrapper">
+                <div class="phone-code-select-wrapper">
+                  <span class="selected-flag">{{ selectedCountry.flag }}</span>
+                  <select v-model="phoneCode" class="phone-code-select" aria-label="Country dial code" @change="updateSelectedCountry">
+                    <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.flag }} {{ c.dial }}</option>
+                  </select>
+                  <span class="phone-dial-code">{{ selectedCountry.dial }}</span>
+                  <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+                <input 
+                  type="tel" 
+                  id="phoneNumber" 
+                  v-model="phoneNumber" 
+                  @input="clearError('phoneNumber')"
+                  class="form-input phone-input" 
+                  placeholder="50 123 4567" 
+                  required 
+                  autocomplete="tel-national"
+                >
+              </div>
+              <span v-if="errors.phoneNumber" class="error-msg">Please enter a valid phone number.</span>
+            </div>
+
+            <!-- Row 5: Password Input Group -->
             <div class="form-group" :class="{ error: errors.password }">
               <label for="password" class="field-label">Password</label>
               <div class="input-container">
@@ -201,7 +229,7 @@
               <span v-if="errors.password" class="error-msg">Password must be at least 6 characters.</span>
             </div>
 
-            <!-- Row 5: Confirm Password Input Group -->
+            <!-- Row 6: Confirm Password Input Group -->
             <div class="form-group" :class="{ error: errors.confirmPassword }">
               <label for="confirmPassword" class="field-label">Confirm Password</label>
               <div class="input-container">
@@ -238,32 +266,6 @@
                 </button>
               </div>
               <span v-if="errors.confirmPassword" class="error-msg">Passwords do not match.</span>
-            </div>
-
-            <!-- Row 6: Phone Number with Country Code Dropdown -->
-            <div class="form-group" :class="{ error: errors.phoneNumber }">
-              <label for="phoneNumber" class="field-label">Phone Number</label>
-              <div class="phone-input-wrapper">
-                <select v-model="phoneCode" class="phone-code-select" aria-label="Country dial code">
-                  <option value="+971">971 🇦🇪</option>
-                  <option value="+966">966 🇸🇦</option>
-                  <option value="+1">1 🇺🇸</option>
-                  <option value="+44">44 🇬🇧</option>
-                  <option value="+20">20 🇪🇬</option>
-                  <option value="+962">962 🇯🇴</option>
-                </select>
-                <input 
-                  type="tel" 
-                  id="phoneNumber" 
-                  v-model="phoneNumber" 
-                  @input="clearError('phoneNumber')"
-                  class="form-input phone-input" 
-                  placeholder="50 123 4567" 
-                  required 
-                  autocomplete="tel-national"
-                >
-              </div>
-              <span v-if="errors.phoneNumber" class="error-msg">Please enter a valid phone number.</span>
             </div>
 
             <!-- Row 7: Checkbox: Agree to Terms of Use -->
@@ -341,6 +343,16 @@ import { ref, reactive } from 'vue'
 
 const emit = defineEmits(['switch-view', 'go-to-login'])
 
+// Countries with flags and dial codes
+const countries = ref([
+  { code: '+971', dial: '+971', flag: '🇦🇪', name: 'UAE' },
+  { code: '+966', dial: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { code: '+1',   dial: '+1',   flag: '🇺🇸', name: 'USA' },
+  { code: '+44',  dial: '+44',  flag: '🇬🇧', name: 'UK' },
+  { code: '+20',  dial: '+20',  flag: '🇪🇬', name: 'Egypt' },
+  { code: '+962', dial: '+962', flag: '🇯🇴', name: 'Jordan' },
+])
+
 // Form State
 const firstName = ref('')
 const lastName = ref('')
@@ -352,6 +364,12 @@ const confirmPassword = ref('')
 const phoneCode = ref('+971')
 const phoneNumber = ref('')
 const agreeTerms = ref(false)
+
+const selectedCountry = ref(countries.value[0])
+
+const updateSelectedCountry = () => {
+  selectedCountry.value = countries.value.find(c => c.code === phoneCode.value) || countries.value[0]
+}
 
 const isPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
