@@ -12,26 +12,32 @@ export const authService = {
    * @returns {Promise<Object>} response data (user info, tokens)
    */
   async login({ email, password, rememberMe = true }) {
-    const data = await apiClient.post('/auth/login', {
+    const data = await apiClient.post('/login', {
       email,
       password,
       rememberMe
     })
 
-    if (data?.token) {
-      this.setToken(data.token, rememberMe)
+    const token = data?.token || data?.access_token || data?.data?.token
+    if (token) {
+      this.setToken(token, rememberMe)
     }
 
     return data
   },
 
   /**
-   * Register a new user
-   * @param {Object} userData - { firstName, lastName, country, city, email, password, phoneCode, phoneNumber }
+   * Register a new user (Laravel /register)
+   * @param {Object} userData - payload to send to Laravel backend
    * @returns {Promise<Object>}
    */
   async signup(userData) {
-    return await apiClient.post('/auth/signup', userData)
+    const data = await apiClient.post('/register', userData)
+    const token = data?.token || data?.access_token || data?.data?.token
+    if (token) {
+      this.setToken(token, true)
+    }
+    return data
   },
 
   /**
@@ -40,7 +46,7 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async forgotPassword(email) {
-    return await apiClient.post('/auth/forgot-password', { email })
+    return await apiClient.post('/forgot-password', { email })
   },
 
   /**
@@ -50,7 +56,7 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async verifyOtp(email, otpCode) {
-    return await apiClient.post('/auth/verify-otp', {
+    return await apiClient.post('/verify-otp', {
       email,
       otp: otpCode
     })
@@ -62,7 +68,7 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async resendOtp(email) {
-    return await apiClient.post('/auth/resend-otp', { email })
+    return await apiClient.post('/resend-otp', { email })
   },
 
   /**
@@ -71,10 +77,10 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async resetPassword({ email, newPassword, confirmPassword, token }) {
-    return await apiClient.post('/auth/reset-password', {
+    return await apiClient.post('/reset-password', {
       email,
-      newPassword,
-      confirmPassword,
+      password: newPassword,
+      password_confirmation: confirmPassword,
       token
     })
   },
@@ -84,7 +90,7 @@ export const authService = {
    */
   async logout() {
     try {
-      await apiClient.post('/auth/logout')
+      await apiClient.post('/logout')
     } catch {
       // Clean up local session even if server request fails
     } finally {
@@ -97,7 +103,7 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async getProfile() {
-    return await apiClient.get('/auth/me')
+    return await apiClient.get('/user')
   },
 
   // Token management helpers
