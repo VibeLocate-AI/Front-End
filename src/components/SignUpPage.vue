@@ -162,20 +162,46 @@
               <span v-if="errors.email" class="error-msg">Please enter a valid email address.</span>
             </div>
 
-            <!-- Row 4: Phone Number with Country Code Dropdown -->
+            <!-- Row 4: Phone Number with Custom Country Flag Dropdown -->
             <div class="form-group" :class="{ error: errors.phoneNumber }">
               <label for="phoneNumber" class="field-label">Phone Number</label>
               <div class="phone-input-wrapper">
-                <div class="phone-code-select-wrapper">
-                  <span class="selected-flag">{{ selectedCountry.flag }}</span>
-                  <select v-model="phoneCode" class="phone-code-select" aria-label="Country dial code" @change="updateSelectedCountry">
-                    <option v-for="c in countries" :key="c.code" :value="c.code">{{ c.flag }} {{ c.dial }}</option>
-                  </select>
-                  <span class="phone-dial-code">{{ selectedCountry.dial }}</span>
-                  <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+                <div class="custom-country-picker" ref="countryDropdownRef">
+                  <button 
+                    type="button" 
+                    class="country-picker-trigger" 
+                    @click="isCountryDropdownOpen = !isCountryDropdownOpen"
+                    :aria-expanded="isCountryDropdownOpen"
+                    aria-label="Select country dial code"
+                  >
+                    <img 
+                      :src="selectedCountry.flagUrl" 
+                      :alt="selectedCountry.name" 
+                      class="country-flag-img"
+                      loading="lazy"
+                    />
+                    <span class="phone-dial-code">{{ selectedCountry.dial }}</span>
+                    <svg class="select-chevron" :class="{ open: isCountryDropdownOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+
+                  <!-- Custom Dropdown Menu -->
+                  <div v-if="isCountryDropdownOpen" class="country-dropdown-menu">
+                    <div 
+                      v-for="c in countries" 
+                      :key="c.iso" 
+                      class="country-dropdown-item" 
+                      :class="{ selected: c.dial === selectedCountry.dial && c.iso === selectedCountry.iso }"
+                      @click="selectCountry(c)"
+                    >
+                      <img :src="c.flagUrl" :alt="c.name" class="country-flag-img" loading="lazy" />
+                      <span class="country-item-name">{{ c.name }}</span>
+                      <span class="country-item-dial">{{ c.dial }}</span>
+                    </div>
+                  </div>
                 </div>
+
                 <input 
                   type="tel" 
                   id="phoneNumber" 
@@ -339,18 +365,27 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits(['switch-view', 'go-to-login'])
 
-// Countries with flags and dial codes
+// Countries with high-resolution flag images and dial codes
 const countries = ref([
-  { code: '+971', dial: '+971', flag: '🇦🇪', name: 'UAE' },
-  { code: '+966', dial: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
-  { code: '+1',   dial: '+1',   flag: '🇺🇸', name: 'USA' },
-  { code: '+44',  dial: '+44',  flag: '🇬🇧', name: 'UK' },
-  { code: '+20',  dial: '+20',  flag: '🇪🇬', name: 'Egypt' },
-  { code: '+962', dial: '+962', flag: '🇯🇴', name: 'Jordan' },
+  { iso: 'ae', dial: '+971', name: 'UAE', flagUrl: 'https://flagcdn.com/w40/ae.png' },
+  { iso: 'sa', dial: '+966', name: 'Saudi Arabia', flagUrl: 'https://flagcdn.com/w40/sa.png' },
+  { iso: 'ps', dial: '+970', name: 'Palestine', flagUrl: 'https://flagcdn.com/w40/ps.png' },
+  { iso: 'eg', dial: '+20',  name: 'Egypt', flagUrl: 'https://flagcdn.com/w40/eg.png' },
+  { iso: 'jo', dial: '+962', name: 'Jordan', flagUrl: 'https://flagcdn.com/w40/jo.png' },
+  { iso: 'qa', dial: '+974', name: 'Qatar', flagUrl: 'https://flagcdn.com/w40/qa.png' },
+  { iso: 'kw', dial: '+965', name: 'Kuwait', flagUrl: 'https://flagcdn.com/w40/kw.png' },
+  { iso: 'bh', dial: '+973', name: 'Bahrain', flagUrl: 'https://flagcdn.com/w40/bh.png' },
+  { iso: 'om', dial: '+968', name: 'Oman', flagUrl: 'https://flagcdn.com/w40/om.png' },
+  { iso: 'us', dial: '+1',   name: 'USA', flagUrl: 'https://flagcdn.com/w40/us.png' },
+  { iso: 'gb', dial: '+44',  name: 'UK', flagUrl: 'https://flagcdn.com/w40/gb.png' },
+  { iso: 'tr', dial: '+90',  name: 'Turkey', flagUrl: 'https://flagcdn.com/w40/tr.png' },
+  { iso: 'de', dial: '+49',  name: 'Germany', flagUrl: 'https://flagcdn.com/w40/de.png' },
+  { iso: 'fr', dial: '+33',  name: 'France', flagUrl: 'https://flagcdn.com/w40/fr.png' },
+  { iso: 'ca', dial: '+1',   name: 'Canada', flagUrl: 'https://flagcdn.com/w40/ca.png' }
 ])
 
 // Form State
@@ -366,10 +401,28 @@ const phoneNumber = ref('')
 const agreeTerms = ref(false)
 
 const selectedCountry = ref(countries.value[0])
+const isCountryDropdownOpen = ref(false)
+const countryDropdownRef = ref(null)
 
-const updateSelectedCountry = () => {
-  selectedCountry.value = countries.value.find(c => c.code === phoneCode.value) || countries.value[0]
+const selectCountry = (c) => {
+  selectedCountry.value = c
+  phoneCode.value = c.dial
+  isCountryDropdownOpen.value = false
 }
+
+const handleClickOutside = (event) => {
+  if (countryDropdownRef.value && !countryDropdownRef.value.contains(event.target)) {
+    isCountryDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const isPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)

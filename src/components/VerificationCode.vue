@@ -34,7 +34,7 @@
           <!-- Step Indicator -->
           <div class="step-indicator">
             <div
-              v-for="step in 3"
+              v-for="step in 2"
               :key="step"
               class="step-dot"
               :class="{ active: currentStep >= step, completed: currentStep > step }"
