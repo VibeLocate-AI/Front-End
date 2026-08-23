@@ -153,11 +153,11 @@ import { authService } from '../services/authService'
 const props = defineProps({
   email: { type: String, default: '' }
 })
-const emit = defineEmits(['go-back', 'verified'])
+const emit = defineEmits(['go-back', 'verified', 'switch-view'])
 
 // State
 const currentStep = ref(2)
-const otpDigits = ref(['', '', '', ''])
+const otpDigits = ref(['', '', '', '', '', ''])
 const otpRefs = ref([])
 const isLoading = ref(false)
 const isVerified = ref(false)
@@ -199,11 +199,11 @@ const handleOtpKeydown = (index, event) => {
 
 const handleOtpPaste = (event) => {
   event.preventDefault()
-  const pasted = event.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 4)
+  const pasted = event.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6)
   pasted.split('').forEach((char, i) => {
-    if (i < 4) otpDigits.value[i] = char
+    if (i < 6) otpDigits.value[i] = char
   })
-  const lastIndex = Math.min(pasted.length, 3)
+  const lastIndex = Math.min(pasted.length, 5)
   otpRefs.value[lastIndex]?.focus()
 }
 
@@ -211,7 +211,7 @@ const handleOtpPaste = (event) => {
 const handleVerify = async () => {
   if (isVerified.value || isLoading.value) return
   const code = otpDigits.value.join('')
-  if (code.length < 4) {
+  if (code.length < 6) {
     errors.otp = true
     return
   }
@@ -246,7 +246,7 @@ const handleResend = async () => {
   try {
     isLoading.value = true
     await authService.resendOtp(props.email)
-    otpDigits.value = ['', '', '', '']
+    otpDigits.value = ['', '', '', '', '', '']
     startResendTimer()
     otpRefs.value[0]?.focus()
     showToast('New code sent to your email!', 'success')
@@ -377,13 +377,13 @@ const showToast = (message, type = 'success') => {
 /* OTP Boxes */
 .otp-group {
   display: flex;
-  gap: 14px;
+  gap: 10px;
   justify-content: center;
 }
 
 .otp-box {
-  width: 58px;
-  height: 62px;
+  width: 50px;
+  height: 58px;
   text-align: center;
   font-size: 24px;
   font-weight: 800;

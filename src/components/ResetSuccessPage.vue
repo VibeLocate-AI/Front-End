@@ -76,7 +76,7 @@
 <script setup>
 import { reactive, onMounted } from 'vue'
 
-const emit = defineEmits(['switch-view'])
+const emit = defineEmits(['switch-view', 'go-to-login'])
 
 // Toast Notification State
 const toast = reactive({

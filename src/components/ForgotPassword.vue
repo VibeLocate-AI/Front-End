@@ -272,7 +272,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { authService } from '../services/authService'
 
 // Emits
-const emit = defineEmits(['go-to-login', 'code-sent'])
+const emit = defineEmits(['go-to-login', 'code-sent', 'switch-view'])
 
 // Steps: 1 = email, 2 = OTP, 3 = new password
 const currentStep = ref(1)
