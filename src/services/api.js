@@ -5,7 +5,7 @@ import axios from 'axios'
  * Configured with base URL, timeout, and request/response interceptors.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vibelocate-laravel.onrender.com/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vibelocate-laravel.onrender.com'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
