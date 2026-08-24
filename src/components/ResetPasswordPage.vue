@@ -134,7 +134,7 @@
 
             <!-- Footer Text to switch back to Login -->
             <footer class="form-footer reset-footer">
-              <p class="footer-text">Remembered your password? <a href="#login" @click.prevent="$emit('switch-view', 'login'); $emit('go-to-login')" class="signup-link">Log In</a></p>
+              <p class="footer-text">Remembered your password? <a href="#login" @click.prevent="goToLogin" class="signup-link">Log In</a></p>
             </footer>
 
           </div>
@@ -156,8 +156,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
+
+const router = useRouter()
+const route = useRoute()
 
 const props = defineProps({
   email: { type: String, default: '' },
@@ -165,6 +169,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['switch-view', 'reset-success', 'go-to-login'])
+
+const effectiveEmail = computed(() => props.email || route.query.email || '')
+const effectiveToken = computed(() => props.token || route.query.token || '')
 
 // Form State
 const newPassword = ref('')
@@ -213,21 +220,27 @@ const handleResetPassword = async () => {
   try {
     isLoading.value = true
     const res = await authService.resetPassword({
-      email: props.email,
+      email: effectiveEmail.value,
       newPassword: newPassword.value,
       confirmPassword: confirmNewPassword.value,
-      token: props.token
+      token: effectiveToken.value
     })
-    showToast(res?.message || 'Password reset successfully!', 'success')
+    showToast(res?.message || 'Password reset successfully! Redirecting to login...', 'success')
+    emit('reset-success')
     setTimeout(() => {
-      emit('reset-success')
-      emit('switch-view', 'resetSuccess')
-    }, 1000)
+      router.push({ path: '/login', query: { reset: '1' } })
+    }, 1200)
   } catch (err) {
     showToast(err.message || 'Failed to reset password. Please try again.', 'error')
   } finally {
     isLoading.value = false
   }
+}
+
+const goToLogin = () => {
+  emit('go-to-login')
+  emit('switch-view', 'login')
+  router.push('/login')
 }
 
 const showToast = (message, type = 'success') => {

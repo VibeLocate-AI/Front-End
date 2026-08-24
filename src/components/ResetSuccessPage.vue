@@ -47,7 +47,7 @@
               <!-- LOG IN Button (Pill Navy) -->
               <button 
                 type="button" 
-                @click="$emit('switch-view', 'login')" 
+                @click="goToLogin" 
                 class="submit-btn success-btn" 
                 id="successLoginBtn"
               >
@@ -75,8 +75,16 @@
 
 <script setup>
 import { reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const emit = defineEmits(['switch-view', 'go-to-login'])
+
+const goToLogin = () => {
+  emit('go-to-login')
+  emit('switch-view', 'login')
+  router.push('/login')
+}
 
 // Toast Notification State
 const toast = reactive({

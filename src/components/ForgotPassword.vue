@@ -241,7 +241,7 @@
           <!-- Back to Login Link -->
           <footer class="form-footer">
             <p class="footer-text">
-              <a href="#" @click.prevent="$emit('go-to-login')" class="back-link">
+              <a href="#" @click.prevent="goToLogin" class="back-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="back-icon">
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
@@ -269,7 +269,11 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
+
+const router = useRouter()
+const route = useRoute()
 
 // Emits
 const emit = defineEmits(['go-to-login', 'code-sent', 'switch-view'])
@@ -345,13 +349,26 @@ const handleSendCode = async () => {
   try {
     isLoading.value = true
     const res = await authService.forgotPassword(email.value.trim())
-    showToast(res?.message || 'Verification code sent to your email!', 'success')
-    emit('code-sent', email.value)
+    showToast(res?.message || 'Verification code sent to your email! Redirecting...', 'success')
+    emit('code-sent', email.value.trim())
+    
+    setTimeout(() => {
+      router.push({
+        path: '/reset-password',
+        query: { email: email.value.trim() }
+      })
+    }, 1200)
   } catch (err) {
     showToast(err.message || 'Failed to send verification code. Please check your email.', 'error')
   } finally {
     isLoading.value = false
   }
+}
+
+const goToLogin = () => {
+  emit('go-to-login')
+  emit('switch-view', 'login')
+  router.push('/login')
 }
 
 // Step 2: OTP Verification

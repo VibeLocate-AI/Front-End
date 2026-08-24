@@ -116,7 +116,7 @@
                 </span>
                 <span class="checkbox-label">Remember Me</span>
               </label>
-              <a href="#forgot-password" @click.prevent="$emit('go-to-forgot')" class="forgot-link">Forget Password?</a>
+              <a href="#forgot-password" @click.prevent="goToForgot" class="forgot-link">Forget Password?</a>
             </div>
 
             <!-- Submit Button -->
@@ -151,7 +151,7 @@
 
           <!-- Footer Text -->
           <footer class="form-footer">
-            <p class="footer-text">If you didn't have an account! <a href="#signup" @click.prevent="$emit('go-to-signup')" class="signup-link">Sign Up</a></p>
+            <p class="footer-text">If you didn't have an account! <a href="#signup" @click.prevent="goToSignUp" class="signup-link">Sign Up</a></p>
           </footer>
 
         </div>
@@ -172,8 +172,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
+
+const router = useRouter()
+const route = useRoute()
 
 // Emits
 const emit = defineEmits(['go-to-forgot', 'go-to-signup', 'switch-view'])
@@ -245,9 +249,25 @@ const handleLogin = async () => {
   }
 }
 
-const handleGoogleLogin = () => {
-  showToast('Connecting to Google Authentication...', 'success')
+const goToForgot = () => {
+  emit('go-to-forgot')
+  emit('switch-view', 'forgot')
+  router.push('/forgot-password')
 }
+
+const goToSignUp = () => {
+  emit('go-to-signup')
+  emit('switch-view', 'signup')
+  router.push('/register')
+}
+
+onMounted(() => {
+  if (route.query.verified) {
+    showToast('Email verified successfully! You can now log in.', 'success')
+  } else if (route.query.reset) {
+    showToast('Password reset successfully! Please log in with your new password.', 'success')
+  }
+})
 
 const showToast = (message, type = 'success') => {
   toast.message = message

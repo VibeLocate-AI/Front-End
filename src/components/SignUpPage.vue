@@ -347,7 +347,7 @@
 
           <!-- Footer Text to switch back to Login -->
           <footer class="form-footer">
-            <p class="footer-text">Already have an account? <a href="#login" @click.prevent="$emit('go-to-login'); $emit('switch-view', 'login')" class="signup-link">Log In</a></p>
+            <p class="footer-text">Already have an account? <a href="#login" @click.prevent="goToLogin" class="signup-link">Log In</a></p>
           </footer>
 
         </div>
@@ -370,9 +370,11 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 
-const emit = defineEmits(['switch-view', 'go-to-login'])
+const router = useRouter()
+const emit = defineEmits(['switch-view', 'go-to-login', 'registered'])
 
 // Countries with high-resolution flag images and dial codes
 const countries = ref([
@@ -518,14 +520,23 @@ const handleSignUp = async () => {
     showToast(res?.message || `Account created successfully for ${firstName.value}!`, 'success')
     
     setTimeout(() => {
-      emit('go-to-login')
-      emit('switch-view', 'login')
-    }, 1500)
+      emit('registered', email.value.trim())
+      router.push({
+        path: '/verify',
+        query: { email: email.value.trim() }
+      })
+    }, 1200)
   } catch (err) {
     showToast(err.message || 'Registration failed. Please check your information.', 'error')
   } finally {
     isLoading.value = false
   }
+}
+
+const goToLogin = () => {
+  emit('go-to-login')
+  emit('switch-view', 'login')
+  router.push('/login')
 }
 
 const handleGoogleSignUp = () => {

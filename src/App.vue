@@ -7,93 +7,19 @@
     <!-- Dark Ambient Overlay -->
     <div class="bg-overlay"></div>
 
-    <!-- Smooth Page Transition between Views -->
-    <Transition name="page" mode="out-in">
-      <!-- Login Page -->
-      <LoginPage
-        v-if="currentPage === 'login'"
-        key="login"
-        @go-to-forgot="currentPage = 'forgot'"
-        @go-to-signup="currentPage = 'signup'"
-        @switch-view="switchView"
-      />
-
-      <!-- Sign Up Page -->
-      <SignUpPage
-        v-else-if="currentPage === 'signup'"
-        key="signup"
-        @go-to-login="currentPage = 'login'"
-        @switch-view="switchView"
-      />
-
-      <!-- Forgot Password (Email Step) -->
-      <ForgotPassword
-        v-else-if="currentPage === 'forgot'"
-        key="forgot"
-        @go-to-login="currentPage = 'login'"
-        @code-sent="goToVerify"
-        @switch-view="switchView"
-      />
-
-      <!-- OTP Verification Code Page -->
-      <VerificationCode
-        v-else-if="currentPage === 'verify'"
-        key="verify"
-        :email="userEmail"
-        @go-back="currentPage = 'forgot'"
-        @verified="handleVerified"
-        @switch-view="switchView"
-      />
-
-      <!-- Reset Password Page -->
-      <ResetPasswordPage
-        v-else-if="currentPage === 'resetPassword'"
-        key="resetPassword"
-        :email="userEmail"
-        :token="resetToken"
-        @go-to-login="currentPage = 'login'"
-        @reset-success="currentPage = 'resetSuccess'"
-        @switch-view="switchView"
-      />
-
-      <!-- Reset Success Confirmation Page -->
-      <ResetSuccessPage
-        v-else-if="currentPage === 'resetSuccess'"
-        key="resetSuccess"
-        @go-to-login="currentPage = 'login'"
-        @switch-view="switchView"
-      />
-    </Transition>
+    <!-- Smooth Page Transition between Views with Router -->
+    <RouterView v-slot="{ Component, route }">
+      <Transition name="page" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </Transition>
+    </RouterView>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import LoginPage from './components/LoginPage.vue'
-import SignUpPage from './components/SignUpPage.vue'
-import ForgotPassword from './components/ForgotPassword.vue'
-import VerificationCode from './components/VerificationCode.vue'
-import ResetPasswordPage from './components/ResetPasswordPage.vue'
-import ResetSuccessPage from './components/ResetSuccessPage.vue'
 
-const currentPage = ref('login')
-const userEmail = ref('')
-const resetToken = ref('')
 const bgVideo = ref(null)
-
-const switchView = (view) => {
-  currentPage.value = view
-}
-
-const goToVerify = (email) => {
-  if (email) userEmail.value = email
-  currentPage.value = 'verify'
-}
-
-const handleVerified = (token) => {
-  if (token) resetToken.value = token
-  currentPage.value = 'resetPassword'
-}
 
 onMounted(() => {
   const video = bgVideo.value

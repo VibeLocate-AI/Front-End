@@ -45,12 +45,12 @@
           <header class="form-header">
             <h1 class="welcome-heading">Enter the verification code</h1>
             <p class="verify-desc">Enter the code we sent to your email</p>
-            <p class="email-badge" v-if="email">
+            <p class="email-badge" v-if="currentEmail">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="email-badge-icon">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
-              {{ email }}
+              {{ currentEmail }}
             </p>
           </header>
 
@@ -120,7 +120,7 @@
 
           <!-- Back Link -->
           <footer class="form-footer">
-            <a href="#" @click.prevent="$emit('go-back')" class="back-link">
+            <a href="#" @click.prevent="handleGoBack" class="back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="back-icon">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
@@ -146,14 +146,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
+
+const router = useRouter()
+const route = useRoute()
 
 // Props & Emits
 const props = defineProps({
   email: { type: String, default: '' }
 })
 const emit = defineEmits(['go-back', 'verified', 'switch-view'])
+
+// Computed current email from prop or query param
+const currentEmail = computed(() => {
+  return props.email || route.query.email || ''
+})
 
 // State
 const currentStep = ref(2)
@@ -218,11 +227,14 @@ const handleVerify = async () => {
 
   try {
     isLoading.value = true
-    const res = await authService.verifyOtp(props.email, code)
+    const res = await authService.verifyOtp(currentEmail.value, code)
     isVerified.value = true
-    showToast(res?.message || 'Code verified successfully!', 'success')
+    showToast(res?.message || 'Verification successful! Redirecting to login...', 'success')
     const token = res?.token || res?.reset_token || ''
-    setTimeout(() => emit('verified', token), 1200)
+    emit('verified', token)
+    setTimeout(() => {
+      router.push('/login')
+    }, 1200)
   } catch (err) {
     errors.otp = true
     showToast(err.message || 'Invalid or expired verification code.', 'error')
@@ -245,7 +257,7 @@ const handleResend = async () => {
   if (resendTimer.value > 0 || isLoading.value) return
   try {
     isLoading.value = true
-    await authService.resendOtp(props.email)
+    await authService.resendOtp(currentEmail.value)
     otpDigits.value = ['', '', '', '', '', '']
     startResendTimer()
     otpRefs.value[0]?.focus()
@@ -254,6 +266,15 @@ const handleResend = async () => {
     showToast(err.message || 'Failed to resend code.', 'error')
   } finally {
     isLoading.value = false
+  }
+}
+
+const handleGoBack = () => {
+  emit('go-back')
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/register')
   }
 }
 
