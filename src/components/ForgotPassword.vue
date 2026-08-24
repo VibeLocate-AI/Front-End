@@ -354,8 +354,8 @@ const handleSendCode = async () => {
     
     setTimeout(() => {
       router.push({
-        path: '/reset-password',
-        query: { email: email.value.trim() }
+        path: '/verify',
+        query: { email: email.value.trim(), from: 'forgot' }
       })
     }, 1200)
   } catch (err) {

@@ -229,12 +229,23 @@ const handleVerify = async () => {
     isLoading.value = true
     const res = await authService.verifyOtp(currentEmail.value, code)
     isVerified.value = true
-    showToast(res?.message || 'Verification successful! Redirecting to login...', 'success')
     const token = res?.token || res?.reset_token || ''
     emit('verified', token)
-    setTimeout(() => {
-      router.push('/login')
-    }, 1200)
+    // If user came from forgot password flow → go to reset-password
+    if (route.query.from === 'forgot') {
+      showToast(res?.message || 'Code verified! Redirecting to reset password...', 'success')
+      setTimeout(() => {
+        router.push({
+          path: '/reset-password',
+          query: { email: currentEmail.value, token }
+        })
+      }, 1200)
+    } else {
+      showToast(res?.message || 'Verification successful! Redirecting to login...', 'success')
+      setTimeout(() => {
+        router.push('/login')
+      }, 1200)
+    }
   } catch (err) {
     errors.otp = true
     showToast(err.message || 'Invalid or expired verification code.', 'error')
