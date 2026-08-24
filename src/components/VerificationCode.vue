@@ -268,7 +268,11 @@ const handleResend = async () => {
   if (resendTimer.value > 0 || isLoading.value) return
   try {
     isLoading.value = true
-    await authService.resendOtp(currentEmail.value)
+    if (route.query.from === 'forgot') {
+      await authService.forgotPassword(currentEmail.value)
+    } else {
+      await authService.resendOtp(currentEmail.value)
+    }
     otpDigits.value = ['', '', '', '', '', '']
     startResendTimer()
     otpRefs.value[0]?.focus()
