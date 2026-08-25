@@ -50,13 +50,27 @@ export const authService = {
   },
 
   /**
-   * Verify OTP code sent to email
+   * Verify OTP code sent to email (account registration verification)
    * @param {string} email
    * @param {string} otpCode
    * @returns {Promise<Object>}
    */
   async verifyOtp(email, otpCode) {
     return await apiClient.post('/verify-otp', {
+      email,
+      otp: otpCode
+    })
+  },
+
+  /**
+   * Verify OTP code for password reset flow
+   * Uses a separate endpoint: /api/verify-reset-otp
+   * @param {string} email
+   * @param {string} otpCode
+   * @returns {Promise<Object>}
+   */
+  async verifyResetOtp(email, otpCode) {
+    return await apiClient.post('/verify-reset-otp', {
       email,
       otp: otpCode
     })

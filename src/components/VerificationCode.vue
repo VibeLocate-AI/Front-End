@@ -238,15 +238,23 @@ const handleVerify = async () => {
 
   try {
     isLoading.value = true
-    const res = await authService.verifyOtp(currentEmail.value, code)
+
+    // Use the correct endpoint based on the flow:
+    // - forgot password flow → /api/verify-reset-otp
+    // - registration flow    → /api/verify-otp
+    const isForgotFlow = route.query.from === 'forgot'
+    const res = isForgotFlow
+      ? await authService.verifyResetOtp(currentEmail.value, code)
+      : await authService.verifyOtp(currentEmail.value, code)
+
     isVerified.value = true
     const token = res?.token || res?.reset_token || res?.data?.token || ''
     if (token) {
       sessionStorage.setItem('reset_token', token)
     }
     emit('verified', token)
-    // If user came from forgot password flow → go to reset-password
-    if (route.query.from === 'forgot') {
+
+    if (isForgotFlow) {
       showToast(res?.message || 'Code verified! Redirecting to reset password...', 'success')
       setTimeout(() => {
         router.push({
