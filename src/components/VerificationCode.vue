@@ -159,9 +159,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['go-back', 'verified', 'switch-view'])
 
-// Computed current email from prop or query param
+// Computed current email from prop, query param, or sessionStorage
 const currentEmail = computed(() => {
-  return props.email || route.query.email || ''
+  return props.email || route.query.email || sessionStorage.getItem('pending_email') || ''
 })
 
 // State
@@ -181,6 +181,12 @@ let toastTimeout = null
 const bgVideo = ref(null)
 
 onMounted(() => {
+  // If email is not found, attempt to retrieve from session
+  if (!currentEmail.value) {
+    showToast('No email specified for verification. Redirecting...', 'error')
+    setTimeout(() => router.push('/forgot-password'), 2000)
+    return
+  }
   // Auto-focus first input
   setTimeout(() => otpRefs.value[0]?.focus(), 300)
   startResendTimer()
@@ -225,11 +231,19 @@ const handleVerify = async () => {
     return
   }
 
+  if (!currentEmail.value) {
+    showToast('Email address is missing. Please start over.', 'error')
+    return
+  }
+
   try {
     isLoading.value = true
     const res = await authService.verifyOtp(currentEmail.value, code)
     isVerified.value = true
-    const token = res?.token || res?.reset_token || ''
+    const token = res?.token || res?.reset_token || res?.data?.token || ''
+    if (token) {
+      sessionStorage.setItem('reset_token', token)
+    }
     emit('verified', token)
     // If user came from forgot password flow → go to reset-password
     if (route.query.from === 'forgot') {
@@ -266,6 +280,10 @@ const startResendTimer = () => {
 
 const handleResend = async () => {
   if (resendTimer.value > 0 || isLoading.value) return
+  if (!currentEmail.value) {
+    showToast('Email address is missing. Please start over.', 'error')
+    return
+  }
   try {
     isLoading.value = true
     if (route.query.from === 'forgot') {

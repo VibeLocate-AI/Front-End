@@ -502,13 +502,14 @@ const handleSignUp = async () => {
 
   try {
     isLoading.value = true
+    const cleanEmail = email.value.trim()
     const payload = {
       name: `${firstName.value.trim()} ${lastName.value.trim()}`,
       first_name: firstName.value.trim(),
       last_name: lastName.value.trim(),
       country: country.value.trim(),
       city: city.value.trim(),
-      email: email.value.trim(),
+      email: cleanEmail,
       password: password.value,
       password_confirmation: confirmPassword.value,
       phone: `${phoneCode.value}${phoneNumber.value.trim()}`,
@@ -517,13 +518,14 @@ const handleSignUp = async () => {
     }
 
     const res = await authService.signup(payload)
+    sessionStorage.setItem('pending_email', cleanEmail)
     showToast(res?.message || `Account created successfully for ${firstName.value}!`, 'success')
     
     setTimeout(() => {
-      emit('registered', email.value.trim())
+      emit('registered', cleanEmail)
       router.push({
         path: '/verify',
-        query: { email: email.value.trim() }
+        query: { email: cleanEmail }
       })
     }, 1200)
   } catch (err) {

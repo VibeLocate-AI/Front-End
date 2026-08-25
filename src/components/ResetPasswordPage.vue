@@ -79,7 +79,7 @@
                     </svg>
                   </button>
                 </div>
-                <span v-if="errors.newPassword" class="error-msg">Password must be at least 6 characters.</span>
+                <span v-if="errors.newPassword" class="error-msg">Password must be at least 8 characters.</span>
               </div>
 
               <!-- Confirm New Password Input Group -->
@@ -170,8 +170,8 @@ const props = defineProps({
 
 const emit = defineEmits(['switch-view', 'reset-success', 'go-to-login'])
 
-const effectiveEmail = computed(() => props.email || route.query.email || '')
-const effectiveToken = computed(() => props.token || route.query.token || '')
+const effectiveEmail = computed(() => props.email || route.query.email || sessionStorage.getItem('pending_email') || '')
+const effectiveToken = computed(() => props.token || route.query.token || sessionStorage.getItem('reset_token') || '')
 
 // Form State
 const newPassword = ref('')
@@ -209,11 +209,16 @@ const clearError = (field) => {
 }
 
 const handleResetPassword = async () => {
-  errors.newPassword = newPassword.value.trim().length < 6
+  errors.newPassword = newPassword.value.trim().length < 8
   errors.confirmNewPassword = confirmNewPassword.value !== newPassword.value || !confirmNewPassword.value
 
   if (errors.newPassword || errors.confirmNewPassword) {
     showToast('Please fix the highlighted errors.', 'error')
+    return
+  }
+
+  if (!effectiveEmail.value) {
+    showToast('Email address is missing. Please start password recovery again.', 'error')
     return
   }
 
@@ -226,6 +231,8 @@ const handleResetPassword = async () => {
       token: effectiveToken.value
     })
     showToast(res?.message || 'Password reset successfully! Redirecting to login...', 'success')
+    sessionStorage.removeItem('pending_email')
+    sessionStorage.removeItem('reset_token')
     emit('reset-success')
     setTimeout(() => {
       router.push({ path: '/login', query: { reset: '1' } })

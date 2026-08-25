@@ -346,16 +346,19 @@ const handleSendCode = async () => {
     return
   }
 
+  const cleanEmail = email.value.trim()
+
   try {
     isLoading.value = true
-    const res = await authService.forgotPassword(email.value.trim())
+    const res = await authService.forgotPassword(cleanEmail)
+    sessionStorage.setItem('pending_email', cleanEmail)
     showToast(res?.message || 'Verification code sent to your email! Redirecting...', 'success')
-    emit('code-sent', email.value.trim())
+    emit('code-sent', cleanEmail)
     
     setTimeout(() => {
       router.push({
         path: '/verify',
-        query: { email: email.value.trim(), from: 'forgot' }
+        query: { email: cleanEmail, from: 'forgot' }
       })
     }, 1200)
   } catch (err) {

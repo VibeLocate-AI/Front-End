@@ -73,15 +73,18 @@ export const authService = {
 
   /**
    * Reset user password with new credentials
-   * @param {Object} payload - { email, newPassword, confirmPassword, token/otp }
+   * @param {Object} payload - { email, newPassword, confirmPassword, token }
    * @returns {Promise<Object>}
    */
   async resetPassword({ email, newPassword, confirmPassword, token }) {
     return await apiClient.post('/reset-password', {
       email,
+      new_password: newPassword,
+      new_password_confirmation: confirmPassword,
       password: newPassword,
       password_confirmation: confirmPassword,
-      token
+      token,
+      otp: token
     })
   },
 

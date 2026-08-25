@@ -33,6 +33,14 @@ apiClient.interceptors.request.use(
 // Response Interceptor: Standardize responses and handle Laravel validation / error formats
 apiClient.interceptors.response.use(
   (response) => {
+    // If backend returns HTTP 200 with { success: false }
+    if (response.data && response.data.success === false) {
+      const msg = response.data.message || response.data.error || 'Request failed'
+      const customError = new Error(msg)
+      customError.status = 200
+      customError.data = response.data
+      return Promise.reject(customError)
+    }
     return response.data
   },
   (error) => {
