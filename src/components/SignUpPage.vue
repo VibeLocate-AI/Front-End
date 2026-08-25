@@ -372,6 +372,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { triggerGoogleSignIn } from '../services/googleAuth'
 
 const router = useRouter()
 const emit = defineEmits(['switch-view', 'go-to-login', 'registered'])
@@ -541,8 +542,40 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-const handleGoogleSignUp = () => {
-  showToast('Connecting to Google Registration...', 'success')
+const handleGoogleSignUp = async () => {
+  try {
+    isLoading.value = true
+    showToast('Connecting to Google...', 'success')
+    const googleUser = await triggerGoogleSignIn()
+
+    if (!googleUser || !googleUser.email) return
+
+    const googleEmail = googleUser.email.trim()
+    email.value = googleEmail
+    if (googleUser.name) {
+      const parts = googleUser.name.split(' ')
+      firstName.value = parts[0] || ''
+      lastName.value = parts.slice(1).join(' ') || ''
+    }
+
+    sessionStorage.setItem('pending_email', googleEmail)
+    showToast(`Google Sign-Up initiated for ${googleEmail}. Sending verification code...`, 'success')
+
+    try {
+      await authService.resendOtp(googleEmail)
+    } catch {}
+
+    setTimeout(() => {
+      router.push({
+        path: '/verify',
+        query: { email: googleEmail, from: 'google' }
+      })
+    }, 1300)
+  } catch (err) {
+    showToast(err.message || 'Google Sign-Up was cancelled.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const showToast = (message, type = 'success') => {
