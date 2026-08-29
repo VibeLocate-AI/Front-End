@@ -175,7 +175,6 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
-import { triggerGoogleSignIn } from '../services/googleAuth'
 
 const router = useRouter()
 const route = useRoute()
@@ -246,68 +245,16 @@ const handleLogin = async () => {
     })
     showToast(res?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
   } catch (err) {
-    // If account is unverified (HTTP 403 or message mentions verify)
-    const isUnverified = err.status === 403 || (err.message && err.message.toLowerCase().includes('verify'))
-
-    if (isUnverified) {
-      sessionStorage.setItem('pending_email', cleanEmail)
-      showToast('Please verify your email first. Sending a verification code...', 'error')
-      
-      try {
-        await authService.resendOtp(cleanEmail)
-      } catch {
-        // ignore if resend fails, still proceed to verify
-      }
-
-      setTimeout(() => {
-        router.push({
-          path: '/verify',
-          query: { email: cleanEmail }
-        })
-      }, 1400)
-      return
-    }
-
     showToast(err.message || 'Login failed. Please check your credentials.', 'error')
   } finally {
     isLoading.value = false
   }
 }
 
-// Google Sign-In Handler
+// Google Sign-In is not connected to an API authentication endpoint yet.
+// It must not start an OTP verification flow from the login page.
 const handleGoogleLogin = async () => {
-  try {
-    isLoading.value = true
-    showToast('Connecting to Google...', 'success')
-    const googleUser = await triggerGoogleSignIn()
-
-    if (!googleUser || !googleUser.email) return
-
-    const googleEmail = googleUser.email.trim()
-    sessionStorage.setItem('pending_email', googleEmail)
-
-    // Send verification code to email if unverified
-    showToast(`Google Sign-In initiated for ${googleEmail}. Sending verification code...`, 'success')
-    try {
-      await authService.resendOtp(googleEmail)
-    } catch {
-      // If account not found or already verified, try forgot-password/signup fallback
-      try {
-        await authService.forgotPassword(googleEmail)
-      } catch {}
-    }
-
-    setTimeout(() => {
-      router.push({
-        path: '/verify',
-        query: { email: googleEmail, from: 'google' }
-      })
-    }, 1300)
-  } catch (err) {
-    showToast(err.message || 'Google Sign-In was cancelled or failed.', 'error')
-  } finally {
-    isLoading.value = false
-  }
+  showToast('Google Sign-In is not available yet. Please sign in with your email and password.', 'error')
 }
 
 const goToForgot = () => {
