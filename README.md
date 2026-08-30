@@ -1,0 +1,79 @@
+# VibeLocate AI - Front-End
+
+A modern, responsive, and futuristic Vue 3 authentication frontend for **VibeLocate AI**, built with Vite and pure CSS.
+
+---
+
+## 🚀 Features
+
+- **Futuristic UI & Fluid Transitions**: Seamless page transitions with background ambient video animations.
+- **Complete Authentication Flow**:
+  - **Login Page (`LoginPage.vue`)**: Email/Password login, Remember Me, Google OAuth trigger, and navigation links.
+  - **Sign Up Page (`SignUpPage.vue`)**: Multi-field registration (Name, Country, City, Email, Password, Country Code & Phone, Terms acceptance).
+  - **Forgot Password (`ForgotPassword.vue`)**: 3-step password recovery flow.
+  - **Verification Code (`VerificationCode.vue`)**: 4-digit / 6-digit OTP verification with auto-focus, paste support, and resend countdown timer.
+  - **Reset Password (`ResetPasswordPage.vue`)**: New password setup with password strength meter and validation.
+  - **Reset Success (`ResetSuccessPage.vue`)**: Confirmation view with smooth redirect back to login.
+- **Glassmorphism & Micro-animations**: State-of-the-art styling with responsive design for desktop, tablet, and mobile devices.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Vue.js 3](https://vuejs.org/) (Composition API with `<script setup>`)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: Vanilla CSS (Custom Design Tokens, Variables & Keyframe Animations)
+- **Typography**: Google Fonts ([Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans))
+
+---
+
+## 📂 Project Structure
+
+```text
+├── public/
+│   └── images/              # Assets (logos, illustrations, video background)
+├── src/
+│   ├── assets/
+│   │   └── style.css        # Main stylesheet & design system
+│   ├── components/
+│   │   ├── ForgotPassword.vue
+│   │   ├── LoginPage.vue
+│   │   ├── ResetPasswordPage.vue
+│   │   ├── ResetSuccessPage.vue
+│   │   ├── SignUpPage.vue
+│   │   └── VerificationCode.vue
+│   ├── App.vue              # Central routing & transition orchestrator
+│   └── main.js              # Application entry point
+├── index.html
+├── package.json
+└── vite.config.js
+```
+
+---
+
+## 💻 Getting Started
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Run Development Server
+```bash
+npm run dev
+```
+
+### 3. Build for Production
+```bash
+npm run build
+```
+
+### 4. Preview Production Build
+```bash
+npm run preview
+```
+
+---
+
+## 📄 License
+This project is private and confidential for VibeLocate AI.
