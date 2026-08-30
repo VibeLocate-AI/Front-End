@@ -288,8 +288,8 @@
             <span v-if="errors.agreeTerms" class="error-msg terms-error">You must agree to the Terms of Use to proceed.</span>
 
             <!-- Submit Button (Navy Pill) -->
-            <button type="submit" class="submit-btn signup-btn" id="signUpBtn">
-              <span>SIGN UP</span>
+            <button type="submit" class="submit-btn signup-btn" id="signUpBtn" :disabled="isLoading">
+              <span>{{ isLoading ? 'CREATING ACCOUNT...' : 'SIGN UP' }}</span>
             </button>
 
           </form>
@@ -315,7 +315,7 @@
 
           <!-- Footer Text to switch back to Login -->
           <footer class="form-footer">
-            <p class="footer-text">Already have an account? <a href="#login" @click.prevent="$emit('switch-view', 'login')" class="signup-link">Log In</a></p>
+            <p class="footer-text">Already have an account? <a href="/login" @click.prevent="router.push('/login')" class="signup-link">Log In</a></p>
           </footer>
 
         </div>
@@ -338,8 +338,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { authService } from '../services/authService'
 
 const emit = defineEmits(['switch-view'])
+const router = useRouter()
 
 // Form State
 const firstName = ref('')
@@ -355,6 +358,7 @@ const agreeTerms = ref(false)
 
 const isPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
+const isLoading = ref(false)
 
 // Features Bullet Points matching image mockup exactly
 const features = ref([
@@ -403,7 +407,7 @@ const isValidEmail = (val) => {
   return re.test(val.trim())
 }
 
-const handleSignUp = () => {
+const handleSignUp = async () => {
   errors.firstName = !firstName.value.trim()
   errors.lastName = !lastName.value.trim()
   errors.country = !country.value.trim()
@@ -417,7 +421,23 @@ const handleSignUp = () => {
   const hasErrors = Object.values(errors).some(val => val)
 
   if (!hasErrors) {
-    showToast(`Account created successfully for ${firstName.value}!`, 'success')
+    try {
+      isLoading.value = true
+      const response = await authService.signup({
+        first_name: firstName.value.trim(), last_name: lastName.value.trim(),
+        name: `${firstName.value.trim()} ${lastName.value.trim()}`,
+        country: country.value.trim(), city: city.value.trim(), email: email.value.trim(),
+        password: password.value, password_confirmation: confirmPassword.value,
+        phone: `${phoneCode.value}${phoneNumber.value.trim()}`
+      })
+      sessionStorage.setItem('pending_email', email.value.trim())
+      showToast(response?.message || 'Account created. Verify your email to continue.', 'success')
+      setTimeout(() => router.push({ path: '/verify', query: { email: email.value.trim() } }), 900)
+    } catch (err) {
+      showToast(err.message || 'Unable to create your account. Please try again.', 'error')
+    } finally {
+      isLoading.value = false
+    }
   } else {
     showToast('Please fix the highlighted errors before submitting.', 'error')
   }

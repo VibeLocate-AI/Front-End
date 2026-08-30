@@ -117,12 +117,12 @@
                 </span>
                 <span class="checkbox-label">Remember Me</span>
               </label>
-              <a href="#forgot-password" @click.prevent="$emit('switch-view', 'resetPassword')" class="forgot-link">Forget Password?</a>
+              <a href="/forgot-password" @click.prevent="router.push('/forgot-password')" class="forgot-link">Forget Password?</a>
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="submit-btn" id="submitBtn">
-              <span>LOG IN</span>
+            <button type="submit" class="submit-btn" id="submitBtn" :disabled="isLoading">
+              <span>{{ isLoading ? 'LOGGING IN...' : 'LOG IN' }}</span>
             </button>
 
           </form>
@@ -148,7 +148,7 @@
 
           <!-- Footer Text -->
           <footer class="form-footer">
-            <p class="footer-text">If you didn't have an account! <a href="#signup" @click.prevent="$emit('switch-view', 'signup')" class="signup-link">Sign Up</a></p>
+            <p class="footer-text">If you didn't have an account! <a href="/register" @click.prevent="router.push('/register')" class="signup-link">Sign Up</a></p>
           </footer>
 
         </div>
@@ -171,14 +171,18 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { authService } from '../services/authService'
 
 const emit = defineEmits(['switch-view'])
+const router = useRouter()
 
 // Reactive Form State
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(true)
 const isPasswordVisible = ref(false)
+const isLoading = ref(false)
 
 // Features Bullet Points
 const features = ref([
@@ -216,12 +220,21 @@ const isValidEmail = (val) => {
   return re.test(val.trim())
 }
 
-const handleLogin = () => {
+const handleLogin = async () => {
   errors.email = !isValidEmail(email.value)
   errors.password = password.value.trim().length < 6
 
   if (!errors.email && !errors.password) {
-    showToast('Login successful! Welcome to VibeLocate AI.', 'success')
+    try {
+      isLoading.value = true
+      const response = await authService.login({ email: email.value.trim(), password: password.value, rememberMe: rememberMe.value })
+      showToast(response?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
+      setTimeout(() => router.push('/'), 700)
+    } catch (err) {
+      showToast(err.message || 'Unable to log in. Please try again.', 'error')
+    } finally {
+      isLoading.value = false
+    }
   } else {
     showToast('Please fix the highlighted errors in the form.', 'error')
   }

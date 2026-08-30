@@ -122,15 +122,15 @@
               </div>
 
               <!-- Submit Button (Pill Navy Reset Password) -->
-              <button type="submit" class="submit-btn reset-btn" id="resetBtn">
-                <span>Reset Password</span>
+              <button type="submit" class="submit-btn reset-btn" id="resetBtn" :disabled="isLoading">
+                <span>{{ isLoading ? 'RESETTING...' : 'Reset Password' }}</span>
               </button>
 
             </form>
 
             <!-- Footer Text to switch back to Login -->
             <footer class="form-footer reset-footer">
-              <p class="footer-text">Remembered your password? <a href="#login" @click.prevent="$emit('switch-view', 'login')" class="signup-link">Log In</a></p>
+              <p class="footer-text">Remembered your password? <a href="/login" @click.prevent="router.push('/login')" class="signup-link">Log In</a></p>
             </footer>
 
           </div>
@@ -153,8 +153,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { authService } from '../services/authService'
 
 const emit = defineEmits(['switch-view'])
+const route = useRoute()
+const router = useRouter()
 
 // Form State
 const newPassword = ref('')
@@ -162,6 +166,7 @@ const confirmNewPassword = ref('')
 
 const isNewPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
+const isLoading = ref(false)
 
 // Error State
 const errors = reactive({
@@ -190,15 +195,28 @@ const clearError = (field) => {
   errors[field] = false
 }
 
-const handleResetPassword = () => {
+const handleResetPassword = async () => {
   errors.newPassword = newPassword.value.trim().length < 6
   errors.confirmNewPassword = confirmNewPassword.value !== newPassword.value || !confirmNewPassword.value
 
   if (!errors.newPassword && !errors.confirmNewPassword) {
-    showToast('Password reset successfully!', 'success')
-    setTimeout(() => {
-      emit('switch-view', 'resetSuccess')
-    }, 600)
+    const email = route.query.email || sessionStorage.getItem('pending_email')
+    const token = route.query.token || sessionStorage.getItem('reset_token')
+    if (!email || !token) {
+      showToast('Your reset session has expired. Please request a new code.', 'error')
+      return
+    }
+    try {
+      isLoading.value = true
+      const response = await authService.resetPassword({ email, newPassword: newPassword.value, confirmPassword: confirmNewPassword.value, token })
+      sessionStorage.removeItem('reset_token')
+      showToast(response?.message || 'Password reset successfully!', 'success')
+      setTimeout(() => router.push('/reset-success'), 600)
+    } catch (err) {
+      showToast(err.message || 'Failed to reset password. Please try again.', 'error')
+    } finally {
+      isLoading.value = false
+    }
   } else {
     showToast('Please fix the highlighted errors.', 'error')
   }

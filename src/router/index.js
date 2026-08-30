@@ -5,11 +5,13 @@ import ForgotPassword from '../components/ForgotPassword.vue'
 import VerificationCode from '../components/VerificationCode.vue'
 import ResetPasswordPage from '../components/ResetPasswordPage.vue'
 import ResetSuccessPage from '../components/ResetSuccessPage.vue'
+import LandingPage from '../components/LandingPage.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    name: 'Landing',
+    component: LandingPage
   },
   {
     path: '/login',
@@ -45,7 +47,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/login'
+    redirect: '/'
   }
 ]
 
