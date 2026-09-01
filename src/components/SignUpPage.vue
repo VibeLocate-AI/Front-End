@@ -340,6 +340,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { triggerGoogleSignIn } from '../services/googleAuth'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
@@ -423,14 +424,18 @@ const handleSignUp = async () => {
   if (!hasErrors) {
     try {
       isLoading.value = true
+      const fullName = `${firstName.value.trim()} ${lastName.value.trim()}`
       const response = await authService.signup({
         first_name: firstName.value.trim(), last_name: lastName.value.trim(),
-        name: `${firstName.value.trim()} ${lastName.value.trim()}`,
+        name: fullName,
         country: country.value.trim(), city: city.value.trim(), email: email.value.trim(),
         password: password.value, password_confirmation: confirmPassword.value,
         phone: `${phoneCode.value}${phoneNumber.value.trim()}`
       })
       sessionStorage.setItem('pending_email', email.value.trim())
+      const userPayload = JSON.stringify({ name: fullName, email: email.value.trim(), avatar: '' })
+      localStorage.setItem('auth_user', userPayload)
+      sessionStorage.setItem('auth_user', userPayload)
       showToast(response?.message || 'Account created. Verify your email to continue.', 'success')
       setTimeout(() => router.push({ path: '/verify', query: { email: email.value.trim() } }), 900)
     } catch (err) {
@@ -443,8 +448,30 @@ const handleSignUp = async () => {
   }
 }
 
-const handleGoogleSignUp = () => {
-  showToast('Connecting to Google Registration...', 'success')
+const handleGoogleSignUp = async () => {
+  try {
+    isLoading.value = true
+    showToast('Connecting to Google Registration...', 'success')
+    const googleUser = await triggerGoogleSignIn()
+    const response = await authService.loginWithGoogle(googleUser.token, true)
+    const profile = response?.user || response?.data?.user || (response?.data && typeof response.data === 'object' && response.data.email ? response.data : {})
+    const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || googleUser.name || ''
+    const emailVal = profile.email || googleUser.email || ''
+    const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || googleUser.picture || ''
+
+    if (name || emailVal) {
+      const userPayload = JSON.stringify({ name, email: emailVal, avatar })
+      localStorage.setItem('auth_user', userPayload)
+      sessionStorage.setItem('auth_user', userPayload)
+    }
+
+    showToast(response?.message || 'Google registration successful!', 'success')
+    setTimeout(() => router.push('/home'), 700)
+  } catch (err) {
+    showToast(err.message || 'Google registration was cancelled or failed.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const showToast = (message, type = 'success') => {

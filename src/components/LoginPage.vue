@@ -229,7 +229,7 @@ const handleLogin = async () => {
     try {
       isLoading.value = true
       const response = await authService.login({ email: email.value.trim(), password: password.value, rememberMe: rememberMe.value })
-      storeAuthenticatedUser(response)
+      storeAuthenticatedUser(response, { email: email.value.trim(), name: email.value.trim().split('@')[0] })
       showToast(response?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
       setTimeout(() => router.push('/home'), 700)
     } catch (err) {
@@ -273,13 +273,13 @@ const showToast = (message, type = 'success') => {
 }
 
 const storeAuthenticatedUser = (response, fallback = {}) => {
-  const profile = response?.user || response?.data?.user || response?.data || {}
+  const profile = response?.user || response?.data?.user || (response?.data && typeof response.data === 'object' && response.data.email ? response.data : {})
   const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || fallback.name || ''
-  const email = profile.email || fallback.email || ''
+  const emailVal = profile.email || fallback.email || ''
   const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || fallback.picture || fallback.avatar || ''
 
-  if (name || email) {
-    const userPayload = JSON.stringify({ name, email, avatar })
+  if (name || emailVal) {
+    const userPayload = JSON.stringify({ name, email: emailVal, avatar })
     localStorage.setItem('auth_user', userPayload)
     sessionStorage.setItem('auth_user', userPayload)
   }

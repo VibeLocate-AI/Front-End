@@ -68,10 +68,10 @@
                   @error="onAvatarError"
                 >
                 <div class="dropdown-user-info">
-                  <strong class="dropdown-user-name">{{ user.name || 'Mohamed Ahmed' }}</strong>
-                  <span class="dropdown-user-email">{{ user.email || 'mohamed@dubaiestates.ae' }}</span>
+                  <strong class="dropdown-user-name">{{ displayName }}</strong>
+                  <span class="dropdown-user-email">{{ displayEmail }}</span>
                   <span class="dropdown-user-badge">
-                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? 'Verified Resident' : 'Guest Account' }}
+                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? 'Verified Member' : 'Guest Account' }}
                   </span>
                 </div>
               </div>
@@ -407,6 +407,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 
 const areas = [
@@ -510,6 +511,8 @@ const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
 
+const router = useRouter()
+
 const user = ref({
   name: '',
   email: '',
@@ -522,17 +525,23 @@ const isLoggedIn = computed(() => {
   return authService.isAuthenticated() || !!(user.value.email || user.value.name)
 })
 
+const displayName = computed(() => {
+  return user.value.name || (user.value.email ? user.value.email.split('@')[0] : 'Guest User')
+})
+
+const displayEmail = computed(() => {
+  return user.value.email || 'guest@vibelocate.ai'
+})
+
 const userAvatarUrl = computed(() => {
   if (user.value.avatar && user.value.avatar.trim() !== '') {
     return user.value.avatar
   }
-  const displayName = user.value.name || user.value.email || 'Mohamed Ahmed'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0284c7&color=ffffff&bold=true`
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName.value)}&background=00D2FF&color=070d19&bold=true`
 })
 
 const onAvatarError = (event) => {
-  const displayName = user.value.name || user.value.email || 'Mohamed Ahmed'
-  event.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0284c7&color=ffffff&bold=true`
+  event.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName.value)}&background=00D2FF&color=070d19&bold=true`
 }
 
 const toggleProfileMenu = () => {
@@ -544,12 +553,17 @@ const handleLogout = async () => {
   await authService.logout()
   localStorage.removeItem('auth_user')
   sessionStorage.removeItem('auth_user')
+  localStorage.removeItem('auth_token')
+  sessionStorage.removeItem('auth_token')
   user.value = {
     name: '',
     email: '',
     avatar: ''
   }
   showToast('Logged out successfully.')
+  setTimeout(() => {
+    router.push('/')
+  }, 500)
 }
 
 const filteredProperties = computed(() => {
@@ -655,15 +669,6 @@ onMounted(async () => {
       }
     } catch (err) {
       console.warn('Profile fetch failed, using cached session:', err)
-    }
-  }
-
-  // 4. Default fallback to Mohammed Ahmed if user is visiting for the first time
-  if (!user.value.name && !user.value.email) {
-    user.value = {
-      name: 'Mohamed Ahmed',
-      email: 'mohamed@dubaiestates.ae',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
     }
   }
 })

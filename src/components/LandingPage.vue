@@ -25,8 +25,15 @@
           <button class="icon-btn search-trigger" id="searchTrigger" title="Quick Search" @click="scrollToSearch">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
-          <button class="btn btn-outline btn-sm" @click="$emit('switch-view', 'login')">Log In</button>
-          <button class="btn btn-accent btn-glow btn-sm" @click="$emit('switch-view', 'signup')">Sign Up</button>
+          <template v-if="isLoggedIn">
+            <button class="btn btn-accent btn-glow btn-sm" @click="router.push('/home')">
+              <i class="fa-solid fa-house" style="margin-right: 4px;"></i> Home
+            </button>
+          </template>
+          <template v-else>
+            <button class="btn btn-outline btn-sm" @click="goToLogin">Log In</button>
+            <button class="btn btn-accent btn-glow btn-sm" @click="goToSignup">Sign Up</button>
+          </template>
           <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu" @click="mobileMenuOpen = !mobileMenuOpen">
             <span></span>
             <span></span>
@@ -472,8 +479,25 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { authService } from '../services/authService'
 
 const emit = defineEmits(['switch-view'])
+const router = useRouter()
+
+const isLoggedIn = computed(() => {
+  return authService.isAuthenticated() || !!localStorage.getItem('auth_user')
+})
+
+const goToLogin = () => {
+  emit('switch-view', 'login')
+  router.push('/login')
+}
+
+const goToSignup = () => {
+  emit('switch-view', 'signup')
+  router.push('/register')
+}
 
 // ========== NAVBAR ==========
 const isScrolled = ref(false)
