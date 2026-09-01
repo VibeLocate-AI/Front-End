@@ -248,11 +248,23 @@ img {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.user-profile-menu-container {
+  position: relative;
+}
+
 .user-profile-menu {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  transition: var(--transition-fast);
+  user-select: none;
+}
+
+.user-profile-menu:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .header-avatar {
@@ -267,6 +279,202 @@ img {
 .profile-arrow {
   color: #94a3b8;
   font-size: 10px;
+  transition: transform 0.25s ease;
+}
+
+.profile-arrow.rotate-180 {
+  transform: rotate(180deg);
+  color: var(--cyan-accent);
+}
+
+/* User Profile Dropdown Box */
+.profile-dropdown-box {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 280px;
+  background: rgba(10, 22, 40, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(24px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+  padding: 16px;
+  z-index: 1000;
+  animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropdown-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--cyan-accent);
+  box-shadow: 0 2px 8px var(--cyan-glow);
+  flex-shrink: 0;
+}
+
+.dropdown-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dropdown-user-name {
+  color: var(--white);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-user-email {
+  color: #94a3b8;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.dropdown-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--cyan-accent);
+  background: rgba(0, 210, 255, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-top: 5px;
+  width: fit-content;
+}
+
+.dropdown-user-badge i {
+  font-size: 9px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 12px 0;
+}
+
+.dropdown-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dropdown-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  transition: var(--transition-fast);
+}
+
+.dropdown-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  transform: translateX(2px);
+}
+
+.dropdown-menu-item i {
+  color: var(--cyan-accent);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.dropdown-footer-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: #f87171;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  transition: var(--transition-fast);
+}
+
+.dropdown-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.dropdown-logout-btn i {
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.dropdown-guest-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dropdown-login-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--blue-primary);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dropdown-login-btn:hover {
+  background: var(--blue-hover);
+}
+
+.dropdown-signup-btn {
+  flex: 1;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dropdown-signup-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .menu-toggle {

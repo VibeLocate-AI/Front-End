@@ -250,7 +250,7 @@ const handleGoogleLogin = async () => {
     // Opens Google's account and consent window.
     const googleUser = await triggerGoogleSignIn()
     const response = await authService.loginWithGoogle(googleUser.token, rememberMe.value)
-    storeAuthenticatedUser(response)
+    storeAuthenticatedUser(response, googleUser)
 
     showToast(response?.message || 'Google sign-in successful!', 'success')
     setTimeout(() => router.push('/home'), 700)
@@ -272,14 +272,16 @@ const showToast = (message, type = 'success') => {
   }, 3200)
 }
 
-const storeAuthenticatedUser = (response) => {
+const storeAuthenticatedUser = (response, fallback = {}) => {
   const profile = response?.user || response?.data?.user || response?.data || {}
-  if (profile && (profile.name || profile.email || profile.first_name)) {
-    sessionStorage.setItem('auth_user', JSON.stringify({
-      name: profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' '),
-      email: profile.email || '',
-      avatar: profile.avatar || profile.profile_photo_url || profile.image || ''
-    }))
+  const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || fallback.name || ''
+  const email = profile.email || fallback.email || ''
+  const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || fallback.picture || fallback.avatar || ''
+
+  if (name || email) {
+    const userPayload = JSON.stringify({ name, email, avatar })
+    localStorage.setItem('auth_user', userPayload)
+    sessionStorage.setItem('auth_user', userPayload)
   }
 }
 </script>

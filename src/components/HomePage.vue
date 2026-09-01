@@ -47,9 +47,65 @@
             <i class="fa-regular fa-heart"></i>
           </button>
 
-          <div class="user-profile-menu">
-            <img class="header-avatar" :src="user.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'" :alt="user.name || 'User'">
-            <i class="fa-solid fa-chevron-down profile-arrow"></i>
+          <div class="user-profile-menu-container" ref="profileDropdownRef">
+            <div class="user-profile-menu" @click="toggleProfileMenu">
+              <img
+                class="header-avatar"
+                :src="userAvatarUrl"
+                :alt="user.name || 'User'"
+                @error="onAvatarError"
+              >
+              <i class="fa-solid fa-chevron-down profile-arrow" :class="{ 'rotate-180': profileMenuOpen }"></i>
+            </div>
+
+            <!-- Interactive User Profile Dropdown -->
+            <div v-if="profileMenuOpen" class="profile-dropdown-box">
+              <div class="dropdown-user-header">
+                <img
+                  class="dropdown-avatar"
+                  :src="userAvatarUrl"
+                  :alt="user.name || 'User'"
+                  @error="onAvatarError"
+                >
+                <div class="dropdown-user-info">
+                  <strong class="dropdown-user-name">{{ user.name || 'Mohamed Ahmed' }}</strong>
+                  <span class="dropdown-user-email">{{ user.email || 'mohamed@dubaiestates.ae' }}</span>
+                  <span class="dropdown-user-badge">
+                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? 'Verified Resident' : 'Guest Account' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <div class="dropdown-menu-list">
+                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Profile management portal opening soon.')">
+                  <i class="fa-regular fa-user"></i>
+                  <span>My Profile</span>
+                </button>
+                <button class="dropdown-menu-item" @click="scrollTo('featured'); profileMenuOpen = false">
+                  <i class="fa-regular fa-heart"></i>
+                  <span>Saved Properties ({{ favorites.size }})</span>
+                </button>
+                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Your active search filters are saved.')">
+                  <i class="fa-solid fa-sliders"></i>
+                  <span>Preferences</span>
+                </button>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <div class="dropdown-footer-actions">
+                <button v-if="isLoggedIn" class="dropdown-logout-btn" @click="handleLogout">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                  <span>Log Out</span>
+                </button>
+                <div v-else class="dropdown-guest-actions">
+                  <button class="dropdown-login-btn" @click="$router.push('/login')">Log In</button>
+                  <button class="dropdown-signup-btn" @click="$router.push('/register')">Sign Up</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -448,16 +504,53 @@ const nearbyProperties = properties.slice(4)
 const query = ref('')
 const favorites = ref(new Set())
 const mobileMenuOpen = ref(false)
+const profileMenuOpen = ref(false)
+const profileDropdownRef = ref(null)
 const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
+
 const user = ref({
-  name: 'Mohamed Ahmed',
-  email: 'mohamed@dubaiestates.ae',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+  name: '',
+  email: '',
+  avatar: ''
 })
 
 let toastTimer = null
+
+const isLoggedIn = computed(() => {
+  return authService.isAuthenticated() || !!(user.value.email || user.value.name)
+})
+
+const userAvatarUrl = computed(() => {
+  if (user.value.avatar && user.value.avatar.trim() !== '') {
+    return user.value.avatar
+  }
+  const displayName = user.value.name || user.value.email || 'Mohamed Ahmed'
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0284c7&color=ffffff&bold=true`
+})
+
+const onAvatarError = (event) => {
+  const displayName = user.value.name || user.value.email || 'Mohamed Ahmed'
+  event.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0284c7&color=ffffff&bold=true`
+}
+
+const toggleProfileMenu = () => {
+  profileMenuOpen.value = !profileMenuOpen.value
+}
+
+const handleLogout = async () => {
+  profileMenuOpen.value = false
+  await authService.logout()
+  localStorage.removeItem('auth_user')
+  sessionStorage.removeItem('auth_user')
+  user.value = {
+    name: '',
+    email: '',
+    avatar: ''
+  }
+  showToast('Logged out successfully.')
+}
 
 const filteredProperties = computed(() => {
   const term = query.value.toLowerCase().trim()
@@ -496,6 +589,7 @@ const searchByArea = (areaName) => {
 
 const scrollTo = (id) => {
   mobileMenuOpen.value = false
+  profileMenuOpen.value = false
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 
@@ -508,20 +602,69 @@ const showToast = (msg) => {
   }, 2500)
 }
 
+const parseUserData = (raw) => {
+  if (!raw) return null
+  const profile = raw?.data?.user || raw?.data || raw?.user || raw
+  const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.username || ''
+  const email = profile.email || ''
+  const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || ''
+  if (name || email || avatar) {
+    return { name, email, avatar }
+  }
+  return null
+}
+
+const loadUserFromStorage = () => {
+  const rawLocal = localStorage.getItem('auth_user') || localStorage.getItem('user')
+  const rawSession = sessionStorage.getItem('auth_user') || sessionStorage.getItem('user')
+  
+  if (rawLocal) {
+    try {
+      const parsed = parseUserData(JSON.parse(rawLocal))
+      if (parsed) user.value = { ...user.value, ...parsed }
+    } catch {}
+  } else if (rawSession) {
+    try {
+      const parsed = parseUserData(JSON.parse(rawSession))
+      if (parsed) user.value = { ...user.value, ...parsed }
+    } catch {}
+  }
+}
+
+const handleDocumentClick = (e) => {
+  if (profileDropdownRef.value && !profileDropdownRef.value.contains(e.target)) {
+    profileMenuOpen.value = false
+  }
+}
+
 onMounted(async () => {
-  try {
-    const res = await authService.getProfile()
-    const profile = res?.data || res?.user || res || {}
-    if (profile.name || profile.email) {
-      user.value = {
-        name: profile.name || profile.full_name || user.value.name,
-        email: profile.email || user.value.email,
-        avatar: profile.avatar || profile.profile_photo_url || user.value.avatar
+  // 1. Instantly load cached user data from storage
+  loadUserFromStorage()
+
+  // 2. Add document listener for dropdown outside clicks
+  document.addEventListener('click', handleDocumentClick)
+
+  // 3. Fetch latest profile from API if token exists
+  if (authService.isAuthenticated()) {
+    try {
+      const res = await authService.getProfile()
+      const parsed = parseUserData(res)
+      if (parsed) {
+        user.value = { ...user.value, ...parsed }
+        localStorage.setItem('auth_user', JSON.stringify(user.value))
       }
+    } catch (err) {
+      console.warn('Profile fetch failed, using cached session:', err)
     }
-  } catch {
-    const cached = JSON.parse(sessionStorage.getItem('auth_user') || 'null')
-    if (cached) user.value = { ...user.value, ...cached }
+  }
+
+  // 4. Default fallback to Mohammed Ahmed if user is visiting for the first time
+  if (!user.value.name && !user.value.email) {
+    user.value = {
+      name: 'Mohamed Ahmed',
+      email: 'mohamed@dubaiestates.ae',
+      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+    }
   }
 })
 </script>
