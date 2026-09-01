@@ -27,14 +27,16 @@ export const authService = {
   },
 
   /**
-   * Exchange a Google OAuth access token for an application session token.
-   * @param {string} accessToken
+   * Exchange a Google ID token for an application session token.
+   * @param {string} idToken
    * @param {boolean} rememberMe
    * @returns {Promise<Object>}
    */
-  async loginWithGoogle(accessToken, rememberMe = true) {
-    const data = await apiClient.post('/google-login', {
-      access_token: accessToken
+  async loginWithGoogle(idToken, rememberMe = true) {
+    const data = await apiClient.post('/auth/google', {
+      id_token: idToken,
+      device_uuid: 'web-browser',
+      device_type: 'web'
     })
 
     const token = data?.token || data?.access_token || data?.data?.token

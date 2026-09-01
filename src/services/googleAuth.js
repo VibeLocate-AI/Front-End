@@ -1,5 +1,3 @@
-import { authService } from './authService'
-
 /**
  * VibeLocate AI - Google Authentication Helper
  * Handles Google Identity Services (GIS) integration and fallback handling.
@@ -55,66 +53,36 @@ export function decodeGoogleJwt(token) {
  * @returns {Promise<{ email: string, name: string, token: string, verified: boolean }>}
  */
 export async function triggerGoogleSignIn() {
-  if (GOOGLE_CLIENT_ID) {
-    try {
-      const google = await loadGoogleScript()
-      return new Promise((resolve, reject) => {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              try {
-                // Fetch user info using access token
-                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-                })
-                const userInfo = await userInfoRes.json()
-                resolve({
-                  email: userInfo.email,
-                  name: userInfo.name || userInfo.email.split('@')[0],
-                  picture: userInfo.picture,
-                  token: tokenResponse.access_token,
-                  verified: userInfo.email_verified || true
-                })
-              } catch (err) {
-                reject(err)
-              }
-            } else {
-              reject(new Error('Google Sign-In was cancelled or failed.'))
-            }
-          },
-          error_callback: (err) => reject(err)
-        })
-        client.requestAccessToken()
-      })
-    } catch (err) {
-      console.warn('Google SDK Sign-In encountered an issue, falling back to prompt:', err)
-    }
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error('Google Sign-In is not configured.')
   }
 
-  // Fallback: If VITE_GOOGLE_CLIENT_ID is not yet configured in .env
+  const google = await loadGoogleScript()
   return new Promise((resolve, reject) => {
-    const inputEmail = window.prompt(
-      'Google Sign-In:\nEnter your Google Email address to continue:',
-      ''
-    )
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (credentialResponse) => {
+        if (!credentialResponse?.credential) {
+          reject(new Error('Google Sign-In was cancelled or failed.'))
+          return
+        }
 
-    if (!inputEmail || !inputEmail.trim()) {
-      return reject(new Error('Google Sign-In was cancelled.'))
-    }
+        const profile = decodeGoogleJwt(credentialResponse.credential) || {}
+        resolve({
+          email: profile.email || '',
+          name: profile.name || '',
+          picture: profile.picture,
+          // This is the Google ID token required by the backend.
+          token: credentialResponse.credential,
+          verified: profile.email_verified === true
+        })
+      }
+    })
 
-    const cleanEmail = inputEmail.trim()
-    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
-    if (!isValid) {
-      return reject(new Error('Please enter a valid Google email address.'))
-    }
-
-    resolve({
-      email: cleanEmail,
-      name: cleanEmail.split('@')[0],
-      token: 'google_oauth_' + Date.now(),
-      verified: false
+    google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        reject(new Error('Google sign-in prompt could not be displayed. Please allow pop-ups and try again.'))
+      }
     })
   })
 }
