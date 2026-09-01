@@ -6,18 +6,11 @@
         <!-- Logo -->
         <a class="brand" href="#top" @click.prevent="scrollTo('top')">
           <div class="brand-logo-wrap">
-            <svg class="brand-pin-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 3C11.3726 3 6 8.37258 6 15C6 23.25 18 33 18 33C18 33 30 23.25 30 15C30 8.37258 24.6274 3 18 3Z" fill="url(#pinGrad)" />
-              <path d="M12 11L18 20L24 11" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <defs>
-                <linearGradient id="pinGrad" x1="6" y1="3" x2="30" y2="33" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00D2FF"/>
-                  <stop offset="1" stop-color="#0066FF"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <span class="brand-text">Vibe<span class="brand-highlight">Locate</span></span>
-            <span class="ai-badge">AI</span>
+            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
+            <div class="brand-text">
+              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
+              <span class="brand-badge">AI</span>
+            </div>
           </div>
         </a>
 
@@ -366,8 +359,11 @@
       <div class="footer-inner">
         <div class="footer-brand">
           <div class="brand-logo-wrap justify-center">
-            <span class="brand-text">Vibe<span class="brand-highlight">Locate</span></span>
-            <span class="ai-badge">AI</span>
+            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img footer-logo-img">
+            <div class="brand-text">
+              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
+              <span class="brand-badge">AI</span>
+            </div>
           </div>
           <p class="footer-tagline">
             Your trusted destination for buying, renting, and listing premium properties across Dubai.

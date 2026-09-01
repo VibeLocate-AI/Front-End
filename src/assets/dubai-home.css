@@ -126,35 +126,61 @@ img {
   justify-content: center;
 }
 
-.brand-pin-icon {
-  width: 32px;
-  height: 32px;
-  filter: drop-shadow(0 2px 8px var(--cyan-glow));
+.brand-logo-img {
+  height: 44px;
+  max-width: 200px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25)) contrast(1.06) brightness(1.02);
+  transition: all var(--transition-smooth);
+}
+
+.brand:hover .brand-logo-img {
+  transform: scale(1.04);
+  filter: drop-shadow(0 6px 18px rgba(0, 210, 255, 0.4)) contrast(1.08) brightness(1.05);
 }
 
 .brand-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  user-select: none;
+}
+
+.brand-title {
   font-family: var(--font-heading);
-  font-size: 20px;
+  font-size: 1.4rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--white);
-  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
-.brand-highlight {
+.brand-accent {
   color: var(--cyan-accent);
+  text-shadow: 0 0 20px var(--cyan-glow);
 }
 
-.ai-badge {
-  font-family: var(--font-body);
-  font-size: 10px;
+.brand-badge {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, var(--cyan-accent), var(--blue-primary));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--white);
-  padding: 2px 7px;
+  background: linear-gradient(135deg, var(--blue-primary), var(--cyan-accent));
+  padding: 0.2rem 0.5rem;
   border-radius: 6px;
-  margin-left: 2px;
-  box-shadow: 0 2px 6px rgba(0, 210, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 210, 255, 0.35);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-logo-img {
+  height: 52px;
+  max-width: 220px;
+  filter: drop-shadow(0 4px 16px rgba(0, 210, 255, 0.35)) contrast(1.08) brightness(1.05);
 }
 
 /* Nav Menu Links */
