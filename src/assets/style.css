@@ -1543,6 +1543,7 @@ body {
     display: flex;
     align-items: center;
     gap: 2.2rem;
+    list-style: none;
 }
 
 .nav-link {
