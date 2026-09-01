@@ -173,6 +173,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { triggerGoogleSignIn } from '../services/googleAuth'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
@@ -240,8 +241,22 @@ const handleLogin = async () => {
   }
 }
 
-const handleGoogleLogin = () => {
-  showToast('Connecting to Google Authentication...', 'success')
+const handleGoogleLogin = async () => {
+  try {
+    isLoading.value = true
+    showToast('Connecting to Google Authentication...', 'success')
+
+    // Opens Google's account and consent window.
+    const googleUser = await triggerGoogleSignIn()
+    const response = await authService.loginWithGoogle(googleUser.token, rememberMe.value)
+
+    showToast(response?.message || 'Google sign-in successful!', 'success')
+    setTimeout(() => router.push('/'), 700)
+  } catch (err) {
+    showToast(err.message || 'Google sign-in was cancelled or failed.', 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const showToast = (message, type = 'success') => {

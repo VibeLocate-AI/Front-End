@@ -27,6 +27,25 @@ export const authService = {
   },
 
   /**
+   * Exchange a Google OAuth access token for an application session token.
+   * @param {string} accessToken
+   * @param {boolean} rememberMe
+   * @returns {Promise<Object>}
+   */
+  async loginWithGoogle(accessToken, rememberMe = true) {
+    const data = await apiClient.post('/google-login', {
+      access_token: accessToken
+    })
+
+    const token = data?.token || data?.access_token || data?.data?.token
+    if (token) {
+      this.setToken(token, rememberMe)
+    }
+
+    return data
+  },
+
+  /**
    * Register a new user (Laravel /register)
    * @param {Object} userData - payload to send to Laravel backend
    * @returns {Promise<Object>}
