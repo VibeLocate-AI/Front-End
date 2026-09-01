@@ -1,6 +1,6 @@
 <template>
-  <div class="app-container" :class="{ 'auth-mode': route.name !== 'Landing' }">
-    <template v-if="route.name !== 'Landing'">
+  <div class="app-container" :class="{ 'auth-mode': !['Landing', 'Home'].includes(route.name) }">
+    <template v-if="!['Landing', 'Home'].includes(route.name)">
       <video ref="bgVideo" class="bg-video" autoplay muted playsinline>
         <source src="/images/bg.mp4" type="video/mp4">
       </video>
@@ -22,7 +22,7 @@ const viewRoutes = { landing: '/', login: '/login', signup: '/register', resetPa
 const switchView = (view) => router.push(viewRoutes[view] || '/login')
 
 watch(() => route.name, async (name) => {
-  if (name !== 'Landing') {
+  if (!['Landing', 'Home'].includes(name)) {
     await nextTick()
     bgVideo.value?.play().catch(() => {})
   }

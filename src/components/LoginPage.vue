@@ -230,7 +230,7 @@ const handleLogin = async () => {
       isLoading.value = true
       const response = await authService.login({ email: email.value.trim(), password: password.value, rememberMe: rememberMe.value })
       showToast(response?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
-      setTimeout(() => router.push('/'), 700)
+      setTimeout(() => router.push('/home'), 700)
     } catch (err) {
       showToast(err.message || 'Unable to log in. Please try again.', 'error')
     } finally {
@@ -251,7 +251,7 @@ const handleGoogleLogin = async () => {
     const response = await authService.loginWithGoogle(googleUser.token, rememberMe.value)
 
     showToast(response?.message || 'Google sign-in successful!', 'success')
-    setTimeout(() => router.push('/'), 700)
+    setTimeout(() => router.push('/home'), 700)
   } catch (err) {
     showToast(err.message || 'Google sign-in was cancelled or failed.', 'error')
   } finally {

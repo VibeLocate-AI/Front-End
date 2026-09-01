@@ -6,12 +6,18 @@ import VerificationCode from '../components/VerificationCode.vue'
 import ResetPasswordPage from '../components/ResetPasswordPage.vue'
 import ResetSuccessPage from '../components/ResetSuccessPage.vue'
 import LandingPage from '../components/LandingPage.vue'
+import HomePage from '../components/HomePage.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Landing',
     component: LandingPage
+  },
+  {
+    path: '/home',
+    name: 'Home',
+    component: HomePage
   },
   {
     path: '/login',
