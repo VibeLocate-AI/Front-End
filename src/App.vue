@@ -1,6 +1,6 @@
 <template>
-  <div class="app-container" :class="{ 'auth-mode': !['Landing', 'Home'].includes(route.name) }">
-    <template v-if="!['Landing', 'Home'].includes(route.name)">
+  <div class="app-container" :class="{ 'auth-mode': !['Landing', 'Home', 'HomeAlias'].includes(route.name) }">
+    <template v-if="!['Landing', 'Home', 'HomeAlias'].includes(route.name)">
       <video ref="bgVideo" class="bg-video" autoplay muted playsinline>
         <source src="/images/bg.mp4" type="video/mp4">
       </video>

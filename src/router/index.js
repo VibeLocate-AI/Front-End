@@ -11,12 +11,12 @@ import HomePage from '../components/HomePage.vue'
 const routes = [
   {
     path: '/',
-    name: 'Landing',
-    component: LandingPage
+    name: 'Home',
+    component: HomePage
   },
   {
     path: '/home',
-    name: 'Home',
+    name: 'HomeAlias',
     component: HomePage
   },
   {
