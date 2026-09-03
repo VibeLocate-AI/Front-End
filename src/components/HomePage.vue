@@ -107,45 +107,55 @@
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="top">
       <!-- HERO SECTION -->
-      <section class="hero-section">
-        <div class="hero-backdrop"></div>
-        <div class="hero-content">
-          <div class="hero-pill-badge">
-            <span class="sparkle-icon">✦</span> AI-POWERED REAL ESTATE PLATFORM
+      <section class="hero-section" id="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-shapes">
+          <div class="shape shape-1"></div>
+          <div class="shape shape-2"></div>
+        </div>
+
+        <div class="container hero-content">
+          <div class="badge-pill fade-in">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i>
+            <span>AI-POWERED REAL ESTATE PLATFORM</span>
           </div>
 
-          <h1 class="hero-headline">
+          <h1 class="hero-title fade-in">
             Find Your Dream<br>
-            <span class="cyan-gradient-text">Property in Dubai</span>
+            <span class="text-cyan-bright">Property in Dubai</span>
           </h1>
 
-          <p class="hero-subline">
-            Discover premium Dubai properties tailored to your lifestyle, comfort, and aspirations.
+          <p class="hero-desc fade-in">
+            Discover premium Dubai properties tailored to your lifestyle, comfort, and aspirations with next-generation AI recommendations.
           </p>
 
-          <!-- AI Contextual Search Box -->
-          <div class="ai-search-card">
-            <div class="ai-search-header">
-              <span class="ai-sparkle">✦</span> AI CONTEXTUAL SEARCH
-            </div>
-            <form class="ai-search-form" @submit.prevent="handleSearch">
-              <div class="ai-input-group">
-                <input
-                  id="keyword"
-                  v-model.trim="query"
-                  type="text"
-                  placeholder="e.g., I need a luxury villa near the beach for $5,000/month"
-                  class="ai-search-input"
-                >
-                <button class="btn-ai-search" type="submit">
-                  <i class="fa-solid fa-robot"></i>
-                  <span>AI Search</span>
-                </button>
+
+          <!-- Floating Glass Search Widget -->
+          <div class="search-widget-card glassmorphism fade-in" ref="searchWidget">
+            <form class="search-form" @submit.prevent="handleSearch">
+              <div class="form-group" style="width: 100%;">
+                <label class="search-label">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> AI CONTEXTUAL SEARCH
+                </label>
+                <div class="search-input-wrapper">
+                  <input
+                    id="keyword"
+                    v-model.trim="query"
+                    type="text"
+                    class="hero-search-input"
+                    placeholder="e.g., I need a luxury villa near the beach for $5,000/month"
+                  >
+                  <button type="submit" class="btn btn-primary search-submit-btn">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>AI Search</span>
+                  </button>
+                </div>
               </div>
             </form>
-            <p v-if="searchMessage" class="bot-feedback">{{ searchMessage }}</p>
+            <p v-if="searchMessage" class="bot-feedback" style="margin-top: 10px;">{{ searchMessage }}</p>
           </div>
         </div>
+
       </section>
 
       <!-- TWO-COLUMN CONTENT AREA -->
@@ -355,39 +365,69 @@
     </main>
 
     <!-- ==================== FOOTER ==================== -->
-    <footer class="site-footer">
-      <div class="footer-inner">
+    <footer class="footer" id="contact">
+      <div class="container footer-top">
         <div class="footer-brand">
-          <div class="brand-logo-wrap justify-center">
+          <a href="#hero" class="logo footer-logo" @click.prevent="scrollTo('hero')">
             <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img footer-logo-img">
-            <div class="brand-text">
+            <div class="brand-text footer-brand-text">
               <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
               <span class="brand-badge">AI</span>
             </div>
-          </div>
-          <p class="footer-tagline">
-            Your trusted destination for buying, renting, and listing premium properties across Dubai.
+          </a>
+          <p class="brand-desc">
+            Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.
           </p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          </div>
         </div>
 
-        <div class="footer-nav-row">
-          <span class="footer-nav-label">QUICK LINKS</span>
-          <a href="#top" @click.prevent="scrollTo('top')">Home</a>
-          <a href="#featured" @click.prevent="scrollTo('featured')">Buy</a>
-          <a href="#featured" @click.prevent="scrollTo('featured')">Rent</a>
-          <a href="#areas" @click.prevent="scrollTo('areas')">Popular Areas</a>
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Quick Links</h4>
+          <ul>
+            <li><a href="#hero" @click.prevent="scrollTo('hero')">Home</a></li>
+            <li><a href="#about" @click.prevent="scrollTo('about')">Services</a></li>
+            <li><a href="#about" @click.prevent="scrollTo('about')">About Us</a></li>
+            <li><a href="#testimonials" @click.prevent="scrollTo('testimonials')">Testimonials</a></li>
+            <li><a href="#contact" @click.prevent="scrollTo('contact')">Contact</a></li>
+          </ul>
         </div>
 
-        <div class="footer-contact-row">
-          <span class="footer-nav-label">CONTACT US</span>
-          <span>Dubai, UAE</span>
-          <span class="sep">|</span>
-          <a href="tel:+971501234567">+971 50 123 4567</a>
-          <span class="sep">|</span>
-          <a href="mailto:hello@vibelocate.ai">hello@vibelocate.ai</a>
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Support</h4>
+          <ul>
+            <li><a href="#" @click.prevent="showToast('Help Center is coming soon')">Help Center</a></li>
+            <li><a href="#" @click.prevent="showToast('Safety & Security information')">Safety &amp; Security</a></li>
+            <li><a href="#" @click.prevent="showToast('Terms & Conditions')">Terms &amp; Conditions</a></li>
+            <li><a href="#" @click.prevent="showToast('Privacy Policy')">Privacy Policy</a></li>
+          </ul>
         </div>
 
-        <div class="footer-bottom">
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Contact</h4>
+          <ul class="contact-info-list">
+            <li>
+              <i class="fa-solid fa-location-dot"></i>
+              <span>742 Evergreen Blvd, Beverly Hills, CA</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-envelope"></i>
+              <span>contact@vibelocate.ai</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-phone"></i>
+              <span>+1 (800) 456-7890</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container bottom-container">
           <p>&copy; 2026 VibeLocate AI. All rights reserved.</p>
         </div>
       </div>
@@ -503,6 +543,7 @@ const favorites = ref(new Set())
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
+const searchWidget = ref(null)
 const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
@@ -600,7 +641,9 @@ const searchByArea = (areaName) => {
 const scrollTo = (id) => {
   mobileMenuOpen.value = false
   profileMenuOpen.value = false
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  const targetId = id === 'top' || id === 'hero' ? (document.getElementById('hero') ? 'hero' : 'top') : id
+  const el = document.getElementById(targetId) || (id === 'testimonials' || id === 'services' ? document.getElementById('about') : null)
+  el?.scrollIntoView({ behavior: 'smooth' })
 }
 
 const showToast = (msg) => {

@@ -1505,11 +1505,23 @@ body {
 }
 
 /* ==================== CONTAINER ==================== */
-.landing-page-wrapper .container {
+.landing-page-wrapper .container,
+.hero-section .container,
+.footer .container {
     width: 100%;
     max-width: 1200px;
     margin-inline: auto;
     padding-inline: 1.5rem;
+}
+
+/* fade-in animation */
+.fade-in {
+    animation: lpFadeIn 0.8s ease forwards;
+}
+
+@keyframes lpFadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* ==================== NAVBAR ==================== */
@@ -2501,6 +2513,12 @@ body {
     margin-bottom: 1.5rem;
 }
 
+.footer-links-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
 .footer-links-col ul li {
     margin-bottom: 0.75rem;
 }
@@ -2530,8 +2548,16 @@ body {
     margin-top: 0.3rem;
 }
 
+.footer .footer-bottom,
 .footer-bottom {
+    width: 100%;
+    max-width: 100%;
     padding: 1.5rem 0;
+    font-size: 0.85rem;
+}
+
+.footer .footer-bottom p {
+    color: rgba(255, 255, 255, 0.6);
     font-size: 0.85rem;
 }
 
