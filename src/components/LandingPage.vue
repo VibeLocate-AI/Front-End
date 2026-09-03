@@ -88,11 +88,28 @@
                   id="aiSearchInput"
                   v-model="aiSearchQuery"
                   class="hero-search-input"
-                  placeholder="e.g., I need a quiet studio near modern cafes with fast Wi-Fi under $2,000/month"
+                  placeholder="e.g., Two-bedroom house in Dubai"
                 >
                 <button type="submit" class="btn btn-primary search-submit-btn">
                   <i class="fa-solid fa-robot"></i>
                   <span>AI Search</span>
+                </button>
+              </div>
+
+              <!-- Quick Demo Prompt Chips for Direct Navigation to AI Screens -->
+              <div class="ai-prompt-chips" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Try Prompts:</span>
+                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Two-bedroom house in Dubai')">
+                  ✦ Two-bedroom house in Dubai
+                </button>
+                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Luxury Marina Studio $2,500')">
+                  ✦ Marina Studio ($2,500)
+                </button>
+                <button type="button" class="ai-chip-pill chip-err" @click="runQuickSearch('error')">
+                  ⚠️ Service Busy (Image 1)
+                </button>
+                <button type="button" class="ai-chip-pill chip-none" @click="runQuickSearch('no match')">
+                  🔍 No Match (Image 2)
                 </button>
               </div>
             </div>
@@ -540,16 +557,13 @@ const scrollToSearch = () => {
 }
 
 const handleAISearch = () => {
-  if (!aiSearchQuery.value.trim()) {
-    showToast('Please enter your ideal living situation for AI analysis.')
-    return
-  }
-  showToast('🧠 AI is analyzing your prompt and finding matches...')
-  setTimeout(() => {
-    activeFilter.value = 'all'
-    scrollTo('rentals')
-    showToast('Found the best matches for your vibe!')
-  }, 1500)
+  const queryToPass = aiSearchQuery.value.trim()
+  router.push({ path: '/home', query: { q: queryToPass, search: 'true' } })
+}
+
+const runQuickSearch = (prompt) => {
+  aiSearchQuery.value = prompt
+  handleAISearch()
 }
 
 // ========== FEATURES ==========
