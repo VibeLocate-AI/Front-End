@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePasswordBtn.addEventListener('click', () => {
             const isPassword = passwordInput.getAttribute('type') === 'password';
             passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-            
+
             // Toggle eye icon appearance
             const eyeIcon = togglePasswordBtn.querySelector('svg');
             if (isPassword) {
@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Form Submission Handling
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
+
         let valid = true;
-        
+
         if (!isValidEmail(emailInput.value)) {
             emailGroup.classList.add('error');
             valid = false;
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showToast(message, type = 'success') {
         toast.textContent = message;
         toast.className = `toast show ${type}`;
-        
+
         setTimeout(() => {
             toast.className = 'toast hidden';
         }, 3200);
