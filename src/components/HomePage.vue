@@ -222,8 +222,8 @@
                 </div>
 
                 <div class="ai-match-subtitle-row">
-                  <span class="ai-match-price">${{ prop.price ? prop.price.toLocaleString() : '2,500' }} <small>/month</small></span>
-                  <span class="ai-match-rental-period">• {{ prop.period || 'Monthly Rental' }}</span>
+                  <span class="ai-match-price">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : '' }} <small>{{ prop.period || '/yr' }}</small></span>
+                  <span class="ai-match-rental-period">• {{ prop.rent_frequency || 'yearly' }}</span>
                 </div>
 
                 <!-- Clear Specs Bar (Beds, Baths, Sqft) -->
@@ -485,8 +485,8 @@
                       <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
                     </p>
                     <div class="property-card-pricing">
-                      <span class="price-val">${{ prop.price.toLocaleString() }}</span>
-                      <span class="price-period">/month</span>
+                      <span class="price-val">{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</span>
+                      <span class="price-period">{{ prop.period || '/yr' }}</span>
                     </div>
 
                     <div class="property-card-specs">
@@ -513,7 +513,7 @@
               </div>
 
               <div class="nearby-cards-grid">
-                <article v-for="prop in nearbyProperties" :key="prop.title" class="nearby-item-card">
+                <article v-for="prop in nearbyProperties" :key="prop.id || prop.title" class="nearby-item-card">
                   <div class="nearby-media" :style="{ backgroundImage: `url('${prop.image}')` }">
                     <button
                       class="nearby-fav-btn"
@@ -528,8 +528,8 @@
                     <h4 class="nearby-title">{{ prop.title }}</h4>
                     <p class="nearby-location"><i class="fa-solid fa-location-dot"></i> {{ prop.area }}</p>
                     <div class="nearby-price">
-                      <strong>${{ prop.price.toLocaleString() }}</strong>
-                      <small>/month</small>
+                      <strong>{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</strong>
+                      <small>{{ prop.period || '/yr' }}</small>
                     </div>
                     <div class="nearby-specs">
                       <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
@@ -720,6 +720,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { propertyService } from '../services/propertyService'
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -728,90 +729,11 @@ const areas = [
   { name: 'Business Bay', count: '732', image: 'https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=400&q=80' }
 ]
 
-const properties = [
-  {
-    type: 'Villa',
-    title: 'Palm Jumeirah Villa',
-    area: 'Palm Jumeirah, Dubai',
-    price: 4500,
-    beds: 5,
-    baths: 6,
-    size: '6,500',
-    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Apartment',
-    title: 'Luxury Apartment in Dubai Marina',
-    area: 'Dubai Marina, Dubai',
-    price: 2800,
-    beds: 2,
-    baths: 3,
-    size: '1,450',
-    image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Penthouse',
-    title: 'Downtown Penthouse Skyline View',
-    area: 'Downtown Dubai, Dubai',
-    price: 12000,
-    beds: 4,
-    baths: 5,
-    size: '3,200',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Townhouse',
-    title: 'Modern Townhouse in JVC',
-    area: 'JVC, Dubai',
-    price: 3200,
-    beds: 3,
-    baths: 4,
-    size: '2,100',
-    image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Apartment',
-    title: 'Luxury Marina Suite',
-    area: 'Dubai Marina',
-    price: 2200,
-    beds: 1,
-    baths: 2,
-    size: '850',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Townhouse',
-    title: 'JVC Modern Townhome',
-    area: 'Jumeirah Village Circle',
-    price: 2900,
-    beds: 3,
-    baths: 3,
-    size: '1,800',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Apartment',
-    title: 'Business Bay 2BR Apartment',
-    area: 'Business Bay, Dubai',
-    price: 2600,
-    beds: 2,
-    baths: 2,
-    size: '1,200',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Villa',
-    title: 'Dubai Hills Family Villa',
-    area: 'Dubai Hills Estate',
-    price: 6500,
-    beds: 5,
-    baths: 6,
-    size: '5,200',
-    image: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=600&q=80'
-  }
-]
+const properties = ref([])
+const isLoadingProperties = ref(false)
+const isLiveApi = ref(false)
 
-const nearbyProperties = properties.slice(4)
+const nearbyProperties = computed(() => properties.value.slice(4))
 
 const query = ref('')
 const favorites = ref(new Set())
@@ -830,38 +752,7 @@ const activeStep = ref(1)
 const aiInputRef = ref(null)
 let progressInterval = null
 
-const aiMatchedList = ref([
-  {
-    id: 1,
-    title: 'Marina Studio',
-    subtitle: 'Monthly - Dubai Marina $2,500',
-    matchScore: 92,
-    area: 'Dubai Marina',
-    price: 2500,
-    type: 'Apartment',
-    period: 'Monthly',
-    beds: 2,
-    baths: 2,
-    size: '1,450',
-    tags: ['Close to cafes', 'Calm', 'Marina View'],
-    image: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1200&q=85'
-  },
-  {
-    id: 2,
-    title: 'Marina Studio',
-    subtitle: 'Monthly - Dubai Marina $2,500',
-    matchScore: 75,
-    area: 'Dubai Marina',
-    price: 2500,
-    type: 'Apartment',
-    period: 'Monthly',
-    beds: 2,
-    baths: 2,
-    size: '1,200',
-    tags: ['Close to cafes', 'Calm', 'Near Metro'],
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85'
-  }
-])
+const aiMatchedList = ref([])
 
 const focusAiSearchInput = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -928,6 +819,15 @@ const runAiSearch = (customQuery) => {
   aiProgress.value = 0
   activeStep.value = 1
   window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  // Trigger dynamic AI search against real property database
+  propertyService.searchWithAi(qTrim).then(res => {
+    if (res?.data && res.data.length > 0) {
+      aiMatchedList.value = res.data.slice(0, 4)
+    }
+  }).catch(err => {
+    console.warn('AI search error, keeping current matched list:', err)
+  })
 
   if (progressInterval) clearInterval(progressInterval)
 
@@ -1020,8 +920,8 @@ const handleLogout = async () => {
 
 const filteredProperties = computed(() => {
   const term = query.value.toLowerCase().trim()
-  if (!term) return properties
-  return properties.filter(p =>
+  if (!term) return properties.value
+  return properties.value.filter(p =>
     `${p.title} ${p.area} ${p.type} ${p.price}`.toLowerCase().includes(term)
   )
 })
@@ -1099,20 +999,41 @@ const handleDocumentClick = (e) => {
   }
 }
 
+const loadProperties = async () => {
+  isLoadingProperties.value = true
+  try {
+    const res = await propertyService.getHomeData()
+    if (res?.properties && res.properties.length > 0) {
+      properties.value = res.properties
+      isLiveApi.value = true
+      if (!aiMatchedList.value.length) {
+        aiMatchedList.value = res.properties.slice(0, 2)
+      }
+    }
+  } catch (err) {
+    console.error('Failed loading properties from /api/home in HomePage:', err)
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
+
 onMounted(async () => {
   // 1. Instantly load cached user data from storage
   loadUserFromStorage()
 
-  // 2. Add document listener for dropdown outside clicks
+  // 2. Fetch real properties from API / database
+  await loadProperties()
+
+  // 3. Add document listener for dropdown outside clicks
   document.addEventListener('click', handleDocumentClick)
 
-  // 3. Trigger AI Search if query parameters exist from landing page search
+  // 4. Trigger AI Search if query parameters exist from landing page search
   if (route.query.q || route.query.search === 'true') {
     const initialQuery = (route.query.q || '').toString()
     runAiSearch(initialQuery || 'Two-bedroom house in Dubai')
   }
 
-  // 4. Fetch latest profile from API if token exists
+  // 5. Fetch latest profile from API if token exists
   if (authService.isAuthenticated()) {
     try {
       const res = await authService.getProfile()
