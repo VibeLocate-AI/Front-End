@@ -106,47 +106,331 @@
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="top">
-      <!-- HERO SECTION -->
-      <section class="hero-section">
-        <div class="hero-backdrop"></div>
-        <div class="hero-content">
-          <div class="hero-pill-badge">
-            <span class="sparkle-icon">✦</span> AI-POWERED REAL ESTATE PLATFORM
+      <!-- 1. AI PROCESSING / LOADING SCREEN (IMAGE 1) -->
+      <section v-if="aiSearchState === 'loading'" class="ai-processing-screen">
+        <!-- Floating Top Search Bar -->
+        <div class="ai-top-bar-container">
+          <div class="ai-top-bar-header">
+            <span class="ai-sparkle">✦</span> AI Contextual Search
+          </div>
+          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
+            <div class="ai-top-bar-input-wrap">
+              <input
+                v-model.trim="query"
+                type="text"
+                class="ai-top-bar-input"
+                placeholder="Two-bedroom house in Dubai"
+              >
+            </div>
+            <button type="submit" class="btn-ai-top-search">
+              AI Search
+            </button>
+          </form>
+        </div>
+
+        <div class="ai-processing-body">
+          <h2 class="ai-processing-title">We arrange the results..........</h2>
+          <p class="ai-processing-subtitle">It takes approximately two seconds.</p>
+
+          <div class="ai-checklist-container">
+            <div class="ai-checklist-item" :class="{ active: activeStep >= 1 }">
+              <div class="ai-check-circle">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <span class="ai-checklist-text">Natural Language Request Analysis.</span>
+            </div>
+
+            <div class="ai-checklist-item" :class="{ active: activeStep >= 2 }">
+              <div class="ai-check-circle">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <span class="ai-checklist-text">Matching Suitable Properties.</span>
+            </div>
+
+            <div class="ai-checklist-item" :class="{ active: activeStep >= 3 }">
+              <div class="ai-check-circle">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <span class="ai-checklist-text">Sort results by relevance.</span>
+            </div>
           </div>
 
-          <h1 class="hero-headline">
-            Find Your Dream<br>
-            <span class="cyan-gradient-text">Property in Dubai</span>
-          </h1>
-
-          <p class="hero-subline">
-            Discover premium Dubai properties tailored to your lifestyle, comfort, and aspirations.
-          </p>
-
-          <!-- AI Contextual Search Box -->
-          <div class="ai-search-card">
-            <div class="ai-search-header">
-              <span class="ai-sparkle">✦</span> AI CONTEXTUAL SEARCH
+          <div class="ai-progress-track-wrapper">
+            <div class="ai-progress-track">
+              <div class="ai-progress-bar-fill" :style="{ width: aiProgress + '%' }"></div>
             </div>
-            <form class="ai-search-form" @submit.prevent="handleSearch">
-              <div class="ai-input-group">
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 2. AI SEARCH RESULTS SCREEN (IMAGE 2) -->
+      <section v-else-if="aiSearchState === 'results'" class="ai-results-screen">
+        <div class="ai-results-wrapper">
+          <!-- Floating Top Search Bar -->
+          <div class="ai-top-bar-container">
+            <div class="ai-top-bar-header">
+              <span class="ai-sparkle">✦</span> AI Contextual Search
+            </div>
+            <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
+              <div class="ai-top-bar-input-wrap">
                 <input
-                  id="keyword"
                   v-model.trim="query"
                   type="text"
-                  placeholder="e.g., I need a luxury villa near the beach for $5,000/month"
-                  class="ai-search-input"
+                  class="ai-top-bar-input"
+                  placeholder="Two-bedroom house in Dubai"
                 >
-                <button class="btn-ai-search" type="submit">
-                  <i class="fa-solid fa-robot"></i>
-                  <span>AI Search</span>
-                </button>
               </div>
+              <button type="submit" class="btn-ai-top-search">
+                AI Search
+              </button>
             </form>
-            <p v-if="searchMessage" class="bot-feedback">{{ searchMessage }}</p>
+          </div>
+
+          <!-- Sorted Header -->
+          <h3 class="ai-results-heading">Sorted by match percentage</h3>
+
+          <!-- AI Matched Cards List -->
+          <div class="ai-results-cards-list">
+            <article
+              v-for="prop in aiMatchedList"
+              :key="prop.id || prop.title"
+              class="ai-property-match-card"
+            >
+              <div class="ai-match-card-media">
+                <img :src="prop.image" :alt="prop.title" loading="lazy">
+                <button
+                  class="card-fav-btn"
+                  :class="{ active: favorites.has(prop.title) }"
+                  type="button"
+                  :aria-label="'Favorite ' + prop.title"
+                  @click.stop="toggleFavorite(prop.title)"
+                >
+                  <i :class="favorites.has(prop.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                </button>
+                <span class="card-property-type-tag">{{ prop.type }}</span>
+              </div>
+              <div class="ai-match-card-content">
+                <div class="ai-match-card-header-row">
+                  <div class="ai-match-title-group">
+                    <h4 class="ai-match-title">{{ prop.title }}</h4>
+                    <span class="ai-match-location">
+                      <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
+                    </span>
+                  </div>
+                  <span class="ai-match-percentage-badge">match {{ prop.matchScore }}%</span>
+                </div>
+
+                <div class="ai-match-subtitle-row">
+                  <span class="ai-match-price">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : '' }} <small>{{ prop.period || '/yr' }}</small></span>
+                  <span class="ai-match-rental-period">• {{ prop.rent_frequency || 'yearly' }}</span>
+                </div>
+
+                <!-- Clear Specs Bar (Beds, Baths, Sqft) -->
+                <div class="ai-match-specs-row">
+                  <span class="ai-spec-item"><i class="fa-solid fa-bed"></i> {{ prop.beds || 2 }} Beds</span>
+                  <span class="ai-spec-item"><i class="fa-solid fa-bath"></i> {{ prop.baths || 2 }} Baths</span>
+                  <span class="ai-spec-item"><i class="fa-solid fa-vector-square"></i> {{ prop.size || '1,450' }} Sqft</span>
+                </div>
+
+                <!-- Tag Pills -->
+                <div class="ai-match-tags-row">
+                  <span v-for="tag in prop.tags" :key="tag" class="ai-tag-pill">{{ tag }}</span>
+                </div>
+
+                <div class="ai-match-card-footer">
+                  <button class="btn-view-ai-prop" @click="showToast('Opening details for ' + prop.title)">
+                    <span>View Property Details</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <!-- Golden / Amber Details Required Notice Card (Image 2 Bottom) -->
+          <div class="ai-refinement-callout-card">
+            <h4 class="ai-refinement-title">
+              Your request requires more details.
+              <span class="ai-refinement-info-icon">i</span>
+            </h4>
+            <p class="ai-refinement-text">
+              Try specifying the budget, area, or type of venue to find better results.
+            </p>
+          </div>
+
+          <!-- Return to standard home page view -->
+          <div class="text-center" style="margin-top: 36px; text-align: center;">
+            <button class="ai-back-home-btn" @click="resetToHome">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Back to Home Overview</span>
+            </button>
           </div>
         </div>
       </section>
+
+      <!-- 3. AI SERVICE UNAVAILABLE / ERROR SCREEN (IMAGE 1) -->
+      <section v-else-if="aiSearchState === 'error'" class="ai-error-screen">
+        <!-- Floating Top Search Bar -->
+        <div class="ai-top-bar-container">
+          <div class="ai-top-bar-header">
+            <span class="ai-sparkle">✦</span> AI Contextual Search
+          </div>
+          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
+            <div class="ai-top-bar-input-wrap">
+              <input
+                ref="aiInputRef"
+                v-model.trim="query"
+                type="text"
+                class="ai-top-bar-input"
+                placeholder="Two-bedroom house in Dubai"
+              >
+            </div>
+            <button type="submit" class="btn-ai-top-search">
+              AI Search
+            </button>
+          </form>
+        </div>
+
+        <div class="ai-error-body">
+          <h2 class="ai-error-headline">Smart search could not be completed.</h2>
+          <p class="ai-error-subtitle">
+            The service is currently busy,<br>
+            please try again later or use the standard search and filters for now.
+          </p>
+
+          <div class="ai-error-buttons-group">
+            <button class="btn-ai-retry" @click="runAiSearch(query)">
+              Retry
+            </button>
+            <button class="btn-ai-switch-filters" @click="resetToHome">
+              Switch to search using filters
+            </button>
+          </div>
+
+          <div class="ai-error-divider"></div>
+
+          <div class="ai-error-code-row">
+            <span class="ai-error-warning-icon">!</span>
+            <span><strong>Error code</strong> AI_ Service_Unavailable</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. AI NO MATCHING PROPERTIES SCREEN (IMAGE 2) -->
+      <section v-else-if="aiSearchState === 'no_results'" class="ai-no-results-screen">
+        <!-- Floating Top Search Bar -->
+        <div class="ai-top-bar-container">
+          <div class="ai-top-bar-header">
+            <span class="ai-sparkle">✦</span> AI Contextual Search
+          </div>
+          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
+            <div class="ai-top-bar-input-wrap">
+              <input
+                ref="aiInputRef"
+                v-model.trim="query"
+                type="text"
+                class="ai-top-bar-input"
+                placeholder="Two-bedroom house in Dubai"
+              >
+            </div>
+            <button type="submit" class="btn-ai-top-search">
+              AI Search
+            </button>
+          </form>
+        </div>
+
+        <div class="ai-no-results-body">
+          <h2 class="ai-no-results-headline">We did not find any matching properties.</h2>
+          <p class="ai-no-results-subtitle">
+            No results found for your request,<br>
+            try adjusting some details.
+          </p>
+
+          <h3 class="ai-closest-results-label">Closest available results</h3>
+
+          <div class="ai-closest-card">
+            <div class="ai-closest-info">
+              <span class="ai-closest-title">Marina Studio</span>
+              <span class="ai-closest-sub">Monthly - Dubai Marina $2,500</span>
+            </div>
+            <span class="ai-match-percentage-badge">match 75%</span>
+          </div>
+
+          <button class="btn-ai-modify-request" @click="focusAiSearchInput">
+            Modify the request
+          </button>
+        </div>
+      </section>
+
+      <!-- 5. STANDARD HOME PAGE OVERVIEW -->
+      <template v-else>
+        <!-- HERO SECTION -->
+        <section class="hero-section" id="hero">
+          <div class="hero-overlay"></div>
+          <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+          </div>
+
+          <div class="container hero-content">
+            <div class="badge-pill fade-in">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i>
+              <span>AI-POWERED REAL ESTATE PLATFORM</span>
+            </div>
+
+            <h1 class="hero-title fade-in">
+              Find Your Dream<br>
+              <span class="text-cyan-bright">Property in Dubai</span>
+            </h1>
+
+            <p class="hero-desc fade-in">
+              Discover premium Dubai properties tailored to your lifestyle, comfort, and aspirations with next-generation AI recommendations.
+            </p>
+
+            <!-- Floating Glass Search Widget -->
+            <div class="search-widget-card glassmorphism fade-in" ref="searchWidget">
+              <form class="search-form" @submit.prevent="handleSearch">
+                <div class="form-group" style="width: 100%;">
+                  <label class="search-label">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI CONTEXTUAL SEARCH
+                  </label>
+                  <div class="search-input-wrapper">
+                    <input
+                      id="keyword"
+                      v-model.trim="query"
+                      type="text"
+                      class="hero-search-input"
+                      placeholder="e.g., Two-bedroom house in Dubai"
+                    >
+                    <button type="submit" class="btn btn-primary search-submit-btn">
+                      <i class="fa-solid fa-robot"></i>
+                      <span>AI Search</span>
+                    </button>
+                  </div>
+
+                  <!-- Interactive Quick Prompt Chips for Testing All AI Screens -->
+                  <div class="ai-prompt-chips">
+                    <span class="chips-label">Demo Prompts:</span>
+                    <button type="button" class="ai-chip-pill" @click="runAiSearch('Two-bedroom house in Dubai')">
+                      ✦ Two-bedroom house in Dubai
+                    </button>
+                    <button type="button" class="ai-chip-pill" @click="runAiSearch('Luxury Marina Studio $2,500')">
+                      ✦ Marina Studio ($2,500)
+                    </button>
+                    <button type="button" class="ai-chip-pill chip-err" @click="runAiSearch('error')">
+                      ⚠️ Service Busy (Image 1)
+                    </button>
+                    <button type="button" class="ai-chip-pill chip-none" @click="runAiSearch('no match')">
+                      🔍 No Match (Image 2)
+                    </button>
+                  </div>
+                </div>
+              </form>
+              <p v-if="searchMessage" class="bot-feedback" style="margin-top: 10px;">{{ searchMessage }}</p>
+            </div>
+          </div>
+        </section>
 
       <!-- TWO-COLUMN CONTENT AREA -->
       <div class="main-container">
@@ -201,8 +485,8 @@
                       <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
                     </p>
                     <div class="property-card-pricing">
-                      <span class="price-val">${{ prop.price.toLocaleString() }}</span>
-                      <span class="price-period">/month</span>
+                      <span class="price-val">{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</span>
+                      <span class="price-period">{{ prop.period || '/yr' }}</span>
                     </div>
 
                     <div class="property-card-specs">
@@ -229,7 +513,7 @@
               </div>
 
               <div class="nearby-cards-grid">
-                <article v-for="prop in nearbyProperties" :key="prop.title" class="nearby-item-card">
+                <article v-for="prop in nearbyProperties" :key="prop.id || prop.title" class="nearby-item-card">
                   <div class="nearby-media" :style="{ backgroundImage: `url('${prop.image}')` }">
                     <button
                       class="nearby-fav-btn"
@@ -244,8 +528,8 @@
                     <h4 class="nearby-title">{{ prop.title }}</h4>
                     <p class="nearby-location"><i class="fa-solid fa-location-dot"></i> {{ prop.area }}</p>
                     <div class="nearby-price">
-                      <strong>${{ prop.price.toLocaleString() }}</strong>
-                      <small>/month</small>
+                      <strong>{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</strong>
+                      <small>{{ prop.period || '/yr' }}</small>
                     </div>
                     <div class="nearby-specs">
                       <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
@@ -352,42 +636,73 @@
           </div>
         </section>
       </div>
+      </template>
     </main>
 
     <!-- ==================== FOOTER ==================== -->
-    <footer class="site-footer">
-      <div class="footer-inner">
+    <footer class="footer" id="contact">
+      <div class="container footer-top">
         <div class="footer-brand">
-          <div class="brand-logo-wrap justify-center">
+          <a href="#hero" class="logo footer-logo" @click.prevent="scrollTo('hero')">
             <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img footer-logo-img">
-            <div class="brand-text">
+            <div class="brand-text footer-brand-text">
               <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
               <span class="brand-badge">AI</span>
             </div>
-          </div>
-          <p class="footer-tagline">
-            Your trusted destination for buying, renting, and listing premium properties across Dubai.
+          </a>
+          <p class="brand-desc">
+            Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.
           </p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          </div>
         </div>
 
-        <div class="footer-nav-row">
-          <span class="footer-nav-label">QUICK LINKS</span>
-          <a href="#top" @click.prevent="scrollTo('top')">Home</a>
-          <a href="#featured" @click.prevent="scrollTo('featured')">Buy</a>
-          <a href="#featured" @click.prevent="scrollTo('featured')">Rent</a>
-          <a href="#areas" @click.prevent="scrollTo('areas')">Popular Areas</a>
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Quick Links</h4>
+          <ul>
+            <li><a href="#hero" @click.prevent="scrollTo('hero')">Home</a></li>
+            <li><a href="#about" @click.prevent="scrollTo('about')">Services</a></li>
+            <li><a href="#about" @click.prevent="scrollTo('about')">About Us</a></li>
+            <li><a href="#testimonials" @click.prevent="scrollTo('testimonials')">Testimonials</a></li>
+            <li><a href="#contact" @click.prevent="scrollTo('contact')">Contact</a></li>
+          </ul>
         </div>
 
-        <div class="footer-contact-row">
-          <span class="footer-nav-label">CONTACT US</span>
-          <span>Dubai, UAE</span>
-          <span class="sep">|</span>
-          <a href="tel:+971501234567">+971 50 123 4567</a>
-          <span class="sep">|</span>
-          <a href="mailto:hello@vibelocate.ai">hello@vibelocate.ai</a>
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Support</h4>
+          <ul>
+            <li><a href="#" @click.prevent="showToast('Help Center is coming soon')">Help Center</a></li>
+            <li><a href="#" @click.prevent="showToast('Safety & Security information')">Safety &amp; Security</a></li>
+            <li><a href="#" @click.prevent="showToast('Terms & Conditions')">Terms &amp; Conditions</a></li>
+            <li><a href="#" @click.prevent="showToast('Privacy Policy')">Privacy Policy</a></li>
+          </ul>
         </div>
 
-        <div class="footer-bottom">
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Contact</h4>
+          <ul class="contact-info-list">
+            <li>
+              <i class="fa-solid fa-location-dot"></i>
+              <span>742 Evergreen Blvd, Beverly Hills, CA</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-envelope"></i>
+              <span>contact@vibelocate.ai</span>
+            </li>
+            <li>
+              <i class="fa-solid fa-phone"></i>
+              <span>+1 (800) 456-7890</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container bottom-container">
           <p>&copy; 2026 VibeLocate AI. All rights reserved.</p>
         </div>
       </div>
@@ -403,8 +718,9 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { propertyService } from '../services/propertyService'
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -413,101 +729,141 @@ const areas = [
   { name: 'Business Bay', count: '732', image: 'https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=400&q=80' }
 ]
 
-const properties = [
-  {
-    type: 'Villa',
-    title: 'Palm Jumeirah Villa',
-    area: 'Palm Jumeirah, Dubai',
-    price: 4500,
-    beds: 5,
-    baths: 6,
-    size: '6,500',
-    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Apartment',
-    title: 'Luxury Apartment in Dubai Marina',
-    area: 'Dubai Marina, Dubai',
-    price: 2800,
-    beds: 2,
-    baths: 3,
-    size: '1,450',
-    image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Penthouse',
-    title: 'Downtown Penthouse Skyline View',
-    area: 'Downtown Dubai, Dubai',
-    price: 12000,
-    beds: 4,
-    baths: 5,
-    size: '3,200',
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Townhouse',
-    title: 'Modern Townhouse in JVC',
-    area: 'JVC, Dubai',
-    price: 3200,
-    beds: 3,
-    baths: 4,
-    size: '2,100',
-    image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=85'
-  },
-  {
-    type: 'Apartment',
-    title: 'Luxury Marina Suite',
-    area: 'Dubai Marina',
-    price: 2200,
-    beds: 1,
-    baths: 2,
-    size: '850',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Townhouse',
-    title: 'JVC Modern Townhome',
-    area: 'Jumeirah Village Circle',
-    price: 2900,
-    beds: 3,
-    baths: 3,
-    size: '1,800',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Apartment',
-    title: 'Business Bay 2BR Apartment',
-    area: 'Business Bay, Dubai',
-    price: 2600,
-    beds: 2,
-    baths: 2,
-    size: '1,200',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    type: 'Villa',
-    title: 'Dubai Hills Family Villa',
-    area: 'Dubai Hills Estate',
-    price: 6500,
-    beds: 5,
-    baths: 6,
-    size: '5,200',
-    image: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=600&q=80'
-  }
-]
+const properties = ref([])
+const isLoadingProperties = ref(false)
+const isLiveApi = ref(false)
 
-const nearbyProperties = properties.slice(4)
+const nearbyProperties = computed(() => properties.value.slice(4))
 
 const query = ref('')
 const favorites = ref(new Set())
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
+const searchWidget = ref(null)
 const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
 
+/* AI Contextual Search Interactive States */
+const aiSearchState = ref('idle') // 'idle' | 'loading' | 'results' | 'error' | 'no_results'
+const aiProgress = ref(0)
+const activeStep = ref(1)
+const aiInputRef = ref(null)
+let progressInterval = null
+
+const aiMatchedList = ref([])
+
+const focusAiSearchInput = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  setTimeout(() => {
+    if (aiInputRef.value) {
+      aiInputRef.value.focus()
+    }
+  }, 300)
+}
+
+const realEstateDomainKeywords = [
+  'house', 'villa', 'studio', 'apartment', 'home', 'dubai', 'bedroom', 'bed', 'bath',
+  'rent', 'buy', 'marina', 'palm', 'jumeirah', 'downtown', 'jvc', 'business bay',
+  'beach', 'pool', 'luxury', 'calm', 'cafe', 'cafes', 'budget', '$', 'dollar',
+  'monthly', 'yearly', 'penthouse', 'townhouse', 'view', 'sea', 'city', 'flat', 'property',
+  'room', 'estate', 'hills'
+]
+
+const isMeaningfulQuery = (str) => {
+  const clean = (str || '').toLowerCase().trim()
+  if (!clean) return false // Empty search -> Error screen
+
+  // Check for random gibberish consonants or invalid patterns (e.g. asdfgh, qwerty, 123456)
+  if (/^[bcdfghjklmnpqrstvwxyz]{4,}$/i.test(clean) || /^\d+$/.test(clean) || clean.length < 2) {
+    return false
+  }
+
+  // Check if query contains domain keywords or valid multi-word input
+  const hasDomainKeyword = realEstateDomainKeywords.some(kw => clean.includes(kw))
+  if (hasDomainKeyword) return true
+
+  const words = clean.split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return true
+
+  return false
+}
+
+const runAiSearch = (customQuery) => {
+  if (customQuery !== undefined) {
+    query.value = customQuery
+  }
+
+  const qTrim = query.value.trim()
+  const qLower = qTrim.toLowerCase()
+
+  // 1. IF SEARCH IS EMPTY OR CONTAINS INCOMPREHENSIBLE / GIBBERISH TEXT -> TRIGGER ERROR SCREEN (IMAGE 1)
+  if (!qTrim || !isMeaningfulQuery(qTrim) || qLower.includes('error') || qLower.includes('busy') || qLower.includes('fail') || route.query.state === 'error') {
+    if (progressInterval) clearInterval(progressInterval)
+    aiSearchState.value = 'error'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
+  // 2. IF SEARCH IS EXPLICITLY UNMATCHED -> TRIGGER NO RESULTS SCREEN (IMAGE 2)
+  if (qLower.includes('no match') || qLower.includes('nomatch') || qLower.includes('unmatched') || route.query.state === 'no_results') {
+    if (progressInterval) clearInterval(progressInterval)
+    aiSearchState.value = 'no_results'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
+  // 3. VALID QUERY -> RUN 2-SECOND LOADING ANALYSIS ANIMATION -> RESULTS SCREEN
+  aiSearchState.value = 'loading'
+  aiProgress.value = 0
+  activeStep.value = 1
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  // Trigger dynamic AI search against real property database
+  propertyService.searchWithAi(qTrim).then(res => {
+    if (res?.data && res.data.length > 0) {
+      aiMatchedList.value = res.data.slice(0, 4)
+    }
+  }).catch(err => {
+    console.warn('AI search error, keeping current matched list:', err)
+  })
+
+  if (progressInterval) clearInterval(progressInterval)
+
+  const startTime = Date.now()
+  const duration = 2000 // 2 seconds animation matching mockup requirement
+
+  progressInterval = setInterval(() => {
+    const elapsed = Date.now() - startTime
+    const progress = Math.min(100, Math.floor((elapsed / duration) * 100))
+    aiProgress.value = progress
+
+    if (progress >= 33 && progress < 66) {
+      activeStep.value = 2
+    } else if (progress >= 66) {
+      activeStep.value = 3
+    }
+
+    if (progress >= 100) {
+      clearInterval(progressInterval)
+      setTimeout(() => {
+        aiSearchState.value = 'results'
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 150)
+    }
+  }, 30)
+}
+
+const resetToHome = () => {
+  if (progressInterval) clearInterval(progressInterval)
+  aiSearchState.value = 'idle'
+  query.value = ''
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const router = useRouter()
+const route = useRoute()
 
 const user = ref({
   name: '',
@@ -564,8 +920,8 @@ const handleLogout = async () => {
 
 const filteredProperties = computed(() => {
   const term = query.value.toLowerCase().trim()
-  if (!term) return properties
-  return properties.filter(p =>
+  if (!term) return properties.value
+  return properties.value.filter(p =>
     `${p.title} ${p.area} ${p.type} ${p.price}`.toLowerCase().includes(term)
   )
 })
@@ -583,13 +939,7 @@ const toggleFavorite = (title) => {
 }
 
 const handleSearch = () => {
-  const count = filteredProperties.value.length
-  if (count > 0) {
-    searchMessage.value = `AI found ${count} properties matching your query.`
-  } else {
-    searchMessage.value = `No exact matches found. Try searching for "Villa", "Marina", or "$3000".`
-  }
-  document.getElementById('featured')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  runAiSearch(query.value)
 }
 
 const searchByArea = (areaName) => {
@@ -600,7 +950,9 @@ const searchByArea = (areaName) => {
 const scrollTo = (id) => {
   mobileMenuOpen.value = false
   profileMenuOpen.value = false
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  const targetId = id === 'top' || id === 'hero' ? (document.getElementById('hero') ? 'hero' : 'top') : id
+  const el = document.getElementById(targetId) || (id === 'testimonials' || id === 'services' ? document.getElementById('about') : null)
+  el?.scrollIntoView({ behavior: 'smooth' })
 }
 
 const showToast = (msg) => {
@@ -647,14 +999,41 @@ const handleDocumentClick = (e) => {
   }
 }
 
+const loadProperties = async () => {
+  isLoadingProperties.value = true
+  try {
+    const res = await propertyService.getHomeData()
+    if (res?.properties && res.properties.length > 0) {
+      properties.value = res.properties
+      isLiveApi.value = true
+      if (!aiMatchedList.value.length) {
+        aiMatchedList.value = res.properties.slice(0, 2)
+      }
+    }
+  } catch (err) {
+    console.error('Failed loading properties from /api/home in HomePage:', err)
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
+
 onMounted(async () => {
   // 1. Instantly load cached user data from storage
   loadUserFromStorage()
 
-  // 2. Add document listener for dropdown outside clicks
+  // 2. Fetch real properties from API / database
+  await loadProperties()
+
+  // 3. Add document listener for dropdown outside clicks
   document.addEventListener('click', handleDocumentClick)
 
-  // 3. Fetch latest profile from API if token exists
+  // 4. Trigger AI Search if query parameters exist from landing page search
+  if (route.query.q || route.query.search === 'true') {
+    const initialQuery = (route.query.q || '').toString()
+    runAiSearch(initialQuery || 'Two-bedroom house in Dubai')
+  }
+
+  // 5. Fetch latest profile from API if token exists
   if (authService.isAuthenticated()) {
     try {
       const res = await authService.getProfile()

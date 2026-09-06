@@ -88,11 +88,28 @@
                   id="aiSearchInput"
                   v-model="aiSearchQuery"
                   class="hero-search-input"
-                  placeholder="e.g., I need a quiet studio near modern cafes with fast Wi-Fi under $2,000/month"
+                  placeholder="e.g., Two-bedroom house in Dubai"
                 >
                 <button type="submit" class="btn btn-primary search-submit-btn">
                   <i class="fa-solid fa-robot"></i>
                   <span>AI Search</span>
+                </button>
+              </div>
+
+              <!-- Quick Demo Prompt Chips for Direct Navigation to AI Screens -->
+              <div class="ai-prompt-chips" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Try Prompts:</span>
+                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Two-bedroom house in Dubai')">
+                  ✦ Two-bedroom house in Dubai
+                </button>
+                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Luxury Marina Studio $2,500')">
+                  ✦ Marina Studio ($2,500)
+                </button>
+                <button type="button" class="ai-chip-pill chip-err" @click="runQuickSearch('error')">
+                  ⚠️ Service Busy (Image 1)
+                </button>
+                <button type="button" class="ai-chip-pill chip-none" @click="runQuickSearch('no match')">
+                  🔍 No Match (Image 2)
                 </button>
               </div>
             </div>
@@ -223,7 +240,7 @@
               :key="tab.value"
               class="filter-tab"
               :class="{ active: activeFilter === tab.value }"
-              @click="activeFilter = tab.value"
+              @click="setFilter(tab.value)"
             >{{ tab.label }}</button>
           </div>
         </div>
@@ -231,7 +248,7 @@
         <!-- Properties Grid -->
         <div class="properties-grid" id="propertiesGrid">
           <article
-            v-for="property in filteredProperties"
+            v-for="property in displayedProperties"
             :key="property.id"
             class="property-card"
           >
@@ -249,12 +266,12 @@
                 <i :class="property.liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
               </button>
               <div class="property-price-tag">
-                <span class="price">${{ property.price.toLocaleString() }}</span><span class="period">/mo</span>
+                <span class="price">{{ property.currencySymbol || 'AED ' }}{{ property.price.toLocaleString() }}</span><span class="period">{{ property.period || '/yr' }}</span>
               </div>
             </div>
             <div class="property-body">
               <div class="property-location">
-                <i class="fa-solid fa-location-dot"></i> {{ property.location }}
+                <i class="fa-solid fa-location-dot"></i> {{ property.location || property.area }}
               </div>
               <h3 class="property-title">{{ property.title }}</h3>
               <p class="property-summary">{{ property.summary }}</p>
@@ -262,7 +279,7 @@
               <div class="property-specs">
                 <span><i class="fa-solid fa-bed"></i> {{ property.beds }} Beds</span>
                 <span><i class="fa-solid fa-bath"></i> {{ property.baths }} Baths</span>
-                <span><i class="fa-solid fa-vector-square"></i> {{ property.area }}</span>
+                <span><i class="fa-solid fa-vector-square"></i> {{ property.size }} sqft</span>
               </div>
 
               <div class="property-footer">
@@ -272,6 +289,14 @@
               </div>
             </div>
           </article>
+        </div>
+
+        <!-- Load More Section (9 items initially) -->
+        <div v-if="filteredProperties.length > visibleCount" class="load-more-wrapper">
+          <button class="btn-load-more" type="button" @click="loadMore">
+            <span>View More Properties</span>
+            <i class="fa-solid fa-angles-down"></i>
+          </button>
         </div>
       </div>
     </section>
@@ -425,7 +450,7 @@
                 <i class="fa-solid fa-location-dot"></i> {{ selectedProperty.location }}
               </div>
               <h2 style="font-size: 1.6rem; margin-bottom: 0.5rem; color: var(--navy-dark);">{{ selectedProperty.title }}</h2>
-              <div class="modal-price">${{ selectedProperty.price.toLocaleString() }} / month</div>
+              <div class="modal-price">{{ selectedProperty.currencySymbol || 'AED ' }}{{ selectedProperty.price.toLocaleString() }} {{ selectedProperty.period || '/ year' }}</div>
               <p style="color: var(--text-muted); font-size: 0.92rem; margin: 1rem 0 1.5rem; line-height: 1.6;">
                 {{ selectedProperty.description }}
               </p>
@@ -481,6 +506,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { propertyService } from '../services/propertyService'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
@@ -540,16 +566,13 @@ const scrollToSearch = () => {
 }
 
 const handleAISearch = () => {
-  if (!aiSearchQuery.value.trim()) {
-    showToast('Please enter your ideal living situation for AI analysis.')
-    return
-  }
-  showToast('🧠 AI is analyzing your prompt and finding matches...')
-  setTimeout(() => {
-    activeFilter.value = 'all'
-    scrollTo('rentals')
-    showToast('Found the best matches for your vibe!')
-  }, 1500)
+  const queryToPass = aiSearchQuery.value.trim()
+  router.push({ path: '/home', query: { q: queryToPass, search: 'true' } })
+}
+
+const runQuickSearch = (prompt) => {
+  aiSearchQuery.value = prompt
+  handleAISearch()
 }
 
 // ========== FEATURES ==========
@@ -601,103 +624,52 @@ const filterTabsList = [
 const activeFilter = ref('all')
 
 // ========== PROPERTIES DATA ==========
-const properties = ref([
-  {
-    id: 1,
-    category: 'apartment',
-    title: 'Luxury Apartments',
-    location: 'Marina Bay, Dubai',
-    price: 4500,
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-    summary: 'Panoramic ocean views with floor-to-ceiling windows and Italian marble finishes.',
-    aiMatch: 98,
-    badgeStyle: 'background: var(--cyan-accent);',
-    beds: 3, baths: 3, area: '2,850 sqft',
-    liked: false,
-    description: 'Experience the pinnacle of high-rise luxury. This penthouse offers uninterrupted panoramic views of Dubai Marina, bespoke Italian marble flooring, state-of-the-art smart home integration, private elevator access, and a wrap-around balcony.',
-    specs: { beds: '3 Bedrooms (Master en-suite)', baths: '3.5 Luxury Bathrooms', area: '2,850 sq.ft (265 m²)', parking: '2 Covered VIP Slots', amenities: ['Private Jacuzzi', 'Infinity Pool Access', '24/7 Concierge', 'Smart Automation'] }
-  },
-  {
-    id: 2,
-    category: 'estate',
-    title: 'Private Estates',
-    location: 'Beverly Hills, CA',
-    price: 14500,
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    summary: 'Gated sanctuary featuring infinity pool, private cinema, and lush gardens.',
-    aiMatch: 92,
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
-    beds: 5, baths: 6, area: '5,600 sqft',
-    liked: false,
-    description: 'A private hilltop oasis nestled in prestigious Beverly Hills. Features an Olympic-sized heated infinity pool, private movie screening cinema, wine cellar, landscaped botanical gardens, and total seclusion.',
-    specs: { beds: '5 Master Suites', baths: '6 Bathrooms', area: '5,600 sq.ft (520 m²)', parking: '4 Car Garage', amenities: ['Private Cinema', 'Infinity Pool', 'Gated Security', 'Wine Cellar'] }
-  },
-  {
-    id: 3,
-    category: 'interior',
-    title: 'Premium Interiors',
-    location: 'Kensington, London',
-    price: 6800,
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80',
-    summary: 'Bespoke Scandinavian interior design with smart climate controls and sun terrace.',
-    aiMatch: 89,
-    badgeStyle: 'background: var(--cyan-accent);',
-    beds: 2, baths: 2, area: '1,950 sqft',
-    liked: false,
-    description: 'Curated with warm Scandinavian aesthetics and custom acoustic insulation. High exposed wooden ceilings, floor-to-ceiling double-glazed windows, private heated sun terrace, and premium designer furnishings.',
-    specs: { beds: '2 Bedrooms', baths: '2 Baths', area: '1,950 sq.ft (181 m²)', parking: '1 Allocated Underground Bay', amenities: ['Sun Terrace', 'Underfloor Heating', 'Custom Interior', 'EV Charging'] }
-  },
-  {
-    id: 4,
-    category: 'villa',
-    title: 'Palma Vista Waterfront Villa',
-    location: 'Miami Beach, FL',
-    price: 9500,
-    image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80',
-    summary: 'Tropical modern masterpiece located right on the Miami waterfront.',
-    aiMatch: 95,
-    badgeStyle: 'background: var(--cyan-accent);',
-    beds: 4, baths: 4, area: '4,100 sqft',
-    liked: false,
-    description: 'Tropical modern masterpiece located right on the Miami waterfront. Direct deep-water dock access for private yachts, expansive outdoor entertaining deck with summer kitchen, and rooftop stargazing lounge.',
-    specs: { beds: '4 Bedrooms', baths: '4 Baths', area: '4,100 sq.ft (380 m²)', parking: '3 Vehicle Driveway', amenities: ['Private Boat Dock', 'Saltwater Pool', 'Rooftop Lounge', 'Chef Kitchen'] }
-  },
-  {
-    id: 5,
-    category: 'apartment',
-    title: 'Glasshouse High-Rise Flat',
-    location: 'Canary Wharf, London',
-    price: 3800,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-    summary: 'Modern urban excellence situated in the financial district.',
-    aiMatch: 87,
-    badgeStyle: 'background: var(--cyan-accent);',
-    beds: 2, baths: 2, area: '1,600 sqft',
-    liked: false,
-    description: 'Modern urban excellence situated in the financial district. Full access to residential wellness club, steam sauna, skyline gym, and 24-hour executive concierge support.',
-    specs: { beds: '2 Bedrooms', baths: '2 Baths', area: '1,600 sq.ft (148 m²)', parking: '1 Underground Slot', amenities: ['Skyline Gym', 'Sauna & Spa', '24/7 Security', 'Private Lounge'] }
-  },
-  {
-    id: 6,
-    category: 'estate',
-    title: 'Royal Palm Designer Suite',
-    location: 'Palm Jumeirah, Dubai',
-    price: 8200,
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
-    summary: 'Ultra-prestigious residence on Palm Jumeirah with private white sand beach access.',
-    aiMatch: 93,
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
-    beds: 3, baths: 3, area: '3,200 sqft',
-    liked: false,
-    description: 'Ultra-prestigious residence on Palm Jumeirah with private white sand beach access. Designed with handcrafted Italian lighting, gold-finished fittings, and direct sunset views over the Arabian Gulf.',
-    specs: { beds: '3 Bedrooms', baths: '3.5 Baths', area: '3,200 sq.ft (297 m²)', parking: '2 VIP Spaces', amenities: ['Private Beach Access', 'Jacuzzi', 'Private Butler Service', 'Valet'] }
-  },
-])
+const properties = ref([])
+const isLoadingProperties = ref(false)
+
+const loadProperties = async () => {
+  isLoadingProperties.value = true
+  try {
+    const res = await propertyService.getHomeData()
+    if (res?.properties && res.properties.length > 0) {
+      properties.value = res.properties
+    }
+  } catch (err) {
+    console.error('Failed loading properties from /api/home in LandingPage:', err)
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
 
 const filteredProperties = computed(() => {
   if (activeFilter.value === 'all') return properties.value
-  return properties.value.filter(p => p.category === activeFilter.value)
+  return properties.value.filter(p => {
+    const cat = (p.category || '').toLowerCase()
+    const typ = (p.type || '').toLowerCase()
+    const filter = activeFilter.value.toLowerCase()
+
+    if (filter === 'apartment') return cat.includes('apartment') || typ.includes('apartment')
+    if (filter === 'villa') return cat.includes('villa') || typ.includes('villa')
+    if (filter === 'estate') return cat.includes('estate') || typ.includes('villa') || typ.includes('penthouse')
+    if (filter === 'interior') return cat.includes('interior') || typ.includes('penthouse') || typ.includes('apartment')
+    return cat === filter || typ === filter
+  })
 })
+
+const visibleCount = ref(9)
+
+const displayedProperties = computed(() => {
+  return filteredProperties.value.slice(0, visibleCount.value)
+})
+
+const loadMore = () => {
+  visibleCount.value += 9
+}
+
+const setFilter = (val) => {
+  activeFilter.value = val
+  visibleCount.value = 9
+}
 
 const toggleFavorite = (property) => {
   property.liked = !property.liked
@@ -765,6 +737,7 @@ const showToast = (message) => {
 let counterObserver = null
 
 onMounted(() => {
+  loadProperties()
   window.addEventListener('scroll', handleScroll)
   document.addEventListener('keydown', handleKeydown)
 
@@ -884,5 +857,47 @@ onUnmounted(() => {
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+/* Load more properties button */
+.load-more-wrapper {
+  margin-top: 3rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-load-more {
+  background: linear-gradient(135deg, var(--navy-primary) 0%, #1e293b 100%);
+  color: var(--white);
+  padding: 0.95rem 2.6rem;
+  border-radius: var(--radius-btn);
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1.5px solid rgba(0, 210, 255, 0.4);
+  box-shadow: 0 8px 25px rgba(2, 6, 23, 0.25);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-load-more:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: var(--white);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(14, 165, 233, 0.4);
+  border-color: #38bdf8;
+}
+
+.btn-load-more i {
+  font-size: 0.9rem;
+  transition: transform 0.25s ease;
+}
+
+.btn-load-more:hover i {
+  transform: translateY(3px);
 }
 </style>
