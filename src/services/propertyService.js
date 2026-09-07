@@ -205,36 +205,102 @@ export const propertyService = {
   },
 
   /**
-   * AI Search directly using backend search endpoint
+   * AI Contextual Search endpoint
+   * POST /api/ai/contextual-search
    * @param {string} queryStr
    */
   async searchWithAi(queryStr) {
     const term = (queryStr || '').trim()
-    const res = await this.getProperties({ search: term, per_page: 20 })
+    if (!term) {
+      return { success: true, data: [] }
+    }
 
-    const words = term.toLowerCase().split(/\s+/).filter(Boolean)
+    try {
+      // 1. Call official backend AI contextual search endpoint
+      const response = await apiClient.post('/ai/contextual-search', {
+        query: term,
+        search: term,
+        prompt: term
+      })
 
-    const scored = (res.data || []).map(p => {
-      let score = 75
-      const content = `${p.title} ${p.area} ${p.type} ${p.summary} ${p.tags.join(' ')}`.toLowerCase()
+      // Extract array from response payload
+      let rawList = []
+      if (Array.isArray(response)) {
+        rawList = response
+      } else if (Array.isArray(response?.data)) {
+        rawList = response.data
+      } else if (Array.isArray(response?.data?.data)) {
+        rawList = response.data.data
+      } else if (Array.isArray(response?.properties)) {
+        rawList = response.properties
+      } else if (Array.isArray(response?.data?.properties)) {
+        rawList = response.data.properties
+      } else if (Array.isArray(response?.results)) {
+        rawList = response.results
+      } else if (Array.isArray(response?.data?.results)) {
+        rawList = response.data.results
+      }
 
-      words.forEach(w => {
-        if (content.includes(w)) {
-          score += 7
+      if (rawList && rawList.length > 0) {
+        const normalized = rawList.map(item => {
+          const rawProp = item.property || item.listing || item.data || item
+          const norm = normalizeProperty(rawProp)
+          const extractedScore = item.match_percentage || item.matchScore || item.match_score || item.score || item.relevance || rawProp.match_score || rawProp.matchScore
+          const matchScore = extractedScore ? Math.round(Number(extractedScore)) : (norm.aiMatch || 88)
+          return {
+            ...norm,
+            matchScore: Math.min(99, Math.max(60, matchScore))
+          }
+        })
+
+        // Sort descending by match score
+        normalized.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+
+        return {
+          success: true,
+          data: normalized,
+          source: 'backend_ai'
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /ai/contextual-search endpoint returned error, applying intelligent fallback:', err)
+    }
+
+    // 2. Intelligent Fallback: Database property query with client-side AI relevance scoring
+    try {
+      const res = await this.getProperties({ search: term, per_page: 20 })
+      const words = term.toLowerCase().split(/\s+/).filter(Boolean)
+
+      const scored = (res.data || []).map(p => {
+        let score = 75
+        const content = `${p.title} ${p.area} ${p.type} ${p.summary} ${p.tags.join(' ')}`.toLowerCase()
+
+        words.forEach(w => {
+          if (content.includes(w)) {
+            score += 7
+          }
+        })
+
+        return {
+          ...p,
+          matchScore: Math.min(99, Math.max(75, score))
         }
       })
 
+      scored.sort((a, b) => b.matchScore - a.matchScore)
+
       return {
-        ...p,
-        matchScore: Math.min(99, Math.max(75, score))
+        success: true,
+        data: scored,
+        source: 'fallback'
       }
-    })
-
-    scored.sort((a, b) => b.matchScore - a.matchScore)
-
-    return {
-      success: true,
-      data: scored
+    } catch (fallbackErr) {
+      console.error('Fallback search failed:', fallbackErr)
+      return {
+        success: false,
+        data: [],
+        error: fallbackErr.message
+      }
     }
   }
 }

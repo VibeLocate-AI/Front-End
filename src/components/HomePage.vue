@@ -1,7 +1,7 @@
 <template>
   <div class="dubai-home">
     <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header">
+    <header class="site-header" :class="{ scrolled: isScrolled }">
       <div class="header-inner">
         <!-- Logo -->
         <a class="brand" href="#top" @click.prevent="scrollTo('top')">
@@ -460,13 +460,56 @@
             <!-- 2. FEATURED PROPERTIES -->
             <section id="featured" class="content-block">
               <div class="block-header">
-                <h2>Featured Properties</h2>
-                <a href="#" class="see-all-link" @click.prevent="showToast('Viewing all featured listings.')">See all properties <span class="arrow">&gt;</span></a>
+                <div>
+                  <h2 class="section-heading-gradient">Featured Properties</h2>
+                  <p class="section-subtext">Hand-picked luxury villas, penthouses, and residences curated by AI</p>
+                </div>
+                <a href="#featured" class="see-all-link" @click.prevent="visibleFeaturedCount = filteredProperties.length">
+                  View All ({{ filteredProperties.length }}) <span class="arrow">&gt;</span>
+                </a>
               </div>
 
+              <!-- Modern Luxury Cards Grid -->
               <div class="featured-cards-grid">
-                <article v-for="prop in filteredProperties.slice(0, 4)" :key="prop.title" class="featured-property-card">
-                  <div class="card-media-wrapper" :style="{ backgroundImage: `url('${prop.image}')` }">
+                <article
+                  v-for="(prop, index) in displayedFeaturedProperties"
+                  :key="prop.id || prop.title + index"
+                  class="featured-property-card luxury-card"
+                  :style="{ animationDelay: `${(index % 4) * 80}ms` }"
+                  @click="openPropertyDetails(prop)"
+                >
+                  <!-- Media Cover Container -->
+                  <div class="card-media-wrapper">
+                    <img
+                      :src="prop.image"
+                      :alt="prop.title"
+                      class="card-img-cover"
+                      loading="lazy"
+                      @error="(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'"
+                    >
+                    
+                    <!-- Media Overlay On Hover -->
+                    <div class="card-media-overlay">
+                      <button
+                        type="button"
+                        class="btn-quick-view"
+                        @click.stop="openPropertyDetails(prop)"
+                      >
+                        <i class="fa-solid fa-eye"></i> Quick Details
+                      </button>
+                    </div>
+
+                    <!-- Top Badges -->
+                    <div class="card-top-badges">
+                      <span class="card-property-tag" :style="prop.badgeStyle">
+                        {{ prop.type }}
+                      </span>
+                      <span class="card-verified-tag">
+                        <i class="fa-solid fa-circle-check"></i> Verified
+                      </span>
+                    </div>
+
+                    <!-- Favorite Heart Button -->
                     <button
                       class="card-fav-btn"
                       :class="{ active: favorites.has(prop.title) }"
@@ -476,68 +519,255 @@
                     >
                       <i :class="favorites.has(prop.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
                     </button>
-                    <span class="card-property-tag">{{ prop.type }}</span>
+
+                    <!-- Bottom AI Match Badge -->
+                    <div class="card-match-chip">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i>
+                      <span>{{ prop.aiMatch || 96 }}% Match</span>
+                    </div>
                   </div>
 
+                  <!-- Details Content Box -->
                   <div class="card-details-box">
-                    <h3 class="property-card-title">{{ prop.title }}</h3>
-                    <p class="property-card-location">
-                      <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
-                    </p>
+                    <!-- Price & Rent Tag -->
                     <div class="property-card-pricing">
-                      <span class="price-val">{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</span>
-                      <span class="price-period">{{ prop.period || '/yr' }}</span>
+                      <div class="price-stack">
+                        <span class="price-val">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : 'N/A' }}</span>
+                        <span class="price-period">{{ prop.period || '/yr' }}</span>
+                      </div>
+                      <span class="rent-tag">{{ prop.rent_frequency || 'yearly' }}</span>
                     </div>
 
+                    <!-- Title & Location -->
+                    <h3 class="property-card-title" :title="prop.title">{{ prop.title }}</h3>
+                    <p class="property-card-location">
+                      <i class="fa-solid fa-location-dot"></i>
+                      <span>{{ prop.area }}</span>
+                    </p>
+
+                    <!-- Specs Row -->
                     <div class="property-card-specs">
-                      <span class="spec-item"><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
-                      <span class="spec-item"><i class="fa-solid fa-bath"></i> {{ prop.baths }} Baths</span>
-                      <span class="spec-item"><i class="fa-solid fa-vector-square"></i> {{ prop.size }} Sqft</span>
+                      <div class="spec-item" title="Bedrooms">
+                        <i class="fa-solid fa-bed"></i>
+                        <span>{{ prop.beds }} Beds</span>
+                      </div>
+                      <div class="spec-item" title="Bathrooms">
+                        <i class="fa-solid fa-bath"></i>
+                        <span>{{ prop.baths }} Baths</span>
+                      </div>
+                      <div class="spec-item" title="Built-up Area">
+                        <i class="fa-solid fa-vector-square"></i>
+                        <span>{{ prop.size }} Sqft</span>
+                      </div>
+                    </div>
+
+                    <!-- Action Footer Button -->
+                    <div class="property-card-footer">
+                      <button
+                        type="button"
+                        class="btn-card-details"
+                        @click.stop="openPropertyDetails(prop)"
+                      >
+                        <span>View Details</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                      </button>
                     </div>
                   </div>
                 </article>
 
+                <!-- Empty State -->
                 <div v-if="!filteredProperties.length" class="empty-search-state">
                   <i class="fa-solid fa-magnifying-glass"></i>
                   <p>No matching properties found for "{{ query }}".</p>
                   <button class="reset-search-btn" @click="query = ''">Reset Filters</button>
                 </div>
               </div>
+
+              <!-- Progressive Load More Section (ماتعرض كل البطاقات مرة واحدة) -->
+              <div v-if="filteredProperties.length > 4" class="luxury-load-more-container">
+                <div class="load-more-counter-wrap">
+                  <span class="counter-text">
+                    Showing <strong>{{ Math.min(visibleFeaturedCount, filteredProperties.length) }}</strong> of <strong>{{ filteredProperties.length }}</strong> Properties
+                  </span>
+                  <div class="counter-progress-bar">
+                    <div
+                      class="counter-progress-fill"
+                      :style="{ width: `${(Math.min(visibleFeaturedCount, filteredProperties.length) / filteredProperties.length) * 100}%` }"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="load-more-actions">
+                  <button
+                    v-if="visibleFeaturedCount < filteredProperties.length"
+                    type="button"
+                    class="btn-luxury-load-more"
+                    :class="{ loading: isLoadingMoreFeatured }"
+                    :disabled="isLoadingMoreFeatured"
+                    @click="loadMoreFeatured"
+                  >
+                    <i v-if="isLoadingMoreFeatured" class="fa-solid fa-circle-notch fa-spin"></i>
+                    <i v-else class="fa-solid fa-circle-plus"></i>
+                    <span>{{ isLoadingMoreFeatured ? 'Loading Properties...' : 'Load More Properties' }}</span>
+                  </button>
+
+                  <button
+                    v-else
+                    type="button"
+                    class="btn-luxury-show-less"
+                    @click="showLessFeatured"
+                  >
+                    <i class="fa-solid fa-angles-up"></i>
+                    <span>Show Less</span>
+                  </button>
+                </div>
+              </div>
             </section>
 
             <!-- 3. NEARBY & RECOMMENDED -->
-            <section class="content-block">
+            <section id="nearby-section" class="content-block">
               <div class="block-header">
-                <h2>Nearby &amp; Recommended</h2>
-                <a href="#" class="see-all-link" @click.prevent="showToast('Viewing all recommendations.')">See all <span class="arrow">&gt;</span></a>
+                <div>
+                  <h2 class="section-heading-gradient">Nearby &amp; Recommended</h2>
+                  <p class="section-subtext">Trending residences in top Dubai prime districts with high resident satisfaction</p>
+                </div>
+                <a href="#nearby-section" class="see-all-link" @click.prevent="visibleNearbyCount = nearbyProperties.length">
+                  View All ({{ nearbyProperties.length }}) <span class="arrow">&gt;</span>
+                </a>
               </div>
 
+              <!-- 2-Column Luxury Landscape Showcase Grid -->
               <div class="nearby-cards-grid">
-                <article v-for="prop in nearbyProperties" :key="prop.id || prop.title" class="nearby-item-card">
-                  <div class="nearby-media" :style="{ backgroundImage: `url('${prop.image}')` }">
+                <article
+                  v-for="(prop, nIdx) in displayedNearbyProperties"
+                  :key="prop.id || prop.title + nIdx"
+                  class="nearby-luxury-showcase-card"
+                  :style="{ animationDelay: `${(nIdx % 4) * 90}ms` }"
+                  @click="openPropertyDetails(prop)"
+                >
+                  <!-- Media Container on Left -->
+                  <div class="nearby-card-media">
+                    <img
+                      :src="prop.image"
+                      :alt="prop.title"
+                      class="nearby-card-img"
+                      loading="lazy"
+                      @error="(e) => e.target.src = 'https://images.unsplash.com/photo-1546412414-e1885259563a?auto=format&fit=crop&w=600&q=80'"
+                    >
+                    <div class="nearby-media-overlay">
+                      <span class="nearby-quick-txt"><i class="fa-solid fa-eye"></i> Quick Details</span>
+                    </div>
+
+                    <!-- Top Media Badges -->
+                    <div class="nearby-top-badges">
+                      <span class="nearby-distance-chip">
+                        <i class="fa-solid fa-location-crosshairs"></i> {{ (1.2 + (nIdx * 0.7)).toFixed(1) }} km
+                      </span>
+                      <span class="nearby-rating-chip">
+                        <i class="fa-solid fa-star"></i> 4.9
+                      </span>
+                    </div>
+
+                    <!-- Favorite Button -->
                     <button
-                      class="nearby-fav-btn"
+                      class="nearby-fav-circle"
                       :class="{ active: favorites.has(prop.title) }"
                       type="button"
+                      :aria-label="'Favorite ' + prop.title"
                       @click.stop="toggleFavorite(prop.title)"
                     >
                       <i :class="favorites.has(prop.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
                     </button>
+
+                    <!-- Type Tag -->
+                    <span class="nearby-prop-type" :style="prop.badgeStyle">
+                      {{ prop.type }}
+                    </span>
                   </div>
-                  <div class="nearby-info">
-                    <h4 class="nearby-title">{{ prop.title }}</h4>
-                    <p class="nearby-location"><i class="fa-solid fa-location-dot"></i> {{ prop.area }}</p>
-                    <div class="nearby-price">
-                      <strong>{{ prop.currencySymbol || 'AED ' }}{{ prop.price.toLocaleString() }}</strong>
-                      <small>{{ prop.period || '/yr' }}</small>
+
+                  <!-- Details Container on Right -->
+                  <div class="nearby-card-content">
+                    <div class="nearby-header-row">
+                      <span class="nearby-match-tag">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> {{ prop.aiMatch || 94 }}% Match
+                      </span>
+                      <span class="nearby-verified-pill">
+                        <i class="fa-solid fa-circle-check"></i> Verified
+                      </span>
                     </div>
-                    <div class="nearby-specs">
-                      <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
-                      <span><i class="fa-solid fa-bath"></i> {{ prop.baths }} Baths</span>
-                      <span><i class="fa-solid fa-vector-square"></i> {{ prop.size }} Sqft</span>
+
+                    <h4 class="nearby-card-title" :title="prop.title">{{ prop.title }}</h4>
+                    <p class="nearby-card-location">
+                      <i class="fa-solid fa-location-dot"></i>
+                      <span>{{ prop.area }}</span>
+                    </p>
+
+                    <div class="nearby-price-row">
+                      <div class="price-stack">
+                        <span class="nearby-price-amount">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : 'N/A' }}</span>
+                        <span class="nearby-price-period">{{ prop.period || '/yr' }}</span>
+                      </div>
+                      <span class="nearby-rent-pill">{{ prop.rent_frequency || 'yearly' }}</span>
+                    </div>
+
+                    <div class="nearby-specs-row">
+                      <span class="nearby-spec-item"><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
+                      <span class="nearby-spec-item"><i class="fa-solid fa-bath"></i> {{ prop.baths }} Baths</span>
+                      <span class="nearby-spec-item"><i class="fa-solid fa-vector-square"></i> {{ prop.size }} Sqft</span>
+                    </div>
+
+                    <div class="nearby-action-footer">
+                      <button
+                        type="button"
+                        class="btn-nearby-explore"
+                        @click.stop="openPropertyDetails(prop)"
+                      >
+                        <span>Explore Property</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                      </button>
                     </div>
                   </div>
                 </article>
+              </div>
+
+              <!-- Nearby Progressive Load More (ماتعرض كل البطاقات مرة واحدة) -->
+              <div v-if="nearbyProperties.length > 4" class="luxury-load-more-container" style="margin-top: 28px;">
+                <div class="load-more-counter-wrap">
+                  <span class="counter-text">
+                    Showing <strong>{{ Math.min(visibleNearbyCount, nearbyProperties.length) }}</strong> of <strong>{{ nearbyProperties.length }}</strong> Recommendations
+                  </span>
+                  <div class="counter-progress-bar">
+                    <div
+                      class="counter-progress-fill"
+                      :style="{ width: `${(Math.min(visibleNearbyCount, nearbyProperties.length) / nearbyProperties.length) * 100}%` }"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="load-more-actions">
+                  <button
+                    v-if="visibleNearbyCount < nearbyProperties.length"
+                    type="button"
+                    class="btn-luxury-load-more"
+                    :class="{ loading: isLoadingMoreNearby }"
+                    :disabled="isLoadingMoreNearby"
+                    @click="loadMoreNearby"
+                  >
+                    <i v-if="isLoadingMoreNearby" class="fa-solid fa-circle-notch fa-spin"></i>
+                    <i v-else class="fa-solid fa-circle-plus"></i>
+                    <span>{{ isLoadingMoreNearby ? 'Loading Recommendations...' : 'Load More Recommendations' }}</span>
+                  </button>
+
+                  <button
+                    v-else
+                    type="button"
+                    class="btn-luxury-show-less"
+                    @click="showLessNearby"
+                  >
+                    <i class="fa-solid fa-angles-up"></i>
+                    <span>Show Less</span>
+                  </button>
+                </div>
               </div>
             </section>
           </div>
@@ -708,6 +938,202 @@
       </div>
     </footer>
 
+    <!-- LUXURY PROPERTY DETAILS MODAL -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div
+          v-if="isModalOpen && selectedProperty"
+          class="property-modal-overlay"
+          @click.self="closePropertyDetails"
+        >
+          <div class="property-modal-container" role="dialog" aria-modal="true">
+            <!-- Close Button -->
+            <button
+              type="button"
+              class="modal-close-btn"
+              aria-label="Close modal"
+              @click="closePropertyDetails"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="modal-grid-layout">
+              <!-- Left: Media Showcase -->
+              <div class="modal-media-col">
+                <div class="modal-hero-image-wrap">
+                  <img
+                    :src="activeModalImage || selectedProperty.image"
+                    :alt="selectedProperty.title"
+                    class="modal-hero-img"
+                  >
+                  <div class="modal-media-badges">
+                    <span class="modal-badge-type">{{ selectedProperty.type }}</span>
+                    <span class="modal-badge-ai">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> {{ selectedProperty.aiMatch || 96 }}% Match
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Image Thumbnails Strip -->
+                <div
+                  v-if="selectedProperty.images && selectedProperty.images.length > 1"
+                  class="modal-thumbnails-strip"
+                >
+                  <button
+                    v-for="(img, idx) in selectedProperty.images"
+                    :key="idx"
+                    type="button"
+                    class="modal-thumb-btn"
+                    :class="{ active: activeModalImage === img }"
+                    @click="activeModalImage = img"
+                  >
+                    <img :src="img" :alt="selectedProperty.title + ' view ' + (idx + 1)">
+                  </button>
+                </div>
+
+                <!-- AI Insight Note -->
+                <div class="modal-ai-recommendation-box">
+                  <div class="ai-box-header">
+                    <i class="fa-solid fa-robot"></i>
+                    <strong>VibeLocate AI Insights</strong>
+                  </div>
+                  <p>
+                    This property matches high lifestyle demand in {{ selectedProperty.area }}, featuring premium finishing, optimal transit accessibility, and strong rental yields.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Right: Details & Specifications -->
+              <div class="modal-info-col">
+                <div class="modal-info-header">
+                  <div class="modal-header-top-row">
+                    <span class="modal-verified-pill">
+                      <i class="fa-solid fa-certificate"></i> Verified Luxury Listing
+                    </span>
+                    <button
+                      type="button"
+                      class="modal-fav-toggle"
+                      :class="{ active: favorites.has(selectedProperty.title) }"
+                      @click="toggleFavorite(selectedProperty.title)"
+                    >
+                      <i :class="favorites.has(selectedProperty.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                      <span>{{ favorites.has(selectedProperty.title) ? 'Favorited' : 'Save' }}</span>
+                    </button>
+                  </div>
+
+                  <h2 class="modal-property-title">{{ selectedProperty.title }}</h2>
+                  <p class="modal-property-location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ selectedProperty.area }}</span>
+                  </p>
+
+                  <div class="modal-pricing-box">
+                    <div class="modal-price-group">
+                      <span class="modal-currency">{{ selectedProperty.currencySymbol || 'AED ' }}</span>
+                      <span class="modal-price-number">{{ selectedProperty.price ? selectedProperty.price.toLocaleString() : 'N/A' }}</span>
+                      <span class="modal-period">{{ selectedProperty.period || '/yr' }}</span>
+                    </div>
+                    <span class="modal-rent-frequency">{{ selectedProperty.rent_frequency || 'Yearly Lease' }}</span>
+                  </div>
+                </div>
+
+                <!-- Key Specs Grid -->
+                <div class="modal-specs-section">
+                  <h4 class="modal-section-title">Property Highlights</h4>
+                  <div class="modal-specs-grid">
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-bed"></i>
+                      <div>
+                        <span class="spec-label">Bedrooms</span>
+                        <strong class="spec-value">{{ selectedProperty.beds }} Bedrooms</strong>
+                      </div>
+                    </div>
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-bath"></i>
+                      <div>
+                        <span class="spec-label">Bathrooms</span>
+                        <strong class="spec-value">{{ selectedProperty.baths }} Bathrooms</strong>
+                      </div>
+                    </div>
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-vector-square"></i>
+                      <div>
+                        <span class="spec-label">Total Area</span>
+                        <strong class="spec-value">{{ selectedProperty.size }} Sqft</strong>
+                      </div>
+                    </div>
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-couch"></i>
+                      <div>
+                        <span class="spec-label">Furnishing</span>
+                        <strong class="spec-value" style="text-transform: capitalize;">{{ selectedProperty.is_furnished || 'Unfurnished' }}</strong>
+                      </div>
+                    </div>
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-square-parking"></i>
+                      <div>
+                        <span class="spec-label">Parking</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.parking || 'Available' }}</strong>
+                      </div>
+                    </div>
+                    <div class="modal-spec-card">
+                      <i class="fa-solid fa-building"></i>
+                      <div>
+                        <span class="spec-label">Property Type</span>
+                        <strong class="spec-value">{{ selectedProperty.type }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Amenities & Features Tags -->
+                <div class="modal-amenities-section">
+                  <h4 class="modal-section-title">Amenities &amp; Features</h4>
+                  <div class="modal-amenities-tags">
+                    <span
+                      v-for="(tag, tIdx) in (selectedProperty.tags && selectedProperty.tags.length ? selectedProperty.tags : ['Balcony', 'Central A/C', 'Security', 'Built-in Wardrobes', 'Shared Gym', 'Covered Parking'])"
+                      :key="tIdx"
+                      class="modal-amenity-chip"
+                    >
+                      <i class="fa-solid fa-circle-check"></i> {{ tag }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div class="modal-description-section">
+                  <h4 class="modal-section-title">About this property</h4>
+                  <p class="modal-description-text">
+                    {{ selectedProperty.description || selectedProperty.summary || 'A prestigious residential opportunity offering unmatched comfort, modern architectural finishes, and panoramic views of Dubai.' }}
+                  </p>
+                </div>
+
+                <!-- Modal Action Buttons -->
+                <div class="modal-action-buttons">
+                  <button
+                    type="button"
+                    class="btn-modal-primary"
+                    @click="showToast('Scheduling private viewing for ' + selectedProperty.title)"
+                  >
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span>Schedule a Private Viewing</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-modal-secondary"
+                    @click="showToast('Connecting you with the verified agent...')"
+                  >
+                    <i class="fa-solid fa-phone"></i>
+                    <span>Contact Agent</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Toast Feedback Notification -->
     <div class="toast-notification" :class="{ visible: toastVisible }">
       <i class="fa-solid fa-circle-check"></i>
@@ -717,7 +1143,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
@@ -733,7 +1159,81 @@ const properties = ref([])
 const isLoadingProperties = ref(false)
 const isLiveApi = ref(false)
 
+// Progressive pagination states (ماتعرض كل البطاقات مرة واحدة)
+const visibleFeaturedCount = ref(4)
+const isLoadingMoreFeatured = ref(false)
+const visibleNearbyCount = ref(4)
+
+// Details Modal State
+const selectedProperty = ref(null)
+const isModalOpen = ref(false)
+const activeModalImage = ref('')
+
+const openPropertyDetails = (prop) => {
+  selectedProperty.value = prop
+  activeModalImage.value = prop.image || (prop.images && prop.images[0]) || ''
+  isModalOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closePropertyDetails = () => {
+  isModalOpen.value = false
+  setTimeout(() => {
+    selectedProperty.value = null
+    document.body.style.overflow = ''
+  }, 250)
+}
+
+const handleKeyDown = (e) => {
+  if (e.key === 'Escape' && isModalOpen.value) {
+    closePropertyDetails()
+  }
+}
+
 const nearbyProperties = computed(() => properties.value.slice(4))
+const displayedFeaturedProperties = computed(() => filteredProperties.value.slice(0, visibleFeaturedCount.value))
+const displayedNearbyProperties = computed(() => nearbyProperties.value.slice(0, visibleNearbyCount.value))
+
+const loadMoreFeatured = () => {
+  isLoadingMoreFeatured.value = true
+  setTimeout(() => {
+    visibleFeaturedCount.value += 4
+    isLoadingMoreFeatured.value = false
+    showToast(`Loaded more properties (${Math.min(visibleFeaturedCount.value, filteredProperties.value.length)} of ${filteredProperties.value.length})`)
+  }, 350)
+}
+
+const showLessFeatured = () => {
+  visibleFeaturedCount.value = 4
+  const section = document.getElementById('featured')
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+const isLoadingMoreNearby = ref(false)
+
+const loadMoreNearby = () => {
+  isLoadingMoreNearby.value = true
+  setTimeout(() => {
+    visibleNearbyCount.value += 4
+    isLoadingMoreNearby.value = false
+    showToast(`Loaded more recommendations (${Math.min(visibleNearbyCount.value, nearbyProperties.value.length)} of ${nearbyProperties.value.length})`)
+  }, 350)
+}
+
+const showLessNearby = () => {
+  visibleNearbyCount.value = 4
+  const section = document.getElementById('nearby-section')
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+const isScrolled = ref(false)
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 20
+}
 
 const query = ref('')
 const favorites = ref(new Set())
@@ -820,13 +1320,23 @@ const runAiSearch = (customQuery) => {
   activeStep.value = 1
   window.scrollTo({ top: 0, behavior: 'smooth' })
 
-  // Trigger dynamic AI search against real property database
+  let searchCompleted = false
+  let searchReturnedResults = false
+
+  // Trigger dynamic AI search against real property database and AI endpoint
   propertyService.searchWithAi(qTrim).then(res => {
+    searchCompleted = true
     if (res?.data && res.data.length > 0) {
-      aiMatchedList.value = res.data.slice(0, 4)
+      searchReturnedResults = true
+      aiMatchedList.value = res.data.slice(0, 8)
+    } else {
+      searchReturnedResults = false
+      aiMatchedList.value = []
     }
   }).catch(err => {
-    console.warn('AI search error, keeping current matched list:', err)
+    searchCompleted = true
+    searchReturnedResults = false
+    console.warn('AI search error:', err)
   })
 
   if (progressInterval) clearInterval(progressInterval)
@@ -848,7 +1358,11 @@ const runAiSearch = (customQuery) => {
     if (progress >= 100) {
       clearInterval(progressInterval)
       setTimeout(() => {
-        aiSearchState.value = 'results'
+        if (searchCompleted && !searchReturnedResults && (!aiMatchedList.value || aiMatchedList.value.length === 0)) {
+          aiSearchState.value = 'no_results'
+        } else {
+          aiSearchState.value = 'results'
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }, 150)
     }
@@ -1046,6 +1560,20 @@ onMounted(async () => {
       console.warn('Profile fetch failed, using cached session:', err)
     }
   }
+
+  // 6. Keyboard listener for Escape key to close modal
+  window.addEventListener('keydown', handleKeyDown)
+
+  // 7. Window scroll listener for fixed sticky navbar
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  handleScroll()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', handleDocumentClick)
+  document.body.style.overflow = ''
 })
 </script>
 
