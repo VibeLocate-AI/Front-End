@@ -1,0 +1,61 @@
+name: Deploy Front-End to Hosting
+
+on:
+  push:
+    branches: [ main, home ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test Front-End
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://vibelocate-laravel.onrender.com/api' }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID || '25578254432-pf7p233hl5g0l7c4stt7ol421u48vlfa.apps.googleusercontent.com' }}
+
+      - name: Archive Production Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Hosting via SSH
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && secrets.HOSTING_IP != ''
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTING_IP }}
+          username: ${{ secrets.HOSTING_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ${{ secrets.HOSTING_FRONTEND_PATH || '/var/www/vibelocate-frontend' }}
+            git pull origin main
+            npm ci
+            npm run build
