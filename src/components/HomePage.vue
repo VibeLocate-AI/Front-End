@@ -25,7 +25,7 @@
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Buy</a>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Rent</a>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">New Projects</a>
-          <a class="nav-item" href="/bb/index.html">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></a>
+          <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
           <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">Areas</a>
           <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">About Us</a>
         </nav>

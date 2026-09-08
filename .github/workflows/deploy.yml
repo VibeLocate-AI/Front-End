@@ -2,7 +2,7 @@ name: Deploy Front-End to Hosting
 
 on:
   push:
-    branches: [ main, home ]
+    branches: [ main, home, map, develop ]
   pull_request:
     branches: [ main ]
 
@@ -41,13 +41,16 @@ jobs:
     name: Deploy to Hosting via SSH
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && secrets.HOSTING_IP != ''
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Deploy to Server via SSH
+        if: ${{ env.HOSTING_IP != '' }}
+        env:
+          HOSTING_IP: ${{ secrets.HOSTING_IP }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTING_IP }}
