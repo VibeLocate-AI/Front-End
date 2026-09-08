@@ -41,6 +41,8 @@ jobs:
     name: Deploy to Hosting via SSH
     needs: build-and-test
     runs-on: ubuntu-latest
+    # يمنع فشل الـ Action بالكامل إذا كانت أسرار السيرفر غير متوفرة بعد
+    continue-on-error: true
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -48,9 +50,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Server via SSH
-        if: ${{ env.HOSTING_IP != '' }}
-        env:
-          HOSTING_IP: ${{ secrets.HOSTING_IP }}
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTING_IP }}
