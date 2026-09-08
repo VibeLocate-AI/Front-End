@@ -7,6 +7,7 @@ import ResetPasswordPage from '../components/ResetPasswordPage.vue'
 import ResetSuccessPage from '../components/ResetSuccessPage.vue'
 import LandingPage from '../components/LandingPage.vue'
 import HomePage from '../components/HomePage.vue'
+import MapPage from '../components/MapPage.vue'
 
 const routes = [
   {
@@ -18,6 +19,11 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: HomePage
+  },
+  {
+    path: '/map',
+    name: 'Map',
+    component: MapPage
   },
   {
     path: '/login',
