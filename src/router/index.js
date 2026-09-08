@@ -8,6 +8,7 @@ import ResetSuccessPage from '../components/ResetSuccessPage.vue'
 import LandingPage from '../components/LandingPage.vue'
 import HomePage from '../components/HomePage.vue'
 import MapPage from '../components/MapPage.vue'
+import ProfilePage from '../components/ProfilePage.vue'
 
 const routes = [
   {
@@ -24,6 +25,16 @@ const routes = [
     path: '/map',
     name: 'Map',
     component: MapPage
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfilePage
+  },
+  {
+    path: '/profile/:tab',
+    name: 'ProfileTab',
+    component: ProfilePage
   },
   {
     path: '/login',
