@@ -72,15 +72,15 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Profile management portal opening soon.')">
+                <button class="dropdown-menu-item" @click="$router.push('/profile'); profileMenuOpen = false">
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
-                <button class="dropdown-menu-item" @click="scrollTo('featured'); profileMenuOpen = false">
+                <button class="dropdown-menu-item" @click="$router.push('/profile/saved'); profileMenuOpen = false">
                   <i class="fa-regular fa-heart"></i>
                   <span>Saved Properties ({{ favorites.size }})</span>
                 </button>
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Your active search filters are saved.')">
+                <button class="dropdown-menu-item" @click="$router.push('/profile/preferences'); profileMenuOpen = false">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Preferences</span>
                 </button>
