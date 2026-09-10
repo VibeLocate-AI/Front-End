@@ -205,6 +205,27 @@ export const propertyService = {
   },
 
   /**
+   * Fetch all geo-located properties directly from GET /api/map
+   */
+  async getMapProperties() {
+    try {
+      const response = await apiClient.get('/map')
+      const rawList = Array.isArray(response)
+        ? response
+        : (Array.isArray(response?.data) ? response.data : (response?.data?.data || []))
+
+      return {
+        success: true,
+        total: response?.total || rawList.length,
+        data: rawList
+      }
+    } catch (err) {
+      console.warn('Failed to fetch from /api/map:', err)
+      return { success: false, data: [], error: err }
+    }
+  },
+
+  /**
    * AI Contextual Search endpoint
    * POST /api/ai/contextual-search
    * @param {string} queryStr
