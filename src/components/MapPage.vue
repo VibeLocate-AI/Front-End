@@ -36,8 +36,16 @@
             List Your Property <span class="plus-sign">+</span>
           </button>
           
-          <button class="icon-action-btn" type="button" aria-label="Favorites" @click="showToast('You have ' + (favorites?.size || 0) + ' saved properties.')">
-            <i class="fa-regular fa-heart"></i>
+          <button
+            class="icon-action-btn"
+            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
+            type="button"
+            aria-label="Saved Properties"
+            title="Saved Properties / العقارات المحفوظة"
+            @click="isSavedModalOpen = true"
+          >
+            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
           </button>
 
           <div class="user-profile-menu-container" ref="profileDropdownRef">
@@ -76,10 +84,10 @@
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
-                <router-link to="/home#featured" class="dropdown-menu-item" style="text-decoration:none;">
-                  <i class="fa-regular fa-heart"></i>
-                  <span>Saved Properties ({{ favorites?.size || 0 }})</span>
-                </router-link>
+                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">
+                  <i class="fa-solid fa-heart text-danger"></i>
+                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
+                </button>
                 <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Your active search filters are saved.')">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Preferences</span>
@@ -339,6 +347,13 @@
 
     <!-- TOAST -->
     <div id="map-toast" class="map-toast"><i class="fa-solid fa-circle-check"></i><span id="toast-message">Ready</span></div>
+
+    <!-- Saved Properties Modal -->
+    <SavedPropertiesModal
+      :is-open="isSavedModalOpen"
+      @close="isSavedModalOpen = false"
+      @open-property="handleOpenSavedProp"
+    />
   </div>
 </template>
 
@@ -346,6 +361,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { favoritesService } from '../services/favoritesService'
+import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
 const router = useRouter()
 
@@ -354,7 +371,16 @@ const isScrolled = ref(false)
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
-const favorites = ref(new Set())
+const isSavedModalOpen = ref(false)
+const favorites = computed(() => favoritesService.savedKeys.value)
+
+const handleOpenSavedProp = (prop) => {
+  if (prop && prop.id && typeof openPropertyModal === 'function') {
+    openPropertyModal(prop.id)
+  } else {
+    router.push('/home#featured')
+  }
+}
 
 // User state
 const user = ref({

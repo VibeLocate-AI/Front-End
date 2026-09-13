@@ -36,8 +36,16 @@
             List Your Property <span class="plus-sign">+</span>
           </button>
           
-          <button class="icon-action-btn" type="button" aria-label="Favorites" @click="showToast('You have ' + favorites.size + ' saved properties.')">
-            <i class="fa-regular fa-heart"></i>
+          <button
+            class="icon-action-btn"
+            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
+            type="button"
+            aria-label="Saved Properties"
+            title="Saved Properties / العقارات المحفوظة"
+            @click="isSavedModalOpen = true"
+          >
+            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
           </button>
 
           <div class="user-profile-menu-container" ref="profileDropdownRef">
@@ -76,9 +84,9 @@
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
-                <button class="dropdown-menu-item" @click="$router.push('/profile/saved'); profileMenuOpen = false">
-                  <i class="fa-regular fa-heart"></i>
-                  <span>Saved Properties ({{ favorites.size }})</span>
+                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
+                  <i class="fa-solid fa-heart text-danger"></i>
+                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
                 </button>
                 <button class="dropdown-menu-item" @click="$router.push('/profile/preferences'); profileMenuOpen = false">
                   <i class="fa-solid fa-sliders"></i>
@@ -1139,6 +1147,13 @@
       <i class="fa-solid fa-circle-check"></i>
       <span>{{ toastMessage }}</span>
     </div>
+
+    <!-- Saved Properties Modal -->
+    <SavedPropertiesModal
+      :is-open="isSavedModalOpen"
+      @close="isSavedModalOpen = false"
+      @open-property="openPropertyDetails"
+    />
   </div>
 </template>
 
@@ -1147,6 +1162,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
+import { favoritesService } from '../services/favoritesService'
+import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -1236,7 +1253,8 @@ const handleScroll = () => {
 }
 
 const query = ref('')
-const favorites = ref(new Set())
+const isSavedModalOpen = ref(false)
+const favorites = computed(() => favoritesService.savedKeys.value)
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
@@ -1440,16 +1458,17 @@ const filteredProperties = computed(() => {
   )
 })
 
-const toggleFavorite = (title) => {
-  const next = new Set(favorites.value)
-  if (next.has(title)) {
-    next.delete(title)
-    showToast(`Removed from favorites`)
+const toggleFavorite = (prop) => {
+  const targetProp = typeof prop === 'string'
+    ? properties.value.find(p => p.title === prop) || { title: prop }
+    : prop
+
+  const isSaved = favoritesService.toggleSave(targetProp)
+  if (isSaved) {
+    showToast(`Added "${targetProp.title || 'Property'}" to favorites ❤️`)
   } else {
-    next.add(title)
-    showToast(`Added to favorites`)
+    showToast(`Removed from favorites`)
   }
-  favorites.value = next
 }
 
 const handleSearch = () => {
