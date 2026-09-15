@@ -9,6 +9,7 @@ import LandingPage from '../components/LandingPage.vue'
 import HomePage from '../components/HomePage.vue'
 import MapPage from '../components/MapPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
+import RentPage from '../components/RentPage.vue'
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: HomePage
+  },
+  {
+    path: '/rent',
+    name: 'Rent',
+    component: RentPage
   },
   {
     path: '/map',
