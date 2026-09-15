@@ -3378,14 +3378,15 @@ img {
 .explore-hero-banner {
   position: relative;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(7, 13, 25, 0.4) 0%, rgba(7, 13, 25, 0.95) 100%),
+  background: linear-gradient(180deg, rgba(7, 13, 25, 0.35) 0%, rgba(7, 13, 25, 0.82) 68%, #070d19 100%),
               url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
   padding: 40px 36px 32px;
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 0;
+  overflow: hidden;
   box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.5);
 }
 
@@ -4082,7 +4083,6 @@ img {
 .per-page-select option {
   background: #0f172a;
 }
-
 
 
 
