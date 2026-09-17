@@ -83,6 +83,9 @@ export function normalizeProperty(raw) {
 
   const frequency = raw.rent_frequency ? `/${raw.rent_frequency}` : '/month'
   const currencySymbol = raw.currency === 'AED' ? 'AED ' : '$'
+  const listingPurpose = String(
+    raw.listing_purpose || raw.purpose || raw.offer_type || raw.transaction_type || raw.listing_type || ''
+  ).toLowerCase()
 
   return {
     id: raw.id,
@@ -95,7 +98,10 @@ export function normalizeProperty(raw) {
     price: priceNum,
     currency: raw.currency || 'AED',
     currencySymbol,
-    rent_frequency: raw.rent_frequency || 'yearly',
+    rent_frequency: raw.rent_frequency || '',
+    listingPurpose,
+    isForRent: raw.is_for_rent === true || raw.is_for_rent === 1 || raw.is_for_rent === '1' ||
+      listingPurpose.includes('rent') || Boolean(raw.rent_frequency),
     period: frequency,
     beds,
     baths,

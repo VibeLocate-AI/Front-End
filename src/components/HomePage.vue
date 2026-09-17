@@ -23,7 +23,7 @@
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
           <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('buy') }}</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('rent') }}</a>
+          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('newProjects') }}</a>
           <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
           <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
@@ -39,8 +39,16 @@
             {{ t('listProperty') }}
           </button>
           
-          <button class="icon-action-btn" type="button" aria-label="Favorites" @click="showToast('You have ' + favorites.size + ' saved properties.')">
-            <i class="fa-regular fa-heart"></i>
+          <button
+            class="icon-action-btn"
+            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
+            type="button"
+            aria-label="Saved Properties"
+            title="Saved Properties / العقارات المحفوظة"
+            @click="isSavedModalOpen = true"
+          >
+            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
           </button>
 
           <div class="user-profile-menu-container" ref="profileDropdownRef">
@@ -79,9 +87,9 @@
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
-                <button class="dropdown-menu-item" @click="$router.push('/profile/saved'); profileMenuOpen = false">
-                  <i class="fa-regular fa-heart"></i>
-                  <span>Saved Properties ({{ favorites.size }})</span>
+                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
+                  <i class="fa-solid fa-heart text-danger"></i>
+                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
                 </button>
                 <button class="dropdown-menu-item" @click="$router.push('/profile/preferences'); profileMenuOpen = false">
                   <i class="fa-solid fa-sliders"></i>
@@ -1142,6 +1150,13 @@
       <i class="fa-solid fa-circle-check"></i>
       <span>{{ toastMessage }}</span>
     </div>
+
+    <!-- Saved Properties Modal -->
+    <SavedPropertiesModal
+      :is-open="isSavedModalOpen"
+      @close="isSavedModalOpen = false"
+      @open-property="openPropertyDetails"
+    />
   </div>
 </template>
 
@@ -1152,6 +1167,8 @@ import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+import { favoritesService } from '../services/favoritesService'
+import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
 const { t, isRtl } = useThemeAndLanguage()
 
@@ -1243,19 +1260,8 @@ const handleScroll = () => {
 }
 
 const query = ref('')
-
-const loadSavedFavorites = () => {
-  try {
-    const raw = localStorage.getItem('vibe_saved_properties')
-    if (raw) {
-      const list = JSON.parse(raw)
-      if (Array.isArray(list)) return new Set(list.map(p => p.title))
-    }
-  } catch (e) { /* ignore */ }
-  return new Set()
-}
-
-const favorites = ref(loadSavedFavorites())
+const isSavedModalOpen = ref(false)
+const favorites = computed(() => favoritesService.savedKeys.value)
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
@@ -1459,44 +1465,17 @@ const filteredProperties = computed(() => {
   )
 })
 
-const toggleFavorite = (title) => {
-  const next = new Set(favorites.value)
-  let rawList = []
-  try {
-    const raw = localStorage.getItem('vibe_saved_properties')
-    if (raw) rawList = JSON.parse(raw) || []
-  } catch (e) { /* ignore */ }
+const toggleFavorite = (prop) => {
+  const targetProp = typeof prop === 'string'
+    ? properties.value.find(p => p.title === prop) || { title: prop }
+    : prop
 
-  if (next.has(title)) {
-    next.delete(title)
-    rawList = rawList.filter(p => p.title !== title)
-    showToast(`Removed "${title}" from favorites.`)
+  const isSaved = favoritesService.toggleSave(targetProp)
+  if (isSaved) {
+    showToast(`Added "${targetProp.title || 'Property'}" to favorites ❤️`)
   } else {
-    next.add(title)
-    const pInfo = properties.value?.find(p => p.title === title)
-    const newProp = pInfo ? {
-      id: pInfo.id || Date.now(),
-      title: pInfo.title,
-      location: pInfo.area || 'Dubai',
-      price: pInfo.price,
-      beds: pInfo.beds || 3,
-      baths: pInfo.baths || 3,
-      sqft: pInfo.sqft || '2,000',
-      type: pInfo.type || 'Apartments',
-      image: pInfo.image,
-      saved: true
-    } : { id: Date.now(), title, saved: true }
-
-    if (!rawList.some(p => p.title === title)) {
-      rawList.unshift(newProp)
-    }
-    showToast(`Saved "${title}" to favorites.`)
+    showToast(`Removed from favorites`)
   }
-  favorites.value = next
-  try {
-    localStorage.setItem('vibe_saved_properties', JSON.stringify(rawList))
-    localStorage.setItem('vibe_saved_titles', JSON.stringify(Array.from(next)))
-  } catch (e) { /* ignore */ }
 }
 
 const handleSearch = () => {
