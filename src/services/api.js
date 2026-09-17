@@ -16,12 +16,16 @@ export const apiClient = axios.create({
   }
 })
 
-// Request Interceptor: Attach Auth Token if available
+// Request Interceptor: Attach Auth Token if available and handle FormData
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    // If payload is FormData, remove Content-Type so Axios/browser sets boundary automatically
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type']
     }
     return config
   },
@@ -37,8 +41,11 @@ apiClient.interceptors.response.use(
     if (response.data && response.data.success === false) {
       const msg = response.data.message || response.data.error || 'Request failed'
       const customError = new Error(msg)
-      customError.status = 200
+      // Use actual HTTP status so callers can distinguish 200-with-failure from 4xx/5xx
+      customError.status = response.status
+      customError.httpStatus = response.status
       customError.data = response.data
+      customError.isSuccessFalse = true
       return Promise.reject(customError)
     }
     return response.data
