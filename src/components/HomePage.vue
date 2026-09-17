@@ -21,19 +21,22 @@
 
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">Home</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Buy</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Rent</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">New Projects</a>
-          <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
-          <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">Areas</a>
-          <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">About Us</a>
+          <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
+          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('buy') }}</a>
+          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('rent') }}</a>
+          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('newProjects') }}</a>
+          <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
+          <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
+          <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">{{ t('aboutUs') }}</a>
         </nav>
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <button class="btn-list-property" type="button" @click="showToast('Property listing portal opening soon.')">
-            List Your Property <span class="plus-sign">+</span>
+          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
+          <NavbarControls />
+
+          <button class="btn-list-property" type="button" @click="$router.push('/add-property')">
+            {{ t('listProperty') }}
           </button>
           
           <button class="icon-action-btn" type="button" aria-label="Favorites" @click="showToast('You have ' + favorites.size + ' saved properties.')">
@@ -810,7 +813,7 @@
               <div class="promo-content">
                 <h3 class="promo-heading">List Your Property<br>With Dubai Estates</h3>
                 <p class="promo-description">Reach thousands of potential buyers and renters.</p>
-                <button class="btn-promo-action" type="button" @click="showToast('Property listing form opening...')">
+                <button class="btn-promo-action" type="button" @click="$router.push('/add-property')">
                   List Your Property <span class="promo-chevron">&gt;</span>
                 </button>
               </div>
@@ -1147,6 +1150,10 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
+import NavbarControls from './NavbarControls.vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+
+const { t, isRtl } = useThemeAndLanguage()
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -1236,7 +1243,19 @@ const handleScroll = () => {
 }
 
 const query = ref('')
-const favorites = ref(new Set())
+
+const loadSavedFavorites = () => {
+  try {
+    const raw = localStorage.getItem('vibe_saved_properties')
+    if (raw) {
+      const list = JSON.parse(raw)
+      if (Array.isArray(list)) return new Set(list.map(p => p.title))
+    }
+  } catch (e) { /* ignore */ }
+  return new Set()
+}
+
+const favorites = ref(loadSavedFavorites())
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
@@ -1442,14 +1461,42 @@ const filteredProperties = computed(() => {
 
 const toggleFavorite = (title) => {
   const next = new Set(favorites.value)
+  let rawList = []
+  try {
+    const raw = localStorage.getItem('vibe_saved_properties')
+    if (raw) rawList = JSON.parse(raw) || []
+  } catch (e) { /* ignore */ }
+
   if (next.has(title)) {
     next.delete(title)
-    showToast(`Removed from favorites`)
+    rawList = rawList.filter(p => p.title !== title)
+    showToast(`Removed "${title}" from favorites.`)
   } else {
     next.add(title)
-    showToast(`Added to favorites`)
+    const pInfo = properties.value?.find(p => p.title === title)
+    const newProp = pInfo ? {
+      id: pInfo.id || Date.now(),
+      title: pInfo.title,
+      location: pInfo.area || 'Dubai',
+      price: pInfo.price,
+      beds: pInfo.beds || 3,
+      baths: pInfo.baths || 3,
+      sqft: pInfo.sqft || '2,000',
+      type: pInfo.type || 'Apartments',
+      image: pInfo.image,
+      saved: true
+    } : { id: Date.now(), title, saved: true }
+
+    if (!rawList.some(p => p.title === title)) {
+      rawList.unshift(newProp)
+    }
+    showToast(`Saved "${title}" to favorites.`)
   }
   favorites.value = next
+  try {
+    localStorage.setItem('vibe_saved_properties', JSON.stringify(rawList))
+    localStorage.setItem('vibe_saved_titles', JSON.stringify(Array.from(next)))
+  } catch (e) { /* ignore */ }
 }
 
 const handleSearch = () => {
