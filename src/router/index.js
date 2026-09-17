@@ -9,6 +9,7 @@ import LandingPage from '../components/LandingPage.vue'
 import HomePage from '../components/HomePage.vue'
 import MapPage from '../components/MapPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
+import AddPropertyPage from '../components/AddPropertyPage.vue'
 
 const routes = [
   {
@@ -25,6 +26,12 @@ const routes = [
     path: '/map',
     name: 'Map',
     component: MapPage
+  },
+  {
+    path: '/add-property',
+    name: 'AddProperty',
+    component: AddPropertyPage,
+    alias: '/property/add'
   },
   {
     path: '/profile',
