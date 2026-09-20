@@ -388,14 +388,6 @@
       </div>
     </main>
 
-    <!-- In-place Property Details Modal -->
-    <PropertyDetailsModal
-      :property="selectedPropForModal"
-      :is-open="isDetailsModalOpen"
-      @close="isDetailsModalOpen = false"
-      @toast="showToast"
-    />
-
     <!-- Saved Properties Drawer Modal -->
     <SavedPropertiesModal
       :is-open="isSavedModalOpen"
@@ -416,7 +408,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { favoritesService } from '../services/favoritesService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
-import PropertyDetailsModal from './PropertyDetailsModal.vue'
 import propertyService from '../services/propertyService'
 
 const router = useRouter()
@@ -427,9 +418,6 @@ const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
 
 const isSavedModalOpen = ref(false)
-const selectedPropForModal = ref(null)
-const isDetailsModalOpen = ref(false)
-
 const toastMessage = ref('')
 const toastVisible = ref(false)
 let toastTimer = null
@@ -712,8 +700,8 @@ const toggleFavorite = (prop) => {
 }
 
 const openDetails = (prop) => {
-  selectedPropForModal.value = prop
-  isDetailsModalOpen.value = true
+  sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
+  router.push({ name: 'PropertyDetails', params: { id: prop.id || encodeURIComponent(prop.slug || prop.title) } })
 }
 
 const handleScroll = () => {
