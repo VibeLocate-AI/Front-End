@@ -87,6 +87,10 @@
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
+                <button class="dropdown-menu-item" @click="$router.push('/my-properties'); profileMenuOpen = false">
+                  <i class="fa-regular fa-building"></i>
+                  <span>My Properties</span>
+                </button>
                 <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
                   <i class="fa-solid fa-heart text-danger"></i>
                   <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>

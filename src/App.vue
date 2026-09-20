@@ -21,7 +21,7 @@ const bgVideo = ref(null)
 const viewRoutes = { landing: '/', login: '/login', signup: '/register', resetPassword: '/forgot-password', resetSuccess: '/reset-success' }
 const switchView = (view) => router.push(viewRoutes[view] || '/login')
 
-const standalonePages = ['Landing', 'Home', 'HomeAlias', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails']
+const standalonePages = ['Landing', 'Home', 'HomeAlias', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties']
 const isAuthPage = computed(() => !standalonePages.includes(route.name))
 
 watch(() => route.name, async () => {

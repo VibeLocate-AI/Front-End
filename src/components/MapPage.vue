@@ -80,9 +80,13 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Profile management portal opening soon.')">
+                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="$router.push('/profile'); profileMenuOpen = false">
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
+                </button>
+                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="$router.push('/my-properties'); profileMenuOpen = false">
+                  <i class="fa-regular fa-building"></i>
+                  <span>My Properties</span>
                 </button>
                 <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">
                   <i class="fa-solid fa-heart text-danger"></i>
