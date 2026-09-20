@@ -107,6 +107,8 @@ export function normalizeProperty(raw) {
     baths,
     size: sizeFormatted,
     area_sqft: Number(rawSqft) || 0,
+    latitude: Number(raw.latitude ?? raw.lat ?? raw.location?.latitude ?? raw.location?.lat) || null,
+    longitude: Number(raw.longitude ?? raw.lng ?? raw.lon ?? raw.location?.longitude ?? raw.location?.lng) || null,
     image: primaryImage,
     images: allImages.length > 0 ? allImages : [primaryImage],
     summary: raw.description || `${type} in ${areaText} with ${beds} beds and ${baths} baths.`,
