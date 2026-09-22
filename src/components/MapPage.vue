@@ -146,6 +146,9 @@
               <option value="DIFC">DIFC</option>
               <option value="Dubai Creek Harbour">Dubai Creek Harbour</option>
               <option value="Bluewaters Island">Bluewaters Island</option>
+              <option value="Dubai Silicon Oasis">Dubai Silicon Oasis</option>
+              <option value="Jumeirah Village Circle">Jumeirah Village Circle</option>
+              <option value="Jumeirah Beach Residence">Jumeirah Beach Residence</option>
             </select>
             <i class="fa-solid fa-chevron-down chevron-icon"></i>
           </div>
@@ -226,9 +229,52 @@
           <button class="layer-btn" data-layer="dark" type="button"><i class="fa-solid fa-moon"></i><span>Night Mode</span></button>
         </div>
         <div class="map-floating-controls">
+          <button id="btn-my-location" class="map-control-btn btn-my-location" type="button" title="تحديد موقعي الحالي والمسافات (My Location)">
+            <i class="fa-solid fa-location-crosshairs"></i>
+          </button>
           <button id="btn-locate" class="map-control-btn" type="button" title="Locate Center Area"><i class="fa-solid fa-crosshairs"></i></button>
           <button id="btn-reset-view" class="map-control-btn" type="button" title="Reset Map View"><i class="fa-solid fa-compress"></i></button>
         </div>
+
+        <!-- Floating Directions & Route Panel -->
+        <div id="map-route-card" class="map-route-card" style="display: none;">
+          <div class="route-card-header">
+            <div class="route-header-title">
+              <i class="fa-solid fa-diamond-turn-right route-icon"></i>
+              <span>تخطيط الاتجاهات والمسار</span>
+            </div>
+            <button id="btn-close-route" class="btn-close-route" type="button" title="إلغاء المسار">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="route-card-content">
+            <div class="route-prop-name" id="route-prop-title">--</div>
+            <div class="route-stats-grid">
+              <div class="route-stat-box">
+                <div class="stat-icon-wrap"><i class="fa-solid fa-route"></i></div>
+                <div class="stat-info">
+                  <span class="stat-val" id="route-distance-val">-- كم</span>
+                  <span class="stat-lbl">المسافة منك</span>
+                </div>
+              </div>
+              <div class="route-stat-box">
+                <div class="stat-icon-wrap time"><i class="fa-solid fa-car-side"></i></div>
+                <div class="stat-info">
+                  <span class="stat-val" id="route-duration-val">-- دقيقة</span>
+                  <span class="stat-lbl">وقت القيادة</span>
+                </div>
+              </div>
+            </div>
+            <div class="route-actions-wrap">
+              <a id="btn-gmaps-navigate" href="#" target="_blank" class="btn-open-gmaps">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>ملاحة عبر خرائط Google</span>
+                <i class="fa-solid fa-arrow-up-right-from-square external-icon"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
         <div id="radar-sweep-overlay" class="radar-sweep-overlay"><div class="radar-beam"></div></div>
       </section>
     </main>
@@ -331,6 +377,7 @@
           </div>
           <div class="modal-actions-row">
             <button class="modal-btn-contact" type="button" @click="showAlert('Connecting you with the verified luxury consultant in Dubai...')"><i class="fa-solid fa-phone"></i><span>Contact Verified Agent</span></button>
+            <button id="modal-btn-directions" class="modal-btn-directions" type="button"><i class="fa-solid fa-diamond-turn-right"></i><span>تخطيط الاتجاهات والمسار</span></button>
             <button class="modal-btn-share" type="button" @click="showAlert('Property link copied to clipboard!')"><i class="fa-solid fa-share-nodes"></i></button>
           </div>
         </div>
@@ -346,6 +393,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
+import { propertyService } from '../services/propertyService'
 
 const router = useRouter()
 
@@ -441,7 +489,7 @@ const handleDocumentClick = (e) => {
 const showAlert = (msg) => alert(msg)
 const handleScroll = () => { isScrolled.value = window.scrollY > 20 }
 
-const PROPERTIES = [
+const STATIC_FALLBACK_PROPERTIES = [
   { id: 1, title: 'The Royal Atlantis Sky Villa', area: 'Palm Jumeirah', type: 'Penthouse', priceAed: 18500000, priceFormatted: 'AED 18,500,000', priceShort: '18.5M', period: 'Sale', distanceKm: 0.4, distanceFormatted: '0.4 km away', aiScore: 99, rating: 4.9, beds: 4, baths: 5, sqft: 5420, vibe: 'Waterfront / Sea View', lat: 25.1378, lng: 55.1272, image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80', aiSummary: 'Ultra-rare panoramic sea view with private infinity pool and Michelin-star hotel amenities on the Palm crescent.', verified: true },
   { id: 2, title: 'Burj Crown Panorama Penthouse', area: 'Downtown Dubai', type: 'Penthouse', priceAed: 8450000, priceFormatted: 'AED 8,450,000', priceShort: '8.45M', period: 'Yearly', distanceKm: 0.8, distanceFormatted: '0.8 km away', aiScore: 98, rating: 4.9, beds: 3, baths: 4, sqft: 2850, vibe: 'Sky High Luxury', lat: 25.1972, lng: 55.2744, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80', aiSummary: 'Unobstructed direct views of the Burj Khalifa and Dubai Fountain with direct air-conditioned mall link.', verified: true },
   { id: 3, title: 'Marina Gate Waterfront Haven', area: 'Dubai Marina', type: 'Apartment', priceAed: 4450000, priceFormatted: 'AED 4,450,000', priceShort: '4.45M', period: 'Yearly', distanceKm: 1.2, distanceFormatted: '1.2 km away', aiScore: 97, rating: 4.8, beds: 2, baths: 3, sqft: 1750, vibe: 'Waterfront / Sea View', lat: 25.0847, lng: 55.1458, image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80', aiSummary: 'Frontline marina promenade residence with 50-meter lap pool, squash courts, and yacht club berths.', verified: true },
@@ -456,8 +504,90 @@ const PROPERTIES = [
   { id: 12, title: 'Il Primo Opera District Grand Penthouse', area: 'Downtown Dubai', type: 'Penthouse', priceAed: 14200000, priceFormatted: 'AED 14,200,000', priceShort: '14.2M', period: 'Sale', distanceKm: 5.4, distanceFormatted: '5.4 km away', aiScore: 98, rating: 5.0, beds: 4, baths: 5, sqft: 4900, vibe: 'Sky High Luxury', lat: 25.1945, lng: 55.2710, image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=900&q=80', aiSummary: 'Full-floor residence adjacent to Dubai Opera with private elevator, cigar lounge, and private wellness spa.', verified: true }
 ]
 
+let currentProperties = [...STATIC_FALLBACK_PROPERTIES]
 let mapInstance = null, activeTileLayer = null, markersMap = new Map(), activePropertyId = null
-let filteredProperties = [...PROPERTIES], toastTimeout = null
+let filteredProperties = [...currentProperties], toastTimeout = null
+
+function formatMapProperty(raw) {
+  const priceNum = Number(raw.price) || 0
+  const lat = parseFloat(raw.latitude) || 25.14
+  const lng = parseFloat(raw.longitude) || 55.22
+  const areaName = raw.neighborhood || raw.neighborhood_name || (raw.address ? raw.address.split(',')[0].trim() : 'Dubai')
+  const type = raw.property_type || (raw.type_id === 2 ? 'Villa' : raw.type_id === 3 ? 'Penthouse' : raw.type_id === 4 ? 'Townhouse' : 'Apartment')
+  const beds = Number(raw.bedrooms || 0)
+  const baths = Number(raw.bathrooms || 0)
+  const sqft = Math.round(Number(raw.area_sqft || 0))
+  const img = raw.primary_image?.image_url || raw.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80'
+
+  // Distance relative to Downtown Dubai [25.1972, 55.2744]
+  const dLat = (lat - 25.1972) * 111
+  const dLng = (lng - 55.2744) * 100
+  const dist = Math.max(0.2, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10)
+
+  // Price formatting
+  const priceFormatted = `AED ${priceNum.toLocaleString()}`
+  const priceShort = priceNum >= 1000000 ? `${(priceNum / 1000000).toFixed(2).replace(/\.00$/, '')}M` : `${Math.round(priceNum / 1000)}K`
+
+  // Vibe classification
+  let vibe = 'High ROI Investment'
+  const lowerTitle = (raw.title || '').toLowerCase()
+  const lowerArea = areaName.toLowerCase()
+  if (lowerArea.includes('palm') || lowerArea.includes('marina') || lowerArea.includes('beach') || lowerArea.includes('creek')) {
+    vibe = 'Waterfront / Sea View'
+  } else if (type === 'Penthouse' || lowerTitle.includes('sky') || lowerTitle.includes('luxury')) {
+    vibe = 'Sky High Luxury'
+  } else if (type === 'Villa' || lowerArea.includes('ranches') || lowerArea.includes('hills') || lowerArea.includes('oasis')) {
+    vibe = 'Green Family Oasis'
+  }
+
+  const aiScore = 90 + ((raw.id * 7) % 10)
+
+  return {
+    id: raw.id,
+    title: raw.title || `${type} in ${areaName}`,
+    slug: raw.slug || '',
+    area: areaName,
+    type,
+    priceAed: priceNum,
+    priceFormatted,
+    priceShort,
+    period: 'Sale',
+    distanceKm: dist,
+    distanceFormatted: `${dist} km away`,
+    aiScore,
+    rating: (4.5 + ((raw.id % 5) * 0.1)).toFixed(1),
+    beds,
+    baths,
+    sqft: sqft || 2200,
+    vibe,
+    lat,
+    lng,
+    image: img,
+    aiSummary: `Prime ${type.toLowerCase()} in ${areaName} featuring ${beds} bedrooms and high-spec interiors with excellent community amenities.`,
+    verified: true
+  }
+}
+
+async function fetchLiveMapProperties() {
+  try {
+    const res = await propertyService.getMapProperties()
+    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      currentProperties = res.data.map(formatMapProperty)
+      filteredProperties = [...currentProperties]
+      if (mapInstance) {
+        renderMarkers(filteredProperties)
+        renderSidebarList(filteredProperties)
+        const group = window.L.featureGroup(filteredProperties.map(p => markersMap.get(p.id)).filter(Boolean))
+        if (group.getLayers().length > 0) {
+          mapInstance.fitBounds(group.getBounds().pad(0.15))
+        }
+      }
+      showToast(`Loaded ${currentProperties.length} live properties from VibeLocate API`)
+    }
+  } catch (err) {
+    console.warn('Map API load failed, using fallback properties:', err)
+  }
+}
 
 const TILE_LAYERS = {
   day: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', options: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', subdomains: 'abc', maxZoom: 19 } },
@@ -487,6 +617,7 @@ function initMap() {
 
 function setTileLayer(type) {
   const L = window.L, mapEl = document.getElementById('leaflet-map')
+  if (!mapInstance || !L) return
   if (activeTileLayer) mapInstance.removeLayer(activeTileLayer)
   const cfg = TILE_LAYERS[type] || TILE_LAYERS.day
   activeTileLayer = L.tileLayer(cfg.url, cfg.options).addTo(mapInstance)
@@ -504,7 +635,7 @@ function createIcon(prop, isActive = false) {
 }
 
 function popupHtml(p) {
-  return `<div class="popup-prop-card"><div class="popup-img-wrap"><img src="${p.image}" alt="${p.title}"><div class="popup-ai-badge">❆ ${p.aiScore}% Match</div></div><div class="popup-body"><div class="popup-price">${p.priceFormatted}</div><div class="popup-title">${p.title}</div><div class="popup-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}, Dubai</div><div class="popup-specs"><span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span><span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span><span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span></div><button class="popup-btn-detail" onclick="window.__vibeMap.openPropertyModal(${p.id})"><span>Explore Property</span><i class="fa-solid fa-arrow-right"></i></button></div></div>`
+  return `<div class="popup-prop-card"><div class="popup-img-wrap"><img src="${p.image}" alt="${p.title}"><div class="popup-ai-badge">❆ ${p.aiScore}% Match</div></div><div class="popup-body"><div class="popup-price">${p.priceFormatted}</div><div class="popup-title">${p.title}</div><div class="popup-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}, Dubai</div><div class="popup-specs"><span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span><span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span><span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span></div><div class="popup-btn-row"><button class="popup-btn-detail" onclick="window.__vibeMap.openPropertyModal(${p.id})"><span>Explore</span><i class="fa-solid fa-arrow-right"></i></button><button class="popup-btn-route" onclick="window.__vibeMap.showRouteCard(${p.id})"><i class="fa-solid fa-diamond-turn-right"></i><span>اتجاهات</span></button></div></div></div>`
 }
 
 function renderMarkers(props) {
@@ -534,12 +665,12 @@ function renderSidebarList(props) {
 }
 
 function selectProperty(id, triggeredByMarker = false) {
-  const prop = PROPERTIES.find(p => p.id === id); if (!prop) return
+  const prop = currentProperties.find(p => p.id === id); if (!prop) return
   activePropertyId = id
   document.querySelectorAll('.map-prop-card').forEach(c => c.classList.toggle('active', c.id === `prop-card-${id}`))
   const activeCard = document.getElementById(`prop-card-${id}`)
   if (activeCard && !triggeredByMarker) activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  markersMap.forEach((marker, mId) => { const p = PROPERTIES.find(x => x.id === mId); if (p) marker.setIcon(createIcon(p, mId === id)) })
+  markersMap.forEach((marker, mId) => { const p = currentProperties.find(x => x.id === mId); if (p) marker.setIcon(createIcon(p, mId === id)) })
   const marker = markersMap.get(id)
   if (marker && mapInstance) { mapInstance.flyTo([prop.lat, prop.lng], 14, { duration: 1.2, easeLinearity: 0.25 }); setTimeout(() => marker.openPopup(), 400) }
 }
@@ -547,7 +678,7 @@ function selectProperty(id, triggeredByMarker = false) {
 function clearActiveStates() {
   activePropertyId = null
   document.querySelectorAll('.map-prop-card').forEach(c => c.classList.remove('active'))
-  markersMap.forEach((marker, mId) => { const p = PROPERTIES.find(x => x.id === mId); if (p) marker.setIcon(createIcon(p, false)) })
+  markersMap.forEach((marker, mId) => { const p = currentProperties.find(x => x.id === mId); if (p) marker.setIcon(createIcon(p, false)) })
 }
 
 function sortProperties() {
@@ -565,7 +696,7 @@ function applyFilters() {
   const g = (id) => document.getElementById(id)?.value || 'all'
   const areaVal = g('filter-area'), typeVal = g('filter-type'), priceVal = g('filter-price'), vibeVal = g('filter-vibe')
   const searchVal = (document.getElementById('sidebar-search-input')?.value || '').toLowerCase().trim()
-  filteredProperties = PROPERTIES.filter(item => {
+  filteredProperties = currentProperties.filter(item => {
     if (areaVal !== 'all' && item.area !== areaVal) return false
     if (typeVal !== 'all' && item.type !== typeVal) return false
     if (vibeVal !== 'all' && item.vibe !== vibeVal) return false
@@ -599,8 +730,9 @@ function resetAllFilters() {
 }
 
 function openPropertyModal(id) {
-  const prop = PROPERTIES.find(p => p.id === id), modal = document.getElementById('property-details-modal')
+  const prop = currentProperties.find(p => p.id === id), modal = document.getElementById('property-details-modal')
   if (!prop || !modal) return
+  window.__vibeMap._activeModalPropId = id
   document.getElementById('modal-main-img').src = prop.image
   document.getElementById('modal-prop-title').textContent = prop.title
   document.getElementById('modal-prop-location').innerHTML = `<i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${prop.area}, Dubai`
@@ -639,6 +771,143 @@ function setupEvents() {
   const btnReset = document.getElementById('btn-reset-view'); if (btnReset) btnReset.addEventListener('click', () => { if (mapInstance) { mapInstance.flyTo([25.14, 55.22], 11, { duration: 1.2 }); clearActiveStates(); showToast('Map view reset to full Dubai overview') } })
   const modalCloseBtn = document.getElementById('modal-close-btn'); if (modalCloseBtn) modalCloseBtn.addEventListener('click', closePropertyModal)
   const modalBackdrop = document.getElementById('property-details-modal'); if (modalBackdrop) modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closePropertyModal() })
+
+  // ─── My Location Button ────────────────────────────────────────────────────
+  const btnMyLocation = document.getElementById('btn-my-location')
+  if (btnMyLocation) {
+    btnMyLocation.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        showToast('⚠️ متصفحك لا يدعم تحديد الموقع الجغرافي')
+        return
+      }
+      btnMyLocation.classList.add('locating')
+      showToast('📍 جاري تحديد موقعك الحالي...')
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          btnMyLocation.classList.remove('locating')
+          const userLat = pos.coords.latitude
+          const userLng = pos.coords.longitude
+          window.__vibeMap._userLat = userLat
+          window.__vibeMap._userLng = userLng
+
+          // Remove old user marker if exists
+          if (window.__vibeMap._userMarker) {
+            window.__vibeMap._userMarker.remove()
+          }
+
+          // Add pulsing user location marker
+          const userIcon = window.L.divIcon({
+            className: '',
+            html: `<div class="user-location-marker"><div class="user-pulse-ring"></div><div class="user-dot"></div></div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+          })
+          const userMarker = window.L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 2000 }).addTo(mapInstance)
+          userMarker.bindPopup(`<div style="font-family:'Plus Jakarta Sans',sans-serif;padding:8px 4px;font-size:0.85rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-circle-user" style="color:#0284c7"></i>موقعك الحالي</div>`)
+          window.__vibeMap._userMarker = userMarker
+
+          // Re-calculate live distance for all properties and re-render
+          currentProperties = currentProperties.map(p => {
+            const dLat = (p.lat - userLat) * 111
+            const dLng = (p.lng - userLng) * 100
+            const realDist = Math.max(0.1, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10)
+            return { ...p, distanceKm: realDist, distanceFormatted: `${realDist} كم منك` }
+          })
+          filteredProperties = [...currentProperties]
+          sortProperties()
+          renderMarkers(filteredProperties)
+          renderSidebarList(filteredProperties)
+
+          mapInstance.flyTo([userLat, userLng], 13, { duration: 1.5 })
+          showToast(`✅ تم تحديد موقعك! أقرب عقار يبعد ${currentProperties.reduce((a, b) => a.distanceKm < b.distanceKm ? a : b).distanceFormatted}`)
+        },
+        (err) => {
+          btnMyLocation.classList.remove('locating')
+          showToast('⚠️ لم نتمكن من تحديد موقعك. تأكد من منح الإذن.')
+          console.warn('Geolocation error:', err)
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      )
+    })
+  }
+
+  // ─── Route Card Close Button ───────────────────────────────────────────────
+  const btnCloseRoute = document.getElementById('btn-close-route')
+  if (btnCloseRoute) {
+    btnCloseRoute.addEventListener('click', () => {
+      const card = document.getElementById('map-route-card')
+      if (card) { card.style.display = 'none' }
+      if (window.__vibeMap._routeLine) {
+        window.__vibeMap._routeLine.remove()
+        window.__vibeMap._routeLine = null
+      }
+    })
+  }
+
+  // ─── Modal Directions Button ───────────────────────────────────────────────
+  const btnModalDir = document.getElementById('modal-btn-directions')
+  if (btnModalDir) {
+    btnModalDir.addEventListener('click', () => {
+      const activeId = window.__vibeMap._activeModalPropId
+      if (!activeId) return
+      const prop = currentProperties.find(p => p.id === activeId)
+      if (!prop) return
+      closePropertyModal()
+      showRouteCard(prop)
+    })
+  }
+}
+
+// ─── Show Route Card ─────────────────────────────────────────────────────────
+function showRouteCard(prop) {
+  const card = document.getElementById('map-route-card')
+  if (!card) return
+
+  const userLat = window.__vibeMap?._userLat
+  const userLng = window.__vibeMap?._userLng
+
+  // Update prop title
+  const titleEl = document.getElementById('route-prop-title')
+  if (titleEl) titleEl.textContent = prop.title
+
+  // Calculate real distance if user location known
+  let distKm = prop.distanceKm
+  if (userLat && userLng) {
+    const dLat = (prop.lat - userLat) * 111
+    const dLng = (prop.lng - userLng) * 100
+    distKm = Math.max(0.1, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10)
+  }
+
+  const durationMin = Math.round(distKm / 0.5)  // ~30 km/h avg Dubai traffic
+
+  const distEl = document.getElementById('route-distance-val')
+  const durEl = document.getElementById('route-duration-val')
+  if (distEl) distEl.textContent = `${distKm} كم`
+  if (durEl) durEl.textContent = `~${durationMin} دقيقة`
+
+  // Google Maps navigation link
+  const gmapsBtn = document.getElementById('btn-gmaps-navigate')
+  if (gmapsBtn) {
+    const origin = (userLat && userLng)
+      ? `${userLat},${userLng}`
+      : 'My+Location'
+    gmapsBtn.href = `https://www.google.com/maps/dir/${origin}/${prop.lat},${prop.lng}`
+  }
+
+  // Draw dashed route line on map
+  if (window.__vibeMap._routeLine) window.__vibeMap._routeLine.remove()
+  if (userLat && userLng && mapInstance) {
+    window.__vibeMap._routeLine = window.L.polyline(
+      [[userLat, userLng], [prop.lat, prop.lng]],
+      { color: '#0284c7', weight: 3, dashArray: '8 8', opacity: 0.85 }
+    ).addTo(mapInstance)
+    mapInstance.fitBounds([[userLat, userLng], [prop.lat, prop.lng]], { padding: [60, 60] })
+  } else if (mapInstance) {
+    mapInstance.flyTo([prop.lat, prop.lng], 14, { duration: 1.2 })
+  }
+
+  card.style.display = 'block'
+  showToast(`🗺️ تخطيط المسار إلى: ${prop.title}`)
 }
 
 onMounted(async () => {
@@ -659,10 +928,19 @@ onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   handleScroll()
   window.addEventListener('keydown', handleKeyDown)
-  window.__vibeMap = { openPropertyModal, selectProperty, resetAllFilters }
+  window.__vibeMap = {
+    openPropertyModal,
+    selectProperty,
+    resetAllFilters,
+    showRouteCard: (id) => {
+      const prop = currentProperties.find(p => p.id === id)
+      if (prop) showRouteCard(prop)
+    }
+  }
   await loadLeaflet()
   initMap()
   setupEvents()
+  fetchLiveMapProperties()
 })
 
 onUnmounted(() => {
@@ -790,6 +1068,10 @@ onUnmounted(() => {
 .map-floating-controls { position: absolute; top: 14px; right: 14px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
 .map-control-btn { background: #ffffff; border: 1px solid rgba(15,23,42,0.12); color: #0f172a; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(15,23,42,0.08); transition: all 0.2s ease; font-size: 0.9rem; }
 .map-control-btn:hover { background: #f8fafc; border-color: #0284c7; color: #0284c7; transform: scale(1.05); }
+.btn-my-location { color: #0284c7; }
+.btn-my-location:hover { background: #f0f9ff; border-color: #0284c7; }
+.btn-my-location.locating i { animation: spin-pulse 1s linear infinite; color: #0284c7; }
+@keyframes spin-pulse { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
 .map-layer-selector { position: absolute; top: 14px; left: 14px; z-index: 1000; display: flex; align-items: center; background: #ffffff; border: 1px solid rgba(15,23,42,0.12); box-shadow: 0 6px 20px rgba(15,23,42,0.08); border-radius: 10px; padding: 3px; gap: 3px; }
 .layer-btn { padding: 5px 10px; font-size: 0.74rem; font-weight: 600; border-radius: 7px; color: #64748b; background: transparent; border: none; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 5px; }
 .layer-btn.active { background: rgba(2,132,199,0.12); color: #0284c7; border: 1px solid rgba(2,132,199,0.3); }
@@ -815,8 +1097,11 @@ onUnmounted(() => {
 :deep(.popup-title) { font-family: 'Outfit', sans-serif; font-size: 0.88rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :deep(.popup-location) { font-size: 0.72rem; color: #64748b; display: flex; align-items: center; gap: 4px; }
 :deep(.popup-specs) { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid rgba(15,23,42,0.05); padding: 5px 8px; border-radius: 6px; font-size: 0.7rem; color: #475569; }
-:deep(.popup-btn-detail) { margin-top: 3px; width: 100%; height: 34px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border: none; transition: all 0.2s ease; }
+:deep(.popup-btn-row) { display: flex; gap: 6px; margin-top: 4px; }
+:deep(.popup-btn-detail) { flex: 1; height: 32px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; border: none; transition: all 0.2s ease; }
 :deep(.popup-btn-detail:hover) { box-shadow: 0 4px 14px rgba(2,132,199,0.35); transform: translateY(-1px); }
+:deep(.popup-btn-route) { padding: 0 10px; height: 32px; background: #f0f9ff; border: 1px solid #0284c7; color: #0284c7; border-radius: 8px; font-weight: 700; font-size: 0.74rem; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: all 0.2s ease; }
+:deep(.popup-btn-route:hover) { background: #0284c7; color: #ffffff; }
 :deep(.map-prop-card) { flex-shrink: 0; min-height: 106px; background: #ffffff; border: 1px solid rgba(15,23,42,0.08); border-radius: 12px; padding: 10px; display: grid; grid-template-columns: 100px 1fr; gap: 12px; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; box-shadow: 0 2px 6px rgba(15,23,42,0.03); }
 :deep(.map-prop-card::before) { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: transparent; transition: background-color 0.2s ease; }
 :deep(.map-prop-card:hover) { border-color: rgba(2,132,199,0.4); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(2,132,199,0.12); }
@@ -847,6 +1132,10 @@ onUnmounted(() => {
 :deep(.custom-radar-marker.active-pin .marker-inner-wrap) { background: #0284c7; border-color: #0f172a; transform: scale(1.18) translateY(-4px); box-shadow: 0 0 24px rgba(2,132,199,0.5); }
 :deep(.custom-radar-marker.active-pin .marker-price-tag) { color: #ffffff; }
 :deep(.custom-radar-marker.active-pin .marker-pin-icon) { background: #ffffff; color: #0284c7; }
+:deep(.user-location-marker) { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+:deep(.user-pulse-ring) { position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(2,132,199,0.25); border: 2px solid #0284c7; animation: userPulse 2s ease-out infinite; }
+:deep(.user-dot) { position: relative; width: 14px; height: 14px; background: #0284c7; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 10px rgba(2,132,199,0.8); }
+@keyframes userPulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
 /* Modal */
 .map-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -870,6 +1159,8 @@ onUnmounted(() => {
 .modal-actions-row { display: flex; gap: 12px; }
 .modal-btn-contact { flex: 1; height: 44px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; font-family: 'Outfit', sans-serif; font-weight: 700; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; font-size: 0.9rem; transition: all 0.2s ease; }
 .modal-btn-contact:hover { box-shadow: 0 4px 18px rgba(2,132,199,0.35); transform: translateY(-1px); }
+.modal-btn-directions { height: 44px; padding: 0 16px; background: #f0f9ff; border: 1.5px solid #0284c7; color: #0284c7; font-family: 'Outfit', sans-serif; font-weight: 700; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; white-space: nowrap; }
+.modal-btn-directions:hover { background: #0284c7; color: #ffffff; box-shadow: 0 4px 14px rgba(2,132,199,0.3); transform: translateY(-1px); }
 .modal-btn-share { width: 44px; height: 44px; background: #f1f5f9; border: 1px solid rgba(15,23,42,0.12); border-radius: 10px; color: #475569; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
 .modal-btn-share:hover { background: #e2e8f0; color: #0284c7; }
 .map-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(15,23,42,0.25); color: #ffffff; padding: 10px 20px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 3000; transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); pointer-events: none; }
@@ -987,6 +1278,150 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Route & Directions Floating Card */
+.map-route-card {
+  position: absolute;
+  bottom: 24px;
+  left: 20px;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  z-index: 1001;
+  padding: 14px 16px;
+  animation: slideUpCard 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+@keyframes slideUpCard {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.route-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+.route-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.route-header-title .route-icon {
+  color: #0284c7;
+  font-size: 0.95rem;
+}
+.btn-close-route {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-close-route:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.route-card-content {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.route-prop-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.route-stat-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.stat-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(2, 132, 199, 0.12);
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.stat-icon-wrap.time {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+.stat-info .stat-val {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+.stat-info .stat-lbl {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+.route-actions-wrap {
+  margin-top: 2px;
+}
+.btn-open-gmaps {
+  width: 100%;
+  height: 36px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+.btn-open-gmaps:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+}
+.external-icon {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
 @media (max-width: 1024px) {
   .map-content-layout { grid-template-columns: 350px 1fr; }
 }
@@ -1029,6 +1464,7 @@ onUnmounted(() => {
   .filter-dropdown-wrap { width: 100%; }
   .btn-scan-map { width: 100%; justify-content: center; }
   .modal-specs-grid { grid-template-columns: repeat(2, 1fr); }
+  .map-route-card { left: 12px; right: 12px; width: auto; bottom: 12px; }
   .footer-top {
     grid-template-columns: 1fr;
     gap: 2rem;
