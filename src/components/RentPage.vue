@@ -22,7 +22,7 @@
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
           <router-link class="nav-item" to="/home">Home</router-link>
-          <router-link class="nav-item" to="/home#featured">Buy</router-link>
+          <router-link class="nav-item" to="/buy">Buy</router-link>
           <router-link class="nav-item active" to="/rent">Rent</router-link>
           <router-link class="nav-item" to="/home#featured">New Projects</router-link>
           <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>

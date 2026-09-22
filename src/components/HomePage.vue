@@ -22,7 +22,7 @@
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
           <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('buy') }}</a>
+          <router-link class="nav-item" to="/buy">{{ t('buy') }}</router-link>
           <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('newProjects') }}</a>
           <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
@@ -1164,7 +1164,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
-import { propertyService } from '../services/propertyService'
+import { propertyService, DEFAULT_PROPERTIES } from '../services/propertyService'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { favoritesService } from '../services/favoritesService'
@@ -1179,7 +1179,7 @@ const areas = [
   { name: 'Business Bay', count: '732', image: 'https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=400&q=80' }
 ]
 
-const properties = ref([])
+const properties = ref([...DEFAULT_PROPERTIES])
 const isLoadingProperties = ref(false)
 const isLiveApi = ref(false)
 

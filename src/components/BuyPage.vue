@@ -561,6 +561,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
+import { propertyService } from '../services/propertyService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
 import PropertyDetailsModal from './PropertyDetailsModal.vue'
 import NavbarControls from './NavbarControls.vue'
@@ -801,10 +802,40 @@ const loadUserProfile = async () => {
   }
 }
 
+const loadApiProperties = async () => {
+  try {
+    const res = await propertyService.getProperties({ listing_type: 'sale' })
+    const list = res?.data || []
+    if (Array.isArray(list) && list.length > 0) {
+      const apiProps = list.filter(p => !p.isForRent).map((p, idx) => ({
+        id: p.id || idx + 1,
+        title: p.title || 'Dubai Luxury Property',
+        location: p.location || p.area || 'Dubai, UAE',
+        price: p.price || 3500000,
+        type: p.type || 'Apartment',
+        beds: p.beds || 2,
+        baths: p.baths || 2,
+        sqft: p.size || '1,450',
+        matchScore: p.aiMatch || (98 - idx * 2),
+        isOffPlan: Boolean(p.isOffPlan || (p.description && p.description.toLowerCase().includes('off-plan'))),
+        image: p.image || (p.images && p.images[0]) || '/images/photo-1600210492486-724fe5c67fb0.jfif',
+        description: p.description || p.summary || ''
+      }))
+      if (apiProps.length >= 4) {
+        buyProperties.value = apiProps
+      }
+    }
+  } catch (err) {
+    console.log('[BuyPage] Backend live properties offline, using curated showcase properties:', err?.message)
+  }
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   document.addEventListener('click', handleClickOutside)
   loadUserProfile()
+  favoritesService.syncWithBackend()
+  loadApiProperties()
 })
 
 onUnmounted(() => {
