@@ -21,19 +21,22 @@
 
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <router-link class="nav-item" to="/home">Home</router-link>
-          <router-link class="nav-item" to="/buy">Buy</router-link>
-          <router-link class="nav-item" to="/rent">Rent</router-link>
-          <router-link class="nav-item" to="/new-projects">New Projects</router-link>
-          <router-link class="nav-item active" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
-          <router-link class="nav-item" to="/home#areas">Areas</router-link>
-          <router-link class="nav-item" to="/about">About Us</router-link>
+          <router-link class="nav-item" to="/home">{{ t('home') }}</router-link>
+          <router-link class="nav-item" to="/buy">{{ t('buy') }}</router-link>
+          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
+          <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
+          <router-link class="nav-item active" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
+          <router-link class="nav-item" to="/home#areas">{{ t('areas') }}</router-link>
+          <router-link class="nav-item" to="/about">{{ t('aboutUs') }}</router-link>
         </nav>
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <button class="btn-list-property" type="button" @click="showToast('Property listing portal opening soon.')">
-            List Your Property <span class="plus-sign">+</span>
+          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
+          <NavbarControls />
+
+          <button class="btn-list-property" type="button" @click="$router.push('/add-property')">
+            {{ t('listProperty') }}
           </button>
           
           <button
@@ -80,22 +83,22 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="$router.push('/profile'); profileMenuOpen = false">
+                <router-link v-if="isLoggedIn" to="/profile" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
-                </button>
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="$router.push('/my-properties'); profileMenuOpen = false">
+                </router-link>
+                <router-link v-if="isLoggedIn" to="/my-properties" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
                   <i class="fa-regular fa-building"></i>
                   <span>My Properties</span>
-                </button>
-                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">
+                </router-link>
+                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:inherit; cursor:pointer;">
                   <i class="fa-solid fa-heart text-danger"></i>
                   <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
                 </button>
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="showToast('Your active search filters are saved.')">
+                <router-link v-if="isLoggedIn" to="/profile/preferences" class="dropdown-menu-item" style="text-decoration:none;">
                   <i class="fa-solid fa-sliders"></i>
                   <span>Preferences</span>
-                </button>
+                </router-link>
               </div>
 
               <div class="dropdown-divider"></div>
@@ -415,6 +418,10 @@ import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
 import { favoritesService } from '../services/favoritesService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
+import NavbarControls from './NavbarControls.vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+
+const { t, isRtl } = useThemeAndLanguage()
 
 const router = useRouter()
 
