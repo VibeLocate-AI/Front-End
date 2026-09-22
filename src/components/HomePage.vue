@@ -24,7 +24,7 @@
           <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
           <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('buy') }}</a>
           <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('newProjects') }}</a>
+          <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
           <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
           <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
           <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">{{ t('aboutUs') }}</a>
