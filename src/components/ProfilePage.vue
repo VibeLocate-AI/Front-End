@@ -742,6 +742,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import authService from '../services/authService'
+import { favoritesService } from '../services/favoritesService'
 
 const route = useRoute()
 const router = useRouter()
@@ -801,12 +802,12 @@ const preferences = ref({
 })
 
 // Stats
-const stats = ref({
-  savedProperties: 12,
+const stats = computed(() => ({
+  savedProperties: favoritesService.savedItems.value.length,
   propertiesViewed: 48,
   searchAlerts: 3,
   inquiriesSent: 2
-})
+}))
 
 // Recently Viewed
 const recentlyViewed = ref([
@@ -850,153 +851,7 @@ const recentlyViewed = ref([
 
 // Saved properties list & filtering
 const activeSavedTab = ref('All')
-
-const savedPropertiesList = ref([
-  {
-    id: 1,
-    title: 'The Royal Atlantis Sky Villa',
-    location: 'Palm Jumeirah',
-    price: 'AED 18,500,000',
-    beds: 4,
-    baths: 5,
-    sqft: '5,420',
-    type: 'Villas',
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    saved: true
-  },
-  {
-    id: 2,
-    title: 'Burj Crown Panorama Penthouse',
-    location: 'Downtown Dubai',
-    price: 'AED 8,450,000',
-    beds: 3,
-    baths: 4,
-    sqft: '2,850',
-    type: 'Penthouses',
-    image: '/images/photo-1512917774080-9991f1c4c750.jfif',
-    saved: true
-  },
-  {
-    id: 3,
-    title: 'Marina Gate Waterfront Haven',
-    location: 'Dubai Marina',
-    price: 'AED 4,450,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,750',
-    type: 'Apartments',
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    saved: true
-  },
-  {
-    id: 4,
-    title: 'Address Beach Resort Apartment',
-    location: 'JBR',
-    price: 'AED 3,200,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,350',
-    type: 'Apartments',
-    image: '/images/photo-1582719478250-c89cae4dc85b.avif',
-    saved: true
-  },
-  {
-    id: 5,
-    title: 'Dubai Hills Family Villa',
-    location: 'Dubai Hills Estate',
-    price: 'AED 7,900,000',
-    beds: 5,
-    baths: 6,
-    sqft: '4,100',
-    type: 'Villas',
-    image: '/images/photo-1613977257363-707ba9348227.jfif',
-    saved: true
-  },
-  {
-    id: 6,
-    title: 'Creek Harbour View Apartment',
-    location: 'Dubai Creek Harbour',
-    price: 'AED 2,950,000',
-    beds: 2,
-    baths: 2,
-    sqft: '1,240',
-    type: 'Apartments',
-    image: '/images/photo-1600210492486-724fe5c67fb0.jfif',
-    saved: true
-  },
-  {
-    id: 7,
-    title: 'Emirates Hills Mansion',
-    location: 'Emirates Hills',
-    price: 'AED 45,000,000',
-    beds: 6,
-    baths: 8,
-    sqft: '12,500',
-    type: 'Villas',
-    image: '/images/photo-1600585154340-be6161a56a0c.avif',
-    saved: true
-  },
-  {
-    id: 8,
-    title: 'One Zaabeel Sky Penthouse',
-    location: 'Zaabeel',
-    price: 'AED 24,000,000',
-    beds: 4,
-    baths: 5,
-    sqft: '4,800',
-    type: 'Penthouses',
-    image: '/images/photo-1618221195710-dd6b41faaea6.jfif',
-    saved: true
-  },
-  {
-    id: 9,
-    title: 'District One Modern Townhouse',
-    location: 'Mohammed Bin Rashid City',
-    price: 'AED 5,600,000',
-    beds: 3,
-    baths: 4,
-    sqft: '3,100',
-    type: 'Townhouses',
-    image: '/images/photo-1512917774080-9991f1c4c750 (1).jfif',
-    saved: true
-  },
-  {
-    id: 10,
-    title: 'Downtown Vista Apartment',
-    location: 'Downtown Dubai',
-    price: 'AED 3,800,000',
-    beds: 2,
-    baths: 2,
-    sqft: '1,420',
-    type: 'Apartments',
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    saved: true
-  },
-  {
-    id: 11,
-    title: 'Palm Jumeirah Signature Villa',
-    location: 'Palm Jumeirah',
-    price: 'AED 32,000,000',
-    beds: 5,
-    baths: 6,
-    sqft: '8,200',
-    type: 'Villas',
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    saved: true
-  },
-  {
-    id: 12,
-    title: 'Bluewaters Island Luxury Residence',
-    location: 'Bluewaters Island',
-    price: 'AED 4,900,000',
-    beds: 3,
-    baths: 3,
-    sqft: '2,100',
-    type: 'Apartments',
-    image: '/images/photo-1582719478250-c89cae4dc85b.avif',
-    saved: true
-  }
-])
+const savedPropertiesList = computed(() => favoritesService.savedItems.value)
 
 const savedFilterCounts = computed(() => {
   return {
@@ -1088,14 +943,12 @@ onMounted(() => {
 
 // Toggle save property
 const toggleSaveProperty = (item) => {
-  item.saved = !item.saved
-  if (item.saved) {
-    showToast(`Saved "${item.title}" to favorites.`)
+  const isSaved = favoritesService.toggleSave(item)
+  if (isSaved) {
+    showToast(`Saved "${item.title || 'Property'}" to favorites ❤️`)
   } else {
-    showToast(`Removed "${item.title}" from favorites.`)
+    showToast(`Removed "${item.title || 'Property'}" from favorites.`)
   }
-  // Keep counts in sync
-  stats.value.savedProperties = savedPropertiesList.value.filter(p => p.saved).length
 }
 
 // Photo upload simulation

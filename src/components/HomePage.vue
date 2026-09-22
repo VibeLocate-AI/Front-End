@@ -21,23 +21,34 @@
 
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">Home</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Buy</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">Rent</a>
-          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">New Projects</a>
-          <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
-          <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">Areas</a>
-          <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">About Us</a>
+          <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
+          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('buy') }}</a>
+          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
+          <a class="nav-item" href="#featured" @click.prevent="scrollTo('featured')">{{ t('newProjects') }}</a>
+          <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
+          <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
+          <a class="nav-item" href="#about" @click.prevent="scrollTo('about')">{{ t('aboutUs') }}</a>
         </nav>
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <button class="btn-list-property" type="button" @click="showToast('Property listing portal opening soon.')">
-            List Your Property <span class="plus-sign">+</span>
+          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
+          <NavbarControls />
+
+          <button class="btn-list-property" type="button" @click="$router.push('/add-property')">
+            {{ t('listProperty') }}
           </button>
           
-          <button class="icon-action-btn" type="button" aria-label="Favorites" @click="showToast('You have ' + favorites.size + ' saved properties.')">
-            <i class="fa-regular fa-heart"></i>
+          <button
+            class="icon-action-btn"
+            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
+            type="button"
+            aria-label="Saved Properties"
+            title="Saved Properties / العقارات المحفوظة"
+            @click="isSavedModalOpen = true"
+          >
+            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
           </button>
 
           <div class="user-profile-menu-container" ref="profileDropdownRef">
@@ -76,9 +87,9 @@
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
                 </button>
-                <button class="dropdown-menu-item" @click="$router.push('/profile/saved'); profileMenuOpen = false">
-                  <i class="fa-regular fa-heart"></i>
-                  <span>Saved Properties ({{ favorites.size }})</span>
+                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
+                  <i class="fa-solid fa-heart text-danger"></i>
+                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
                 </button>
                 <button class="dropdown-menu-item" @click="$router.push('/profile/preferences'); profileMenuOpen = false">
                   <i class="fa-solid fa-sliders"></i>
@@ -810,7 +821,7 @@
               <div class="promo-content">
                 <h3 class="promo-heading">List Your Property<br>With Dubai Estates</h3>
                 <p class="promo-description">Reach thousands of potential buyers and renters.</p>
-                <button class="btn-promo-action" type="button" @click="showToast('Property listing form opening...')">
+                <button class="btn-promo-action" type="button" @click="$router.push('/add-property')">
                   List Your Property <span class="promo-chevron">&gt;</span>
                 </button>
               </div>
@@ -1139,6 +1150,13 @@
       <i class="fa-solid fa-circle-check"></i>
       <span>{{ toastMessage }}</span>
     </div>
+
+    <!-- Saved Properties Modal -->
+    <SavedPropertiesModal
+      :is-open="isSavedModalOpen"
+      @close="isSavedModalOpen = false"
+      @open-property="openPropertyDetails"
+    />
   </div>
 </template>
 
@@ -1147,6 +1165,12 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
+import NavbarControls from './NavbarControls.vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+import { favoritesService } from '../services/favoritesService'
+import SavedPropertiesModal from './SavedPropertiesModal.vue'
+
+const { t, isRtl } = useThemeAndLanguage()
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -1236,7 +1260,8 @@ const handleScroll = () => {
 }
 
 const query = ref('')
-const favorites = ref(new Set())
+const isSavedModalOpen = ref(false)
+const favorites = computed(() => favoritesService.savedKeys.value)
 const mobileMenuOpen = ref(false)
 const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
@@ -1440,16 +1465,17 @@ const filteredProperties = computed(() => {
   )
 })
 
-const toggleFavorite = (title) => {
-  const next = new Set(favorites.value)
-  if (next.has(title)) {
-    next.delete(title)
-    showToast(`Removed from favorites`)
+const toggleFavorite = (prop) => {
+  const targetProp = typeof prop === 'string'
+    ? properties.value.find(p => p.title === prop) || { title: prop }
+    : prop
+
+  const isSaved = favoritesService.toggleSave(targetProp)
+  if (isSaved) {
+    showToast(`Added "${targetProp.title || 'Property'}" to favorites ❤️`)
   } else {
-    next.add(title)
-    showToast(`Added to favorites`)
+    showToast(`Removed from favorites`)
   }
-  favorites.value = next
 }
 
 const handleSearch = () => {

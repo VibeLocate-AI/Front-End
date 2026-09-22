@@ -1,6 +1,6 @@
 <template>
-  <div class="app-container" :class="{ 'auth-mode': !['Landing', 'Home', 'HomeAlias', 'Map', 'Profile', 'ProfileTab'].includes(route.name) }">
-    <template v-if="!['Landing', 'Home', 'HomeAlias', 'Map', 'Profile', 'ProfileTab'].includes(route.name)">
+  <div class="app-container" :class="{ 'auth-mode': isAuthPage }">
+    <template v-if="isAuthPage">
       <video ref="bgVideo" class="bg-video" autoplay muted playsinline>
         <source src="/images/bg.mp4" type="video/mp4">
       </video>
@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -21,8 +21,11 @@ const bgVideo = ref(null)
 const viewRoutes = { landing: '/', login: '/login', signup: '/register', resetPassword: '/forgot-password', resetSuccess: '/reset-success' }
 const switchView = (view) => router.push(viewRoutes[view] || '/login')
 
-watch(() => route.name, async (name) => {
-  if (!['Landing', 'Home', 'Map', 'Profile', 'ProfileTab'].includes(name)) {
+const standalonePages = ['Landing', 'Home', 'HomeAlias', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty']
+const isAuthPage = computed(() => !standalonePages.includes(route.name))
+
+watch(() => route.name, async () => {
+  if (isAuthPage.value) {
     await nextTick()
     bgVideo.value?.play().catch(() => {})
   }
