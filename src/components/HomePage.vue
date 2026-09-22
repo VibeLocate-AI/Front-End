@@ -27,6 +27,7 @@
           <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
           <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
           <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
+          <router-link class="nav-item" to="/favorites">Favorites</router-link>
           <router-link class="nav-item" to="/about">{{ t('aboutUs') }}</router-link>
         </nav>
 
@@ -45,7 +46,7 @@
             type="button"
             aria-label="Saved Properties"
             title="Saved Properties / العقارات المحفوظة"
-            @click="isSavedModalOpen = true"
+            @click="$router.push('/favorites')"
           >
             <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
             <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
@@ -91,7 +92,7 @@
                   <i class="fa-regular fa-building"></i>
                   <span>My Properties</span>
                 </button>
-                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
+                <button class="dropdown-menu-item" @click="$router.push('/favorites'); profileMenuOpen = false">
                   <i class="fa-solid fa-heart text-danger"></i>
                   <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
                 </button>

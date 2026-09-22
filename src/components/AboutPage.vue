@@ -3,8 +3,8 @@
     <header class="about-header">
       <RouterLink class="brand" to="/home"><img src="/logo_transparent.png"><strong>Vibe<span>Locate</span></strong><b>AI</b></RouterLink>
       <button class="menu-toggle" @click="menuOpen=!menuOpen"><i class="fa-solid fa-bars"></i></button>
-      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><RouterLink to="/home#featured">Buy</RouterLink><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><RouterLink to="/home#areas">Areas</RouterLink><RouterLink class="active" to="/about">About Us</RouterLink></nav>
-      <div class="header-actions"><button class="lang"><i class="fa-solid fa-globe"></i> AR <em></em> EN</button><button class="theme"><i class="fa-solid fa-moon"></i></button><button class="list" @click="$router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button><button class="heart"><i class="fa-regular fa-heart"></i></button><button class="avatar" @click="$router.push('/profile')">AU</button></div>
+      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><RouterLink to="/home#featured">Buy</RouterLink><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><RouterLink to="/home#areas">Areas</RouterLink><RouterLink to="/favorites">Favorites</RouterLink><RouterLink class="active" to="/about">About Us</RouterLink></nav>
+      <div class="header-actions"><button class="lang"><i class="fa-solid fa-globe"></i> AR <em></em> EN</button><button class="theme"><i class="fa-solid fa-moon"></i></button><button class="list" @click="$router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button><button class="heart" @click="$router.push('/favorites')"><i class="fa-regular fa-heart"></i></button><button class="avatar" @click="$router.push('/profile')">AU</button></div>
     </header>
 
     <main>

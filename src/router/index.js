@@ -15,6 +15,7 @@ import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
 import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
 import NewProjectsPage from '../components/NewProjectsPage.vue'
 import AboutPage from '../components/AboutPage.vue'
+import FavoritesPage from '../components/FavoritesPage.vue'
 
 const routes = [
   {
@@ -41,6 +42,11 @@ const routes = [
     path: '/about',
     name: 'About',
     component: AboutPage
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: FavoritesPage
   },
   {
     path: '/property/:id',
