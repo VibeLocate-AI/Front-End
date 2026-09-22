@@ -179,6 +179,15 @@
 
               <button
                 class="nav-tab-btn"
+                :class="{ active: activeTab === 'properties' }"
+                @click="switchTab('properties')"
+              >
+                <i class="fa-regular fa-building nav-icon"></i>
+                <span>My Properties</span>
+              </button>
+
+              <button
+                class="nav-tab-btn"
                 :class="{ active: activeTab === 'saved' }"
                 @click="switchTab('saved')"
               >
@@ -226,8 +235,13 @@
           <!-- RIGHT MAIN PANEL -->
           <div class="profile-main-panel">
 
+            <!-- ==================== MY PROPERTIES ==================== -->
+            <div v-if="activeTab === 'properties'" class="tab-view-container properties-embedded-view fade-in">
+              <OwnerPropertiesPage embedded />
+            </div>
+
             <!-- ==================== TAB 1: OVERVIEW ==================== -->
-            <div v-if="activeTab === 'overview'" class="tab-view-container fade-in">
+            <div v-else-if="activeTab === 'overview'" class="tab-view-container fade-in">
               
               <!-- 4 Quick Stat Summary Cards Grid -->
               <div class="stats-grid">
@@ -745,6 +759,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import authService from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
+import OwnerPropertiesPage from './OwnerPropertiesPage.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -873,6 +888,7 @@ const filteredSavedProperties = computed(() => {
 // Tab titles and descriptions
 const tabTitles = {
   overview: 'My Profile',
+  properties: 'My Properties',
   edit: 'Edit Profile',
   saved: 'Saved Properties',
   alerts: 'Search Alerts',
@@ -882,6 +898,7 @@ const tabTitles = {
 
 const tabSubtitles = {
   overview: 'Manage your account, preferences, and saved properties',
+  properties: 'Manage the properties you have listed on VibeLocate AI',
   edit: 'Keep your information up to date',
   saved: 'Your favorite properties, all in one place',
   alerts: 'Manage your real-time property notifications',
@@ -907,6 +924,8 @@ const syncTabFromRoute = () => {
   const path = route.path
   if (path.includes('/edit')) {
     activeTab.value = 'edit'
+  } else if (path.includes('/properties')) {
+    activeTab.value = 'properties'
   } else if (path.includes('/saved')) {
     activeTab.value = 'saved'
   } else if (path.includes('/alerts')) {
