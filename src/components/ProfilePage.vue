@@ -66,6 +66,8 @@
         <!-- Navigation Links -->
         <nav class="nav-links">
           <RouterLink class="nav-item" to="/home">Home</RouterLink>
+          <RouterLink class="nav-item" to="/buy">Buy</RouterLink>
+          <RouterLink class="nav-item" to="/rent">Rent</RouterLink>
           <a class="nav-item" href="/home#map" @click.prevent="navigateToHomeSection('map')">Interactive Map</a>
           <a class="nav-item" href="/home#featured" @click.prevent="navigateToHomeSection('featured')">Featured</a>
           <a class="nav-item" href="/home#districts" @click.prevent="navigateToHomeSection('districts')">Districts</a>
