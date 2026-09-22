@@ -11,6 +11,7 @@ import MapPage from '../components/MapPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
 import AddPropertyPage from '../components/AddPropertyPage.vue'
 import RentPage from '../components/RentPage.vue'
+import BuyPage from '../components/BuyPage.vue'
 
 const routes = [
   {
@@ -22,6 +23,11 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: HomePage
+  },
+  {
+    path: '/buy',
+    name: 'Buy',
+    component: BuyPage
   },
   {
     path: '/rent',
