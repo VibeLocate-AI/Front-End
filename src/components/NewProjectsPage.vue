@@ -3,7 +3,7 @@
     <header class="np-header">
       <RouterLink to="/home" class="np-brand"><img src="/logo_transparent.png"><strong>Vibe<span>Locate</span></strong><b>AI</b></RouterLink>
       <button class="menu-btn" @click="menuOpen=!menuOpen"><i class="fa-solid fa-bars"></i></button>
-      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><a>Buy</a><RouterLink to="/rent">Rent</RouterLink><RouterLink class="active" to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map <i class="fa-solid fa-map-location-dot"></i></RouterLink><a>Areas</a><a>About Us</a></nav>
+      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><a>Buy</a><RouterLink to="/rent">Rent</RouterLink><RouterLink class="active" to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map <i class="fa-solid fa-map-location-dot"></i></RouterLink><a>Areas</a><RouterLink to="/about">About Us</RouterLink></nav>
       <div class="header-tools"><button class="language"><i class="fa-solid fa-globe"></i> AR <em></em> <b>EN</b></button><button class="circle"><i class="fa-solid fa-moon"></i></button><button class="list" @click="$router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button><button class="circle heart"><i class="fa-solid fa-heart"></i><small>3</small></button><button class="user">GU</button><i class="fa-solid fa-chevron-down down"></i></div>
     </header>
 

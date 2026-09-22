@@ -14,6 +14,7 @@ import RentPage from '../components/RentPage.vue'
 import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
 import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
 import NewProjectsPage from '../components/NewProjectsPage.vue'
+import AboutPage from '../components/AboutPage.vue'
 
 const routes = [
   {
@@ -35,6 +36,11 @@ const routes = [
     path: '/new-projects',
     name: 'NewProjects',
     component: NewProjectsPage
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: AboutPage
   },
   {
     path: '/property/:id',

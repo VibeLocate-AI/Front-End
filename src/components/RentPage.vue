@@ -27,7 +27,7 @@
           <router-link class="nav-item" to="/new-projects">New Projects</router-link>
           <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
           <router-link class="nav-item" to="/home#areas">Areas</router-link>
-          <router-link class="nav-item" to="/home#about">About Us</router-link>
+          <router-link class="nav-item" to="/about">About Us</router-link>
         </nav>
 
         <!-- Header Actions -->
