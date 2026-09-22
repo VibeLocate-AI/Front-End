@@ -1,4 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import apiClient from './api'
+import { authService } from './authService'
 
 const STORAGE_KEY = 'vibe_saved_properties'
 
@@ -92,21 +94,69 @@ export const favoritesService = {
     return savedKeys.value.has(titleOrId)
   },
 
-  toggleSave(prop) {
+  /**
+   * Sync favorites from Laravel backend: GET /api/favorites
+   */
+  async syncWithBackend() {
+    if (!authService.isAuthenticated()) return
+    try {
+      const res = await apiClient.get('/favorites')
+      const list = Array.isArray(res) ? res : (res?.data || res?.favorites || [])
+      if (Array.isArray(list) && list.length > 0) {
+        const normalized = list.map(item => {
+          const prop = item.property || item
+          return {
+            id: prop.id,
+            title: prop.title || 'Dubai Property',
+            location: prop.address_line_1 || prop.location || 'Dubai, UAE',
+            price: prop.price ? `AED ${Number(prop.price).toLocaleString()}` : 'AED 0',
+            beds: prop.bedrooms || 2,
+            baths: prop.bathrooms || 2,
+            sqft: prop.area_sqft || '1,500',
+            type: prop.type?.name || 'Apartments',
+            image: prop.cover_image || prop.image || '/images/photo-1545324418-cc1a3fa10c00.avif',
+            saved: true
+          }
+        })
+        savedItems.value = normalized
+        savedKeys.value = new Set(normalized.map(p => p.title || p.id))
+        saveToStorage()
+      }
+    } catch (err) {
+      console.warn('[favoritesService] Could not sync with /api/favorites:', err?.message)
+    }
+  },
+
+  /**
+   * Toggle save/unsave property (optimistic local update + async API call)
+   */
+  async toggleSave(prop) {
     if (!prop) return false
     const key = prop.title || prop.id
     if (!key) return false
 
-    if (savedKeys.value.has(key)) {
-      // Remove
+    const wasSaved = savedKeys.value.has(key)
+    const propId = prop.id
+
+    if (wasSaved) {
+      // Remove locally
       savedItems.value = savedItems.value.filter(item => (item.title || item.id) !== key)
       const nextKeys = new Set(savedKeys.value)
       nextKeys.delete(key)
+      if (prop.id) nextKeys.delete(prop.id)
       savedKeys.value = nextKeys
       saveToStorage()
+
+      // Call API if authenticated: DELETE /api/favorites/{id}
+      if (authService.isAuthenticated() && propId) {
+        apiClient.delete(`/favorites/${propId}`).catch(err => {
+          console.warn('[favoritesService] API remove favorite failed:', err?.message)
+        })
+      }
+
       return false
     } else {
-      // Add
+      // Add locally
       const newItem = {
         id: prop.id || Date.now(),
         title: prop.title || 'Luxury Dubai Property',
@@ -122,18 +172,31 @@ export const favoritesService = {
       savedItems.value = [newItem, ...savedItems.value]
       const nextKeys = new Set(savedKeys.value)
       nextKeys.add(key)
+      if (prop.id) nextKeys.add(prop.id)
       savedKeys.value = nextKeys
       saveToStorage()
+
+      // Call API if authenticated: POST /api/favorites/{id}
+      if (authService.isAuthenticated() && propId) {
+        apiClient.post(`/favorites/${propId}`).catch(err => {
+          console.warn('[favoritesService] API add favorite failed:', err?.message)
+        })
+      }
+
       return true
     }
   },
 
-  remove(titleOrId) {
+  async remove(titleOrId) {
     savedItems.value = savedItems.value.filter(item => (item.title || item.id) !== titleOrId)
     const nextKeys = new Set(savedKeys.value)
     nextKeys.delete(titleOrId)
     savedKeys.value = nextKeys
     saveToStorage()
+
+    if (authService.isAuthenticated() && typeof titleOrId === 'number') {
+      apiClient.delete(`/favorites/${titleOrId}`).catch(() => {})
+    }
   },
 
   clear() {

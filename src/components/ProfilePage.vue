@@ -123,6 +123,8 @@
         <!-- Navigation Links -->
         <nav class="nav-links">
           <RouterLink class="nav-item" to="/home">{{ t('home') }}</RouterLink>
+          <RouterLink class="nav-item" to="/buy">{{ t('buy') }}</RouterLink>
+          <RouterLink class="nav-item" to="/rent">{{ t('rent') }}</RouterLink>
           <a class="nav-item" href="/home#map" @click.prevent="navigateToHomeSection('map')">{{ t('interactiveMap') }}</a>
           <a class="nav-item" href="/home#featured" @click.prevent="navigateToHomeSection('featured')">{{ t('featured') }}</a>
           <a class="nav-item" href="/home#districts" @click.prevent="navigateToHomeSection('districts')">{{ t('districts') }}</a>
@@ -253,6 +255,15 @@
 
               <button
                 class="nav-tab-btn"
+                :class="{ active: activeTab === 'properties' }"
+                @click="switchTab('properties')"
+              >
+                <i class="fa-regular fa-building nav-icon"></i>
+                <span>My Properties</span>
+              </button>
+
+              <button
+                class="nav-tab-btn"
                 :class="{ active: activeTab === 'saved' }"
                 @click="switchTab('saved')"
               >
@@ -300,8 +311,13 @@
           <!-- RIGHT MAIN PANEL -->
           <div class="profile-main-panel">
 
+            <!-- ==================== MY PROPERTIES ==================== -->
+            <div v-if="activeTab === 'properties'" class="tab-view-container properties-embedded-view fade-in">
+              <OwnerPropertiesPage embedded />
+            </div>
+
             <!-- ==================== TAB 1: OVERVIEW ==================== -->
-            <div v-if="activeTab === 'overview'" class="tab-view-container fade-in">
+            <div v-else-if="activeTab === 'overview'" class="tab-view-container fade-in">
               
               <!-- 4 Quick Stat Summary Cards Grid -->
               <div class="stats-grid">
@@ -876,6 +892,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import authService from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
+import OwnerPropertiesPage from './OwnerPropertiesPage.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
@@ -1054,6 +1071,7 @@ const removeAlert = (alert) => {
 // Tab titles and descriptions
 const tabTitles = {
   overview: 'My Profile',
+  properties: 'My Properties',
   edit: 'Edit Profile',
   saved: 'Saved Properties',
   alerts: 'Search Alerts',
@@ -1063,6 +1081,7 @@ const tabTitles = {
 
 const tabSubtitles = {
   overview: 'Manage your account, preferences, and saved properties',
+  properties: 'Manage the properties you have listed on VibeLocate AI',
   edit: 'Keep your information up to date',
   saved: 'Your favorite properties, all in one place',
   alerts: 'Manage your real-time property notifications',
@@ -1140,6 +1159,8 @@ const syncTabFromRoute = () => {
     if (user.value.phone && !editForm.value.phone) editForm.value.phone = user.value.phone
     if (user.value.location && !editForm.value.location) editForm.value.location = user.value.location
     if (user.value.bio && !editForm.value.bio) editForm.value.bio = user.value.bio
+  } else if (path.includes('/properties')) {
+    activeTab.value = 'properties'
   } else if (path.includes('/saved')) {
     activeTab.value = 'saved'
   } else if (path.includes('/alerts')) {

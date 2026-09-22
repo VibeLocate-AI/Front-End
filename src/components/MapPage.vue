@@ -22,12 +22,12 @@
         <!-- Navigation Links -->
         <nav class="nav-links" :class="{ open: mobileMenuOpen }">
           <router-link class="nav-item" to="/home">{{ t('home') }}</router-link>
-          <router-link class="nav-item" to="/home#featured">{{ t('buy') }}</router-link>
+          <router-link class="nav-item" to="/buy">{{ t('buy') }}</router-link>
           <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
-          <router-link class="nav-item" to="/home#featured">{{ t('newProjects') }}</router-link>
+          <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
           <router-link class="nav-item active" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
           <router-link class="nav-item" to="/home#areas">{{ t('areas') }}</router-link>
-          <router-link class="nav-item" to="/home#about">{{ t('aboutUs') }}</router-link>
+          <router-link class="nav-item" to="/about">{{ t('aboutUs') }}</router-link>
         </nav>
 
         <!-- Header Actions -->
@@ -83,9 +83,13 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
-                <router-link v-if="isLoggedIn" to="/profile" class="dropdown-menu-item" style="text-decoration:none;">
+                <router-link v-if="isLoggedIn" to="/profile" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
                   <i class="fa-regular fa-user"></i>
                   <span>My Profile</span>
+                </router-link>
+                <router-link v-if="isLoggedIn" to="/my-properties" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
+                  <i class="fa-regular fa-building"></i>
+                  <span>My Properties</span>
                 </router-link>
                 <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:inherit; cursor:pointer;">
                   <i class="fa-solid fa-heart text-danger"></i>
@@ -317,7 +321,7 @@
           <ul>
             <li><router-link to="/home">Home</router-link></li>
             <li><router-link to="/home#about">Services</router-link></li>
-            <li><router-link to="/home#about">About Us</router-link></li>
+            <li><router-link to="/about">About Us</router-link></li>
             <li><router-link to="/home#testimonials">Testimonials</router-link></li>
             <li><router-link to="/home#contact">Contact</router-link></li>
           </ul>

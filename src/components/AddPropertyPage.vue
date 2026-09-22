@@ -33,8 +33,8 @@
           <RouterLink class="nav-item" to="/map" @click="mobileMenuOpen = false">
             {{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot map-nav-icon"></i>
           </RouterLink>
-          <RouterLink class="nav-item" to="/home" @click="mobileMenuOpen = false">{{ t('buy') }}</RouterLink>
-          <RouterLink class="nav-item" to="/home" @click="mobileMenuOpen = false">{{ t('rent') }}</RouterLink>
+          <RouterLink class="nav-item" to="/buy" @click="mobileMenuOpen = false">{{ t('buy') }}</RouterLink>
+          <RouterLink class="nav-item" to="/rent" @click="mobileMenuOpen = false">{{ t('rent') }}</RouterLink>
           <RouterLink class="nav-item" to="/profile/saved" @click="mobileMenuOpen = false">{{ t('savedProperties') }}</RouterLink>
         </nav>
 
