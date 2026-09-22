@@ -1194,10 +1194,8 @@ const isModalOpen = ref(false)
 const activeModalImage = ref('')
 
 const openPropertyDetails = (prop) => {
-  selectedProperty.value = prop
-  activeModalImage.value = prop.image || (prop.images && prop.images[0]) || ''
-  isModalOpen.value = true
-  document.body.style.overflow = 'hidden'
+  sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
+  router.push({ name: 'PropertyDetails', params: { id: prop.id || encodeURIComponent(prop.slug || prop.title) } })
 }
 
 const closePropertyDetails = () => {
