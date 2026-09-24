@@ -630,7 +630,7 @@ const isLoadingProperties = ref(false)
 const loadProperties = async () => {
   isLoadingProperties.value = true
   try {
-    const res = await propertyService.getHomeData()
+    const res = await propertyService.getHomeData('en')
     if (res?.properties && res.properties.length > 0) {
       properties.value = res.properties
     }

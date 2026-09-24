@@ -272,16 +272,16 @@
           <div class="container hero-content">
             <div class="badge-pill fade-in">
               <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i>
-              <span>AI-POWERED REAL ESTATE PLATFORM</span>
+              <span>{{ t('homeAiPlatform') }}</span>
             </div>
 
             <h1 class="hero-title fade-in">
-              Find Your Dream<br>
-              <span class="text-cyan-bright">Property in Dubai</span>
+              {{ t('homeHeroTitlePart1') }}<br>
+              <span class="text-cyan-bright">{{ t('homeHeroTitlePart2') }}</span>
             </h1>
 
             <p class="hero-desc fade-in">
-              Discover premium Dubai properties tailored to your lifestyle, comfort, and aspirations with next-generation AI recommendations.
+              {{ t('homeHeroSubtitle') }}
             </p>
 
             <!-- Floating Glass Search Widget -->
@@ -289,7 +289,7 @@
               <form class="search-form" @submit.prevent="handleSearch">
                 <div class="form-group" style="width: 100%;">
                   <label class="search-label">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI CONTEXTUAL SEARCH
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> {{ t('homeAiSearch') }}
                   </label>
                   <div class="search-input-wrapper">
                     <input
@@ -297,17 +297,17 @@
                       v-model.trim="query"
                       type="text"
                       class="hero-search-input"
-                      placeholder="e.g., Two-bedroom house in Dubai"
+                      :placeholder="t('homeAiSearchPlaceholder')"
                     >
                     <button type="submit" class="btn btn-primary search-submit-btn">
                       <i class="fa-solid fa-robot"></i>
-                      <span>AI Search</span>
+                      <span>{{ t('homeAiSearchButton') }}</span>
                     </button>
                   </div>
 
                   <!-- Interactive Quick Prompt Chips for Testing All AI Screens -->
                   <div class="ai-prompt-chips">
-                    <span class="chips-label">Demo Prompts:</span>
+                    <span class="chips-label">{{ t('homeDemoPrompts') }}</span>
                     <button type="button" class="ai-chip-pill" @click="runAiSearch('Two-bedroom house in Dubai')">
                       ✦ Two-bedroom house in Dubai
                     </button>
@@ -1354,7 +1354,7 @@ const handleDocumentClick = (e) => {
 const loadProperties = async () => {
   isLoadingProperties.value = true
   try {
-    const res = await propertyService.getHomeData()
+    const res = await propertyService.getHomeData(isRtl.value ? 'ar' : 'en')
     if (res?.properties && res.properties.length > 0) {
       properties.value = res.properties
       isLiveApi.value = true

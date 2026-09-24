@@ -381,8 +381,33 @@ export const propertyService = {
    * Fetch home page bundle directly or gracefully fallback to /properties
    * Contains: properties, property_types, categories, testimonials, stats
    */
-  async getHomeData() {
-    // 1. Try GET /home first
+  async getHomeData(language = 'en') {
+    const locale = language === 'ar' ? 'ar' : 'en'
+    const sections = ['featured-properties', 'recommended-properties', 'popular-areas', 'top-agents']
+
+    try {
+      const calls = await Promise.allSettled(sections.map(section => apiClient.get(`/home/${locale}/${section}`)))
+      const data = Object.fromEntries(calls.map((result, index) => [sections[index], result.status === 'fulfilled' ? result.value : null]))
+      const featured = data['featured-properties']
+      const rawFeatured = Array.isArray(featured) ? featured : (featured?.data || featured?.properties || [])
+      const properties = Array.isArray(rawFeatured) ? rawFeatured.map(normalizeProperty).filter(Boolean) : []
+      if (properties.length) {
+        return {
+          success: true,
+          total: properties.length,
+          properties,
+          featuredProperties: properties,
+          recommendedProperties: data['recommended-properties']?.data || data['recommended-properties'] || [],
+          popularAreas: data['popular-areas']?.data || data['popular-areas'] || [],
+          topAgents: data['top-agents']?.data || data['top-agents'] || [],
+          propertyTypes: [], categories: [], testimonials: [], stats: {}
+        }
+      }
+    } catch {
+      // The localized endpoint may be absent in an older backend deployment.
+    }
+
+    // 1. Try legacy home endpoint.
     try {
       const response = await apiClient.get('/home')
       const rawData = response?.data || response
