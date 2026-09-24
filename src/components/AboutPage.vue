@@ -1,11 +1,5 @@
 <template>
-  <div class="about-page">
-    <header class="about-header">
-      <RouterLink class="brand" to="/home"><img src="/logo_transparent.png"><strong>Vibe<span>Locate</span></strong><b>AI</b></RouterLink>
-      <button class="menu-toggle" @click="menuOpen=!menuOpen"><i class="fa-solid fa-bars"></i></button>
-      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><RouterLink to="/home#featured">Buy</RouterLink><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><RouterLink to="/home#areas">Areas</RouterLink><RouterLink class="active" to="/about">About Us</RouterLink></nav>
-      <div class="header-actions"><button class="lang"><i class="fa-solid fa-globe"></i> AR <em></em> EN</button><button class="theme"><i class="fa-solid fa-moon"></i></button><button class="list" @click="$router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button><button class="heart"><i class="fa-regular fa-heart"></i></button><button class="avatar" @click="$router.push('/profile')">AU</button></div>
-    </header>
+  <div class="about-page" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="currentTheme">
 
     <main>
       <section class="hero">
@@ -23,16 +17,38 @@
 
       <section class="commitment section-light"><div class="commit-copy"><span class="section-label"><i class="fa-solid fa-screwdriver-wrench"></i> OUR COMMITMENT</span><h2>Building a Brighter Future Together</h2><p>We are committed to empowering individuals, families, and investors to find their perfect place in Dubai. By combining innovative technology with local expertise, we aim to create a seamless real estate experience that helps you live, invest, and grow with confidence.</p><button @click="$router.push('/register')">Join Our Community <i class="fa-solid fa-arrow-right"></i></button></div><div class="commit-collage"><img class="main-img" src="/images/photo-1512917774080-9991f1c4c750.jfif"><img class="small-img" src="/images/photo-1600585154340-be6161a56a0c.avif"><div><i class="fa-regular fa-building"></i><strong>Dubai</strong><span>A City of Possibilities</span></div></div></section>
     </main>
-
-    <footer><div class="footer-top"><div class="footer-brand"><div class="brand"><img src="/logo_transparent.png"><strong>Vibe<span>Locate</span></strong><b>AI</b></div><span>A Better Place to Live</span></div><nav><RouterLink to="/home">Home</RouterLink><a>Buy</a><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><a>Areas</a><RouterLink to="/about">About Us</RouterLink></nav><div class="social"><span>Follow Us</span><i class="fa-brands fa-x-twitter"></i><i class="fa-brands fa-instagram"></i><i class="fa-brands fa-facebook-f"></i><i class="fa-brands fa-youtube"></i></div></div><div class="footer-bottom"><span>© 2026 VibeLocate. All rights reserved.</span><div><a>Privacy Policy</a><a>Terms of Service</a><a>Contact Us</a></div></div></footer>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const menuOpen=ref(false)
-const pillars=[{icon:'fa-solid fa-bullseye',title:'Our Mission',text:'To simplify real estate in Dubai through smart technology and trusted information.'},{icon:'fa-regular fa-gem',title:'Our Vision',text:'To be the leading real estate platform in the UAE, known for innovation, trust, and exceptional user experience.'},{icon:'fa-solid fa-people-group',title:'Our Values',text:'Trust  •  Transparency\nInnovation  •  Customer First\nCommunity Growth'}]
-const benefits=[{icon:'fa-solid fa-shield-halved',title:'Trusted Listings',text:'Verified properties from reputable developers and agents.'},{icon:'fa-solid fa-bolt',title:'Smart Search',text:'AI-powered recommendations tailored to your needs.'},{icon:'fa-regular fa-map',title:'Interactive Map',text:'Explore properties and areas across Dubai with ease.'},{icon:'fa-solid fa-headset',title:'Dedicated Support',text:'Our team is here to help you at every step.'}]
+import { ref, computed } from 'vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+
+const { isRtl, theme: currentTheme } = useThemeAndLanguage()
+
+const menuOpen = ref(false)
+
+const pillars = computed(() => isRtl.value ? [
+  { icon: 'fa-solid fa-bullseye', title: 'مهمتنا', text: 'تبسيط التجربة العقارية في دبي من خلال التكنولوجيا الذكية والمعلومات الموثوقة.' },
+  { icon: 'fa-regular fa-gem', title: 'رؤيتنا', text: 'أن نكون المنصة العقارية الرائدة في الإمارات من حيث الابتكار والثقة وتجربة المستخدم الاستثنائية.' },
+  { icon: 'fa-solid fa-people-group', title: 'قيمنا', text: 'الثقة • الشفافية\nالابتكار • العميل أولاً\nالنمو المجتمعي' }
+] : [
+  { icon: 'fa-solid fa-bullseye', title: 'Our Mission', text: 'To simplify real estate in Dubai through smart technology and trusted information.' },
+  { icon: 'fa-regular fa-gem', title: 'Our Vision', text: 'To be the leading real estate platform in the UAE, known for innovation, trust, and exceptional user experience.' },
+  { icon: 'fa-solid fa-people-group', title: 'Our Values', text: 'Trust  •  Transparency\nInnovation  •  Customer First\nCommunity Growth' }
+])
+
+const benefits = computed(() => isRtl.value ? [
+  { icon: 'fa-solid fa-shield-halved', title: 'عقارات موثقة', text: 'عقارات متحقق منها من مطورين ووكلاء معتمدين.' },
+  { icon: 'fa-solid fa-bolt', title: 'بحث ذكي', text: 'توصيات مدعومة بالذكاء الاصطناعي تناسب احتياجاتك.' },
+  { icon: 'fa-regular fa-map', title: 'خريطة تفاعلية', text: 'استكشف العقارات والمناطق في دبي بسهولة.' },
+  { icon: 'fa-solid fa-headset', title: 'دعم متخصص', text: 'فريقنا هنا لمساعدتك في كل خطوة.' }
+] : [
+  { icon: 'fa-solid fa-shield-halved', title: 'Trusted Listings', text: 'Verified properties from reputable developers and agents.' },
+  { icon: 'fa-solid fa-bolt', title: 'Smart Search', text: 'AI-powered recommendations tailored to your needs.' },
+  { icon: 'fa-regular fa-map', title: 'Interactive Map', text: 'Explore properties and areas across Dubai with ease.' },
+  { icon: 'fa-solid fa-headset', title: 'Dedicated Support', text: 'Our team is here to help you at every step.' }
+])
 </script>
 
 <style scoped>

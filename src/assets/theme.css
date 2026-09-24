@@ -68,7 +68,7 @@ body,
 
 /* Light Mode Header: Crisp White Glass */
 [data-theme="light"] .site-header {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgb(255, 255, 255) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid #e2e8f0 !important;
@@ -104,7 +104,7 @@ body,
 
 [data-theme="light"] .site-header .icon-action-btn:hover,
 [data-theme="light"] .nav-ctrl-btn:hover {
-  background: #e2e8f0 !important;
+  background: #f6f7f8 !important;
   border-color: #94a3b8 !important;
   color: #0284c7 !important;
 }

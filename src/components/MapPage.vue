@@ -1,145 +1,26 @@
 <template>
-  <div class="map-page-wrapper">
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header" :class="{ scrolled: isScrolled }">
-      <div class="header-inner">
-        <!-- Logo -->
-        <router-link class="brand" to="/home">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </div>
-        </router-link>
-
-        <!-- Mobile Menu Toggle -->
-        <button class="menu-toggle" type="button" aria-label="Toggle navigation" @click="mobileMenuOpen = !mobileMenuOpen">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-
-        <!-- Navigation Links -->
-        <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <router-link class="nav-item" to="/home">{{ t('home') }}</router-link>
-          <router-link class="nav-item" to="/buy">{{ t('buy') }}</router-link>
-          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
-          <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
-          <router-link class="nav-item active" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
-          <router-link class="nav-item" to="/home#areas">{{ t('areas') }}</router-link>
-          <router-link class="nav-item" to="/about">{{ t('aboutUs') }}</router-link>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
-          <NavbarControls />
-
-          <button class="btn-list-property" type="button" @click="$router.push('/add-property')">
-            {{ t('listProperty') }}
-          </button>
-          
-          <button
-            class="icon-action-btn"
-            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
-            type="button"
-            aria-label="Saved Properties"
-            title="Saved Properties / العقارات المحفوظة"
-            @click="isSavedModalOpen = true"
-          >
-            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
-            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
-          </button>
-
-          <div class="user-profile-menu-container" ref="profileDropdownRef">
-            <div class="user-profile-menu" @click="toggleProfileMenu">
-              <img
-                class="header-avatar"
-                :src="userAvatarUrl"
-                :alt="user.name || 'User'"
-                @error="onAvatarError"
-              >
-              <i class="fa-solid fa-chevron-down profile-arrow" :class="{ 'rotate-180': profileMenuOpen }"></i>
-            </div>
-
-            <!-- Interactive User Profile Dropdown -->
-            <div v-if="profileMenuOpen" class="profile-dropdown-box">
-              <div class="dropdown-user-header">
-                <img
-                  class="dropdown-avatar"
-                  :src="userAvatarUrl"
-                  :alt="user.name || 'User'"
-                  @error="onAvatarError"
-                >
-                <div class="dropdown-user-info">
-                  <strong class="dropdown-user-name">{{ displayName }}</strong>
-                  <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge">
-                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? 'Verified Member' : 'Guest Account' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <div class="dropdown-menu-list">
-                <router-link v-if="isLoggedIn" to="/profile" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
-                  <i class="fa-regular fa-user"></i>
-                  <span>My Profile</span>
-                </router-link>
-                <router-link v-if="isLoggedIn" to="/my-properties" class="dropdown-menu-item" style="text-decoration:none;" @click="profileMenuOpen = false">
-                  <i class="fa-regular fa-building"></i>
-                  <span>My Properties</span>
-                </router-link>
-                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false" style="background:none; border:none; width:100%; text-align:inherit; cursor:pointer;">
-                  <i class="fa-solid fa-heart text-danger"></i>
-                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
-                </button>
-                <router-link v-if="isLoggedIn" to="/profile/preferences" class="dropdown-menu-item" style="text-decoration:none;">
-                  <i class="fa-solid fa-sliders"></i>
-                  <span>Preferences</span>
-                </router-link>
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <div class="dropdown-footer-actions">
-                <button v-if="isLoggedIn" class="dropdown-logout-btn" @click="handleLogout">
-                  <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                  <span>Log Out</span>
-                </button>
-                <div v-else class="dropdown-guest-actions">
-                  <button class="dropdown-login-btn" @click="router.push('/login')">Log In</button>
-                  <button class="dropdown-signup-btn" @click="router.push('/register')">Sign Up</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
+  <div class="map-page-wrapper" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="currentTheme">
     <!-- ==================== HERO / TITLE SECTION ==================== -->
     <section class="map-hero-section">
       <div class="map-hero-container">
         <div class="map-title-area">
           <div class="map-tag">
             <i class="fa-solid fa-satellite-dish"></i>
-            <span>AI-Powered Geospatial Radar</span>
+            <span>{{ t('mapHeroBadge') }}</span>
           </div>
           <h1 class="map-title">
-            Smart Interactive <span class="highlight">Dubai Real Estate Map</span>
+            {{ t('mapTitlePart1') }} <span class="highlight">{{ t('mapTitlePart2') }}</span>
           </h1>
           <p class="map-subtitle">
-            Explore Dubai's most prestigious villas, penthouses, and waterfront residences on the interactive map with real-time AI compatibility scoring.
+            {{ t('mapSubtitle') }}
           </p>
         </div>
         <div class="map-quick-stats">
-          <div class="stat-item"><span class="stat-num cyan">12</span><span class="stat-lbl">Prime Landmarks</span></div>
+          <div class="stat-item"><span class="stat-num cyan">12</span><span class="stat-lbl">{{ t('primeLandmarks') }}</span></div>
           <div class="stat-sep"></div>
-          <div class="stat-item"><span class="stat-num emerald">98%</span><span class="stat-lbl">AI Precision</span></div>
+          <div class="stat-item"><span class="stat-num emerald">98%</span><span class="stat-lbl">{{ t('aiPrecision') }}</span></div>
           <div class="stat-sep"></div>
-          <div class="stat-item"><span class="stat-num">0.4 km</span><span class="stat-lbl">Nearest Property</span></div>
+          <div class="stat-item"><span class="stat-num">0.4 km</span><span class="stat-lbl">{{ t('nearestProperty') }}</span></div>
         </div>
       </div>
     </section>
@@ -151,51 +32,51 @@
           <div class="filter-dropdown-wrap">
             <i class="fa-solid fa-location-dot filter-icon"></i>
             <select id="filter-area" class="filter-select" aria-label="Select District">
-              <option value="all">All Dubai Districts</option>
-              <option value="Downtown Dubai">Downtown Dubai</option>
-              <option value="Palm Jumeirah">Palm Jumeirah</option>
-              <option value="Dubai Marina">Dubai Marina</option>
-              <option value="Business Bay">Business Bay</option>
-              <option value="Dubai Hills Estate">Dubai Hills Estate</option>
-              <option value="Arabian Ranches">Arabian Ranches</option>
-              <option value="DIFC">DIFC</option>
-              <option value="Dubai Creek Harbour">Dubai Creek Harbour</option>
-              <option value="Bluewaters Island">Bluewaters Island</option>
-              <option value="Dubai Silicon Oasis">Dubai Silicon Oasis</option>
-              <option value="Jumeirah Village Circle">Jumeirah Village Circle</option>
-              <option value="Jumeirah Beach Residence">Jumeirah Beach Residence</option>
+              <option value="all">{{ t('allDubaiDistricts') }}</option>
+              <option value="Downtown Dubai">{{ isRtl ? 'وسط مدينة دبي' : 'Downtown Dubai' }}</option>
+              <option value="Palm Jumeirah">{{ isRtl ? 'نخلة جميرا' : 'Palm Jumeirah' }}</option>
+              <option value="Dubai Marina">{{ isRtl ? 'مرسى دبي' : 'Dubai Marina' }}</option>
+              <option value="Business Bay">{{ isRtl ? 'الخليج التجاري' : 'Business Bay' }}</option>
+              <option value="Dubai Hills Estate">{{ isRtl ? 'دبي هيلز استيت' : 'Dubai Hills Estate' }}</option>
+              <option value="Arabian Ranches">{{ isRtl ? 'المرابع العربية' : 'Arabian Ranches' }}</option>
+              <option value="DIFC">{{ isRtl ? 'مركز دبي المالي العالمي' : 'DIFC' }}</option>
+              <option value="Dubai Creek Harbour">{{ isRtl ? 'خور دبي' : 'Dubai Creek Harbour' }}</option>
+              <option value="Bluewaters Island">{{ isRtl ? 'جزيرة بلوواترز' : 'Bluewaters Island' }}</option>
+              <option value="Dubai Silicon Oasis">{{ isRtl ? 'واحة دبي للسيليكون' : 'Dubai Silicon Oasis' }}</option>
+              <option value="Jumeirah Village Circle">{{ isRtl ? 'قرية جميرا الدائرية' : 'Jumeirah Village Circle' }}</option>
+              <option value="Jumeirah Beach Residence">{{ isRtl ? 'جميرا بيتش ريزيدنس' : 'Jumeirah Beach Residence' }}</option>
             </select>
             <i class="fa-solid fa-chevron-down chevron-icon"></i>
           </div>
           <div class="filter-dropdown-wrap">
             <i class="fa-solid fa-building filter-icon"></i>
             <select id="filter-type" class="filter-select" aria-label="Property Type">
-              <option value="all">All Property Types</option>
-              <option value="Penthouse">Luxury Penthouse</option>
-              <option value="Villa">Seafront Villa</option>
-              <option value="Apartment">Modern Apartment</option>
-              <option value="Townhouse">Smart Townhouse</option>
+              <option value="all">{{ t('allTypes') }}</option>
+              <option value="Penthouse">{{ isRtl ? 'بنتهاوس فاخر' : 'Luxury Penthouse' }}</option>
+              <option value="Villa">{{ isRtl ? 'فيلا ساحلية' : 'Seafront Villa' }}</option>
+              <option value="Apartment">{{ isRtl ? 'شقة عصرية' : 'Modern Apartment' }}</option>
+              <option value="Townhouse">{{ isRtl ? 'تاون هاوس ذكي' : 'Smart Townhouse' }}</option>
             </select>
             <i class="fa-solid fa-chevron-down chevron-icon"></i>
           </div>
           <div class="filter-dropdown-wrap">
             <i class="fa-solid fa-coins filter-icon"></i>
             <select id="filter-price" class="filter-select" aria-label="Price Range">
-              <option value="all">All Price Ranges</option>
-              <option value="under-5m">Under AED 5M</option>
-              <option value="5m-10m">AED 5M - 10M</option>
-              <option value="above-10m">Above AED 10M</option>
+              <option value="all">{{ t('anyBudget') }}</option>
+              <option value="under-5m">{{ isRtl ? 'أقل من 5 مليون درهم' : 'Under AED 5M' }}</option>
+              <option value="5m-10m">{{ isRtl ? '5 - 10 مليون درهم' : 'AED 5M - 10M' }}</option>
+              <option value="above-10m">{{ isRtl ? 'أكثر من 10 مليون درهم' : 'Above AED 10M' }}</option>
             </select>
             <i class="fa-solid fa-chevron-down chevron-icon"></i>
           </div>
           <div class="filter-dropdown-wrap">
             <i class="fa-solid fa-wand-magic-sparkles filter-icon"></i>
             <select id="filter-vibe" class="filter-select" aria-label="Lifestyle Vibe">
-              <option value="all">All Lifestyle Vibes</option>
-              <option value="Waterfront / Sea View">Waterfront &amp; Sea View</option>
-              <option value="Sky High Luxury">Sky-High Penthouse</option>
-              <option value="High ROI Investment">High ROI Investment</option>
-              <option value="Green Family Oasis">Green Family Community</option>
+              <option value="all">{{ isRtl ? 'جميع أنماط الحياة' : 'All Lifestyle Vibes' }}</option>
+              <option value="Waterfront / Sea View">{{ isRtl ? 'واجهة مائية وإطلالة بحرية' : 'Waterfront &amp; Sea View' }}</option>
+              <option value="Sky High Luxury">{{ isRtl ? 'بنتهاوس فاخر عالي' : 'Sky-High Penthouse' }}</option>
+              <option value="High ROI Investment">{{ isRtl ? 'عائد استثماري مرتفع' : 'High ROI Investment' }}</option>
+              <option value="Green Family Oasis">{{ isRtl ? 'مجتمع عائلي أخضر' : 'Green Family Community' }}</option>
             </select>
             <i class="fa-solid fa-chevron-down chevron-icon"></i>
           </div>
@@ -203,7 +84,7 @@
         <div class="filter-actions">
           <button id="btn-scan-map" class="btn-scan-map" type="button">
             <i class="fa-solid fa-radar"></i>
-            <span>Scan Map with AI</span>
+            <span>{{ isRtl ? 'مسح الخريطة بالذكاء الاصطناعي' : 'Scan Map with AI' }}</span>
           </button>
           <button id="btn-reset-filters" class="btn-reset-filters" type="button" title="Reset All Filters">
             <i class="fa-solid fa-rotate-right"></i>
@@ -218,19 +99,19 @@
         <div class="sidebar-header">
           <div class="sidebar-title-row">
             <div class="sidebar-title-info">
-              <h2 class="sidebar-heading">Properties in Range</h2>
-              <span id="nearby-count-badge" class="nearby-count-badge">12 Available</span>
+              <h2 class="sidebar-heading">{{ isRtl ? 'عقارات قريبة' : 'Properties in Range' }}</h2>
+              <span id="nearby-count-badge" class="nearby-count-badge">{{ isRtl ? '12 متاح' : '12 Available' }}</span>
             </div>
             <select id="sort-select" class="sort-select" aria-label="Sort properties">
-              <option value="ai-match">❆ Highest AI Match</option>
-              <option value="distance">📍 Nearest Distance</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
+              <option value="ai-match">{{ isRtl ? '❆ أعلى تطابق ذكائي' : '❆ Highest AI Match' }}</option>
+              <option value="distance">{{ isRtl ? '📍 الأقرب مسافةً' : '📍 Nearest Distance' }}</option>
+              <option value="price-asc">{{ t('sortByPriceAsc') }}</option>
+              <option value="price-desc">{{ t('sortByPriceDesc') }}</option>
             </select>
           </div>
           <div class="sidebar-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="sidebar-search-input" class="sidebar-search-input" type="text" placeholder="Search by district, building, or lifestyle...">
+            <input id="sidebar-search-input" class="sidebar-search-input" type="text" :placeholder="isRtl ? 'ابحث بالحي، المبنى، أو نمط الحياة...' : 'Search by district, building, or lifestyle...'">
           </div>
         </div>
         <div id="sidebar-properties-list" class="properties-scroll-list"></div>
@@ -268,22 +149,22 @@
               <div class="route-stat-box">
                 <div class="stat-icon-wrap"><i class="fa-solid fa-route"></i></div>
                 <div class="stat-info">
-                  <span class="stat-val" id="route-distance-val">-- كم</span>
-                  <span class="stat-lbl">المسافة منك</span>
+                  <span class="stat-val" id="route-distance-val">-- {{ isRtl ? 'كم' : 'km' }}</span>
+                  <span class="stat-lbl">{{ t('distanceFromYou') }}</span>
                 </div>
               </div>
               <div class="route-stat-box">
                 <div class="stat-icon-wrap time"><i class="fa-solid fa-car-side"></i></div>
                 <div class="stat-info">
-                  <span class="stat-val" id="route-duration-val">-- دقيقة</span>
-                  <span class="stat-lbl">وقت القيادة</span>
+                  <span class="stat-val" id="route-duration-val">-- {{ isRtl ? 'دقيقة' : 'min' }}</span>
+                  <span class="stat-lbl">{{ t('drivingTime') }}</span>
                 </div>
               </div>
             </div>
             <div class="route-actions-wrap">
               <a id="btn-gmaps-navigate" href="#" target="_blank" class="btn-open-gmaps">
                 <i class="fa-solid fa-map-location-dot"></i>
-                <span>ملاحة عبر خرائط Google</span>
+                <span>{{ t('navigateGoogleMaps') }}</span>
                 <i class="fa-solid fa-arrow-up-right-from-square external-icon"></i>
               </a>
             </div>
@@ -293,75 +174,6 @@
         <div id="radar-sweep-overlay" class="radar-sweep-overlay"><div class="radar-beam"></div></div>
       </section>
     </main>
-
-    <!-- ==================== FOOTER ==================== -->
-    <footer class="footer" id="contact">
-      <div class="container footer-top">
-        <div class="footer-brand">
-          <router-link to="/home" class="logo footer-logo">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img footer-logo-img">
-            <div class="brand-text footer-brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </router-link>
-          <p class="brand-desc">
-            Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.
-          </p>
-          <div class="social-links">
-            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-          </div>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Quick Links</h4>
-          <ul>
-            <li><router-link to="/home">Home</router-link></li>
-            <li><router-link to="/home#about">Services</router-link></li>
-            <li><router-link to="/about">About Us</router-link></li>
-            <li><router-link to="/home#testimonials">Testimonials</router-link></li>
-            <li><router-link to="/home#contact">Contact</router-link></li>
-          </ul>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Support</h4>
-          <ul>
-            <li><a href="#" @click.prevent="showToast('Help Center is coming soon')">Help Center</a></li>
-            <li><a href="#" @click.prevent="showToast('Safety & Security information')">Safety &amp; Security</a></li>
-            <li><a href="#" @click.prevent="showToast('Terms & Conditions')">Terms &amp; Conditions</a></li>
-            <li><a href="#" @click.prevent="showToast('Privacy Policy')">Privacy Policy</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Contact</h4>
-          <ul class="contact-info-list">
-            <li>
-              <i class="fa-solid fa-location-dot"></i>
-              <span>742 Evergreen Blvd, Beverly Hills, CA</span>
-            </li>
-            <li>
-              <i class="fa-solid fa-envelope"></i>
-              <span>contact@vibelocate.ai</span>
-            </li>
-            <li>
-              <i class="fa-solid fa-phone"></i>
-              <span>+1 (800) 456-7890</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <div class="container bottom-container">
-          <p>&copy; 2026 VibeLocate AI. All rights reserved.</p>
-        </div>
-      </div>
-    </footer>
 
     <!-- ==================== PROPERTY DETAILS MODAL ==================== -->
     <div id="property-details-modal" class="map-modal-backdrop" style="display: none;">
@@ -421,7 +233,7 @@ import SavedPropertiesModal from './SavedPropertiesModal.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
-const { t, isRtl } = useThemeAndLanguage()
+const { t, isRtl, isDark, theme: currentTheme } = useThemeAndLanguage()
 
 const router = useRouter()
 

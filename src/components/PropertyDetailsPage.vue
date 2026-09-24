@@ -1,21 +1,5 @@
 <template>
   <div class="property-page">
-    <header class="topbar">
-      <button class="brand" @click="router.push('/home')">
-        <img src="/logo_transparent.png" alt="VibeLocate AI">
-        <span>Vibe<span>Locate</span> <b>AI</b></span>
-      </button>
-      <nav>
-        <button @click="router.push('/home')">Home</button>
-        <button class="active" @click="router.push('/home#featured')">Buy</button>
-        <button @click="router.push('/rent')">Rent</button>
-        <button @click="router.push('/map')">Interactive Map</button>
-      </nav>
-      <div class="top-actions">
-        <button class="icon-btn"><i class="fa-solid fa-moon"></i></button>
-        <button class="list-btn" @click="router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button>
-      </div>
-    </header>
 
     <main v-if="property" class="page-shell">
       <div class="crumbs">
