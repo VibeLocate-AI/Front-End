@@ -32,22 +32,25 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeAndLanguage } from './composables/useThemeAndLanguage'
+import { usePageTranslations } from './composables/usePageTranslations'
 import AppNavbar from './components/AppNavbar.vue'
 import AppFooter from './components/AppFooter.vue'
 import SavedPropertiesModal from './components/SavedPropertiesModal.vue'
 
-const { isRtl, theme } = useThemeAndLanguage()
+const { isRtl, theme, lang } = useThemeAndLanguage()
 
 const route = useRoute()
 const router = useRouter()
 const bgVideo = ref(null)
+
+usePageTranslations(lang, () => route.fullPath)
 const savedModalOpen = ref(false)
 
 // Auth page routes (login, register, etc.) - show video BG
 const authPageNames = ['Login', 'Register', 'Verify', 'ForgotPassword', 'ResetPassword', 'ResetSuccess']
 
 // Pages with the shared navbar (all main app pages)
-const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties', 'NewProjects', 'About', 'Favorites', 'Payment', 'PropertyBooking']
+const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties', 'NewProjects', 'About', 'Favorites', 'Notifications', 'Payment', 'PropertyBooking']
 
 const isAuthPage = computed(() => authPageNames.includes(route.name))
 const isMainPage = computed(() => mainPageNames.includes(route.name))
