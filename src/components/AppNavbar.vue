@@ -27,10 +27,6 @@
           {{ t('interactiveMap') }}
           <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-inline-start:3px;"></i>
         </router-link>
-        <router-link class="nav-item" to="/favorites" active-class="active">
-          <i class="fa-solid fa-heart" style="font-size:0.75rem; color:#ef4444; margin-inline-end:5px;"></i>
-          {{ isRtl ? 'المفضلة' : 'Favorites' }}
-        </router-link>
         <router-link class="nav-item" to="/about" active-class="active">{{ t('aboutUs') }}</router-link>
       </nav>
 
