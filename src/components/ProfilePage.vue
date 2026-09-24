@@ -2,8 +2,8 @@
   <div class="profile-page-root">
     <!-- Toast Notification -->
     <Transition name="toast-fade">
-      <div v-if="toastVisible" class="profile-toast">
-        <i class="fa-solid fa-circle-check toast-icon"></i>
+      <div v-if="toastVisible" class="profile-toast" :class="`profile-toast--${toastType}`">
+        <i :class="toastType === 'error' ? 'fa-solid fa-circle-exclamation toast-icon' : 'fa-solid fa-circle-check toast-icon'"></i>
         <span>{{ toastMessage }}</span>
       </div>
     </Transition>
@@ -49,47 +49,63 @@
       </div>
     </Transition>
 
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header">
-      <div class="header-inner">
-        <!-- Logo -->
-        <RouterLink class="brand" to="/home">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
+    <!-- Delete Account Confirmation Modal -->
+    <Transition name="modal-fade">
+      <div v-if="showDeleteModal" class="upgrade-modal-backdrop" @click.self="closeDeleteModal">
+        <div class="upgrade-modal-content delete-modal-content">
+          <button class="close-modal-btn" :disabled="isDeletingAccount" @click="closeDeleteModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <div class="modal-danger-badge">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+
+          <h2 class="modal-title text-danger">Delete Account</h2>
+          <p class="modal-subtitle">
+            Are you sure you want to permanently delete your account? All your saved properties, search alerts, and profile preferences will be permanently removed.
+          </p>
+
+          <div class="delete-modal-input-wrap">
+            <label class="form-label text-start d-block mb-1">Confirm your password to proceed</label>
+            <div class="password-input-wrap">
+              <input
+                :type="showDeletePass ? 'text' : 'password'"
+                v-model="deleteConfirmPassword"
+                class="form-control"
+                placeholder="Enter your current password"
+                :disabled="isDeletingAccount"
+                @keyup.enter="handleDeleteAccount"
+              >
+              <button type="button" class="btn-toggle-eye" @click="showDeletePass = !showDeletePass" tabindex="-1">
+                <i :class="showDeletePass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+              </button>
             </div>
           </div>
-        </RouterLink>
 
-        <!-- Navigation Links -->
-        <nav class="nav-links">
-          <RouterLink class="nav-item" to="/home">Home</RouterLink>
-          <a class="nav-item" href="/home#map" @click.prevent="navigateToHomeSection('map')">Interactive Map</a>
-          <a class="nav-item" href="/home#featured" @click.prevent="navigateToHomeSection('featured')">Featured</a>
-          <a class="nav-item" href="/home#districts" @click.prevent="navigateToHomeSection('districts')">Districts</a>
-          
-          <div class="ai-radar-tag">
-            <span class="pulse-dot"></span>
-            <span class="radar-text">Live AI Radar: <strong>Active</strong></span>
+          <div v-if="deleteError" class="alert-inline alert-danger mt-3">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>
+            {{ deleteError }}
           </div>
-        </nav>
 
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <RouterLink to="/home" class="btn-back-home">
-            <i class="fa-solid fa-house"></i>
-            <span>Back to Home</span>
-          </RouterLink>
-
-          <button class="header-user-avatar-btn" title="Your Account" @click="switchTab('overview')">
-            <span v-if="!user.avatarUrl" class="avatar-initials">{{ user.avatarInitials }}</span>
-            <img v-else :src="user.avatarUrl" :alt="user.name" class="avatar-img">
-          </button>
+          <div class="modal-actions mt-4">
+            <button
+              class="btn-danger-confirm"
+              :disabled="isDeletingAccount"
+              @click="handleDeleteAccount"
+            >
+              <i v-if="isDeletingAccount" class="fa-solid fa-spinner fa-spin me-1"></i>
+              <i v-else class="fa-solid fa-trash-can me-1"></i>
+              {{ isDeletingAccount ? 'Deleting Account...' : 'Yes, Delete My Account' }}
+            </button>
+            <button class="btn-cancel-modal" :disabled="isDeletingAccount" @click="closeDeleteModal">
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
-    </header>
+    </Transition>
+
 
     <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
     <main class="profile-main-container">
@@ -139,18 +155,29 @@
           <aside class="profile-sidebar-card">
             <!-- User Summary Header -->
             <div class="sidebar-user-info">
-              <div class="user-avatar-wrap">
-                <span v-if="!user.avatarUrl" class="avatar-initials-large">{{ user.avatarInitials }}</span>
-                <img v-else :src="user.avatarUrl" :alt="user.name" class="avatar-img-large">
-              </div>
+              <!-- Loading skeleton -->
+              <template v-if="profileLoading">
+                <div class="user-avatar-wrap skeleton-avatar"></div>
+                <div class="skeleton-line skeleton-name"></div>
+                <div class="skeleton-line skeleton-email"></div>
+                <div class="skeleton-line skeleton-badge"></div>
+              </template>
 
-              <h3 class="user-name">{{ user.name }}</h3>
-              <p class="user-email">{{ user.email }}</p>
-              <p class="user-role">{{ user.role }}</p>
+              <!-- Real data -->
+              <template v-else>
+                <div class="user-avatar-wrap">
+                  <span v-if="!user.avatarUrl" class="avatar-initials-large">{{ user.avatarInitials }}</span>
+                  <img v-else :src="user.avatarUrl" :alt="user.name" class="avatar-img-large">
+                </div>
 
-              <div class="user-member-badge">
-                Member since {{ user.memberSince }}
-              </div>
+                <h3 class="user-name">{{ user.name }}</h3>
+                <p class="user-email">{{ user.email }}</p>
+                <p class="user-role">{{ user.role }}</p>
+
+                <div class="user-member-badge">
+                  Member since {{ user.memberSince }}
+                </div>
+              </template>
             </div>
 
             <div class="sidebar-divider"></div>
@@ -173,6 +200,15 @@
               >
                 <i class="fa-solid fa-pen-to-square nav-icon"></i>
                 <span>Edit Profile</span>
+              </button>
+
+              <button
+                class="nav-tab-btn"
+                :class="{ active: activeTab === 'properties' }"
+                @click="switchTab('properties')"
+              >
+                <i class="fa-regular fa-building nav-icon"></i>
+                <span>My Properties</span>
               </button>
 
               <button
@@ -224,8 +260,13 @@
           <!-- RIGHT MAIN PANEL -->
           <div class="profile-main-panel">
 
+            <!-- ==================== MY PROPERTIES ==================== -->
+            <div v-if="activeTab === 'properties'" class="tab-view-container properties-embedded-view fade-in">
+              <OwnerPropertiesPage embedded />
+            </div>
+
             <!-- ==================== TAB 1: OVERVIEW ==================== -->
-            <div v-if="activeTab === 'overview'" class="tab-view-container fade-in">
+            <div v-else-if="activeTab === 'overview'" class="tab-view-container fade-in">
               
               <!-- 4 Quick Stat Summary Cards Grid -->
               <div class="stats-grid">
@@ -437,6 +478,11 @@
                 <div class="form-card">
                   <h3 class="card-title mb-4">Personal Information</h3>
 
+                  <div v-if="saveErrorMessage" class="profile-error-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ saveErrorMessage }}</span>
+                  </div>
+
                   <form @submit.prevent="saveProfileChanges">
                     <div class="form-group mb-3">
                       <label class="form-label">Full Name</label>
@@ -498,8 +544,11 @@
                     </div>
 
                     <div class="form-actions">
-                      <button type="button" class="btn-cancel" @click="switchTab('overview')">Cancel</button>
-                      <button type="submit" class="btn-save-primary">Save Changes</button>
+                      <button type="button" class="btn-cancel" @click="cancelEdit" :disabled="isSaving">Cancel</button>
+                      <button type="submit" class="btn-save-primary" :disabled="isSaving">
+                        <span v-if="isSaving"><i class="fa-solid fa-spinner fa-spin"></i> Saving...</span>
+                        <span v-else>Save Changes</span>
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -514,11 +563,13 @@
                       <span v-if="!user.avatarUrl" class="avatar-initials-preview">{{ user.avatarInitials }}</span>
                       <img v-else :src="user.avatarUrl" :alt="user.name" class="avatar-img">
                     </div>
-                    <button class="btn-change-photo" @click="triggerPhotoUpload">
-                      <i class="fa-solid fa-camera"></i> Change Photo
+                    <button class="btn-change-photo" @click="triggerPhotoUpload" :disabled="isUploadingPhoto">
+                      <i v-if="isUploadingPhoto" class="fa-solid fa-spinner fa-spin"></i>
+                      <i v-else class="fa-solid fa-camera"></i>
+                      <span>{{ isUploadingPhoto ? ' Uploading...' : ' Change Photo' }}</span>
                     </button>
                     <p class="photo-hint">JPG, PNG up to 5MB</p>
-                    <input type="file" ref="fileInput" class="d-none" accept="image/*" @change="handlePhotoUpload">
+                    <input type="file" ref="fileInput" style="display: none;" accept="image/*" @change="handlePhotoUpload">
                   </div>
 
                   <!-- Account Type Card -->
@@ -568,8 +619,8 @@
                     <img :src="prop.image" :alt="prop.title" class="prop-img">
                     <button
                       class="btn-fav-toggle faved"
-                      @click="toggleSaveProperty(prop)"
-                      title="Remove from saved"
+                      @click.stop="toggleSaveProperty(prop)"
+                      title="Remove from saved properties"
                     >
                       <i class="fa-solid fa-heart"></i>
                     </button>
@@ -592,7 +643,7 @@
 
               <div v-else class="empty-state-card text-center py-5">
                 <i class="fa-regular fa-heart empty-icon mb-3"></i>
-                <h3>No {{ activeSavedTab }} saved yet</h3>
+                <h3>No {{ activeSavedTab === 'All' ? 'properties' : activeSavedTab }} saved yet</h3>
                 <p class="text-muted">Explore Dubai properties and click the heart icon to save your favorites.</p>
                 <RouterLink to="/home" class="btn-save-primary mt-3 d-inline-block">Browse Properties</RouterLink>
               </div>
@@ -609,48 +660,30 @@
                   </button>
                 </div>
 
-                <div class="alerts-list">
-                  <div class="alert-item-box">
+                <div v-if="searchAlertsList.length > 0" class="alerts-list">
+                  <div
+                    v-for="alert in searchAlertsList"
+                    :key="alert.id"
+                    class="alert-item-box"
+                  >
                     <div class="alert-info">
                       <div class="alert-title-row">
-                        <h4 class="alert-name">Dubai Marina 2-Bed Apartments</h4>
-                        <span class="status-badge-active">Active</span>
+                        <h4 class="alert-name">{{ alert.name }}</h4>
+                        <span class="status-badge-active">{{ alert.status }}</span>
                       </div>
-                      <p class="alert-details">AED 1.5M - 3.5M • Instant Email &amp; Push</p>
+                      <p class="alert-details">{{ alert.details }}</p>
                     </div>
                     <div class="alert-actions">
-                      <button class="btn-icon-action" @click="showToast('Alert preferences updated.')"><i class="fa-solid fa-sliders"></i></button>
-                      <button class="btn-icon-action text-danger" @click="showToast('Alert paused.')"><i class="fa-solid fa-trash-can"></i></button>
+                      <button class="btn-icon-action" title="Settings" @click="showToast('Alert preferences updated.')"><i class="fa-solid fa-sliders"></i></button>
+                      <button class="btn-icon-action text-danger" title="Remove Alert" @click="removeAlert(alert)"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                   </div>
+                </div>
 
-                  <div class="alert-item-box">
-                    <div class="alert-info">
-                      <div class="alert-title-row">
-                        <h4 class="alert-name">Palm Jumeirah Luxury Villas</h4>
-                        <span class="status-badge-active">Active</span>
-                      </div>
-                      <p class="alert-details">AED 15M+ • Daily Summary</p>
-                    </div>
-                    <div class="alert-actions">
-                      <button class="btn-icon-action" @click="showToast('Alert preferences updated.')"><i class="fa-solid fa-sliders"></i></button>
-                      <button class="btn-icon-action text-danger" @click="showToast('Alert paused.')"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                  </div>
-
-                  <div class="alert-item-box">
-                    <div class="alert-info">
-                      <div class="alert-title-row">
-                        <h4 class="alert-name">Downtown Dubai Penthouses</h4>
-                        <span class="status-badge-active">Active</span>
-                      </div>
-                      <p class="alert-details">AED 8M - 20M • Instant Email</p>
-                    </div>
-                    <div class="alert-actions">
-                      <button class="btn-icon-action" @click="showToast('Alert preferences updated.')"><i class="fa-solid fa-sliders"></i></button>
-                      <button class="btn-icon-action text-danger" @click="showToast('Alert paused.')"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                  </div>
+                <div v-else class="empty-state-card text-center py-5">
+                  <i class="fa-regular fa-bell empty-icon mb-3"></i>
+                  <h3>No Active Alerts</h3>
+                  <p class="text-muted">You have no active property alerts. Create an alert to receive updates.</p>
                 </div>
               </div>
             </div>
@@ -702,30 +735,95 @@
             <!-- ==================== TAB 6: ACCOUNT SETTINGS ==================== -->
             <div v-else-if="activeTab === 'settings'" class="tab-view-container fade-in">
               <div class="form-card mb-4">
-                <h3 class="card-title mb-4">Security &amp; Password</h3>
-                <form @submit.prevent="showToast('Password updated securely.')">
+                <h3 class="card-title mb-2">Security &amp; Password</h3>
+                <p class="text-muted mb-4">Ensure your account is using a long, random password to stay secure.</p>
+
+                <!-- Status Alerts -->
+                <div v-if="passwordError" class="alert-inline alert-danger mb-4">
+                  <i class="fa-solid fa-circle-exclamation me-2"></i>
+                  <span>{{ passwordError }}</span>
+                </div>
+
+                <div v-if="passwordSuccess" class="alert-inline alert-success mb-4">
+                  <i class="fa-solid fa-circle-check me-2"></i>
+                  <span>{{ passwordSuccess }}</span>
+                </div>
+
+                <form @submit.prevent="handleChangePassword">
                   <div class="form-group mb-3">
-                    <label class="form-label">Current Password</label>
-                    <input type="password" class="form-control" placeholder="••••••••">
+                    <label class="form-label">Current Password <span class="required-star">*</span></label>
+                    <div class="password-input-wrap">
+                      <input
+                        :type="showCurrentPass ? 'text' : 'password'"
+                        v-model="passwordForm.currentPassword"
+                        class="form-control"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                        :disabled="isSavingPassword"
+                      >
+                      <button type="button" class="btn-toggle-eye" @click="showCurrentPass = !showCurrentPass" tabindex="-1">
+                        <i :class="showCurrentPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                      </button>
+                    </div>
                   </div>
+
                   <div class="form-group mb-3">
-                    <label class="form-label">New Password</label>
-                    <input type="password" class="form-control" placeholder="New password">
+                    <label class="form-label">New Password <span class="required-star">*</span></label>
+                    <div class="password-input-wrap">
+                      <input
+                        :type="showNewPass ? 'text' : 'password'"
+                        v-model="passwordForm.newPassword"
+                        class="form-control"
+                        placeholder="Minimum 6 characters"
+                        autocomplete="new-password"
+                        required
+                        :disabled="isSavingPassword"
+                      >
+                      <button type="button" class="btn-toggle-eye" @click="showNewPass = !showNewPass" tabindex="-1">
+                        <i :class="showNewPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                      </button>
+                    </div>
                   </div>
+
                   <div class="form-group mb-4">
-                    <label class="form-label">Confirm New Password</label>
-                    <input type="password" class="form-control" placeholder="Confirm new password">
+                    <label class="form-label">Confirm New Password <span class="required-star">*</span></label>
+                    <div class="password-input-wrap">
+                      <input
+                        :type="showConfirmPass ? 'text' : 'password'"
+                        v-model="passwordForm.confirmPassword"
+                        class="form-control"
+                        placeholder="Repeat new password"
+                        autocomplete="new-password"
+                        required
+                        :disabled="isSavingPassword"
+                      >
+                      <button type="button" class="btn-toggle-eye" @click="showConfirmPass = !showConfirmPass" tabindex="-1">
+                        <i :class="showConfirmPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                      </button>
+                    </div>
                   </div>
-                  <button type="submit" class="btn-save-primary">Update Password</button>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn-save-primary" :disabled="isSavingPassword">
+                      <i v-if="isSavingPassword" class="fa-solid fa-spinner fa-spin me-2"></i>
+                      <i v-else class="fa-solid fa-key me-2"></i>
+                      <span>{{ isSavingPassword ? 'Updating Password...' : 'Update Password' }}</span>
+                    </button>
+                  </div>
                 </form>
               </div>
 
               <div class="form-card danger-card">
-                <h3 class="card-title text-danger mb-2">Danger Zone</h3>
-                <p class="text-muted mb-3">Permanently remove your profile, saved properties, and alerts.</p>
-                <button class="btn-danger-outline" @click="showToast('Please contact support to delete account.')">
-                  Delete Account
-                </button>
+                <div class="danger-header">
+                  <div>
+                    <h3 class="card-title text-danger mb-1">Danger Zone</h3>
+                    <p class="text-muted mb-0">Permanently remove your profile, saved properties, preferences, and alerts.</p>
+                  </div>
+                  <button type="button" class="btn-danger-outline" @click="openDeleteModal">
+                    <i class="fa-solid fa-trash-can me-1"></i> Delete Account
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -742,6 +840,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import authService from '../services/authService'
+import { favoritesService } from '../services/favoritesService'
+import OwnerPropertiesPage from './OwnerPropertiesPage.vue'
+import NavbarControls from './NavbarControls.vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+
+const { t, isRtl } = useThemeAndLanguage()
 
 const route = useRoute()
 const router = useRouter()
@@ -754,39 +858,41 @@ const fileInput = ref(null)
 // Toast state
 const toastMessage = ref('')
 const toastVisible = ref(false)
+const toastType = ref('success')
 let toastTimer = null
 
-const showToast = (msg) => {
+const showToast = (msg, type = 'success') => {
   toastMessage.value = msg
   toastVisible.value = true
+  toastType.value = type
   if (toastTimer) clearTimeout(toastTimer)
   toastTimer = setTimeout(() => {
     toastVisible.value = false
-  }, 3500)
+  }, type === 'error' ? 5000 : 3500)
 }
 
-// User state
+// User state – start empty so no stale placeholder shows before API responds
 const user = ref({
-  name: 'Anas User',
-  email: 'anas.user@example.com',
-  phone: '+971 50 123 4567',
-  location: 'Dubai, UAE',
-  preferredArea: 'Downtown Dubai, Dubai Marina',
+  name: '',
+  email: '',
+  phone: '',
+  location: '',
+  preferredArea: '',
   accountType: 'Free Member',
   role: 'Property Explorer',
-  memberSince: 'Aug 2026',
-  bio: 'Real estate enthusiast exploring the best properties in Dubai.',
+  memberSince: '',
+  bio: '',
   avatarInitials: 'VU',
   avatarUrl: ''
 })
 
 // Form state for editing
 const editForm = ref({
-  name: 'Anas User',
-  email: 'anas.user@example.com',
-  phone: '+971 50 123 4567',
-  location: 'Dubai, UAE',
-  bio: 'Real estate enthusiast exploring the best properties in Dubai.'
+  name: '',
+  email: '',
+  phone: '',
+  location: '',
+  bio: ''
 })
 
 // Preferences
@@ -801,12 +907,12 @@ const preferences = ref({
 })
 
 // Stats
-const stats = ref({
-  savedProperties: 12,
+const stats = computed(() => ({
+  savedProperties: favoritesService.savedItems.value.length,
   propertiesViewed: 48,
   searchAlerts: 3,
   inquiriesSent: 2
-})
+}))
 
 // Recently Viewed
 const recentlyViewed = ref([
@@ -850,153 +956,7 @@ const recentlyViewed = ref([
 
 // Saved properties list & filtering
 const activeSavedTab = ref('All')
-
-const savedPropertiesList = ref([
-  {
-    id: 1,
-    title: 'The Royal Atlantis Sky Villa',
-    location: 'Palm Jumeirah',
-    price: 'AED 18,500,000',
-    beds: 4,
-    baths: 5,
-    sqft: '5,420',
-    type: 'Villas',
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    saved: true
-  },
-  {
-    id: 2,
-    title: 'Burj Crown Panorama Penthouse',
-    location: 'Downtown Dubai',
-    price: 'AED 8,450,000',
-    beds: 3,
-    baths: 4,
-    sqft: '2,850',
-    type: 'Penthouses',
-    image: '/images/photo-1512917774080-9991f1c4c750.jfif',
-    saved: true
-  },
-  {
-    id: 3,
-    title: 'Marina Gate Waterfront Haven',
-    location: 'Dubai Marina',
-    price: 'AED 4,450,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,750',
-    type: 'Apartments',
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    saved: true
-  },
-  {
-    id: 4,
-    title: 'Address Beach Resort Apartment',
-    location: 'JBR',
-    price: 'AED 3,200,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,350',
-    type: 'Apartments',
-    image: '/images/photo-1582719478250-c89cae4dc85b.avif',
-    saved: true
-  },
-  {
-    id: 5,
-    title: 'Dubai Hills Family Villa',
-    location: 'Dubai Hills Estate',
-    price: 'AED 7,900,000',
-    beds: 5,
-    baths: 6,
-    sqft: '4,100',
-    type: 'Villas',
-    image: '/images/photo-1613977257363-707ba9348227.jfif',
-    saved: true
-  },
-  {
-    id: 6,
-    title: 'Creek Harbour View Apartment',
-    location: 'Dubai Creek Harbour',
-    price: 'AED 2,950,000',
-    beds: 2,
-    baths: 2,
-    sqft: '1,240',
-    type: 'Apartments',
-    image: '/images/photo-1600210492486-724fe5c67fb0.jfif',
-    saved: true
-  },
-  {
-    id: 7,
-    title: 'Emirates Hills Mansion',
-    location: 'Emirates Hills',
-    price: 'AED 45,000,000',
-    beds: 6,
-    baths: 8,
-    sqft: '12,500',
-    type: 'Villas',
-    image: '/images/photo-1600585154340-be6161a56a0c.avif',
-    saved: true
-  },
-  {
-    id: 8,
-    title: 'One Zaabeel Sky Penthouse',
-    location: 'Zaabeel',
-    price: 'AED 24,000,000',
-    beds: 4,
-    baths: 5,
-    sqft: '4,800',
-    type: 'Penthouses',
-    image: '/images/photo-1618221195710-dd6b41faaea6.jfif',
-    saved: true
-  },
-  {
-    id: 9,
-    title: 'District One Modern Townhouse',
-    location: 'Mohammed Bin Rashid City',
-    price: 'AED 5,600,000',
-    beds: 3,
-    baths: 4,
-    sqft: '3,100',
-    type: 'Townhouses',
-    image: '/images/photo-1512917774080-9991f1c4c750 (1).jfif',
-    saved: true
-  },
-  {
-    id: 10,
-    title: 'Downtown Vista Apartment',
-    location: 'Downtown Dubai',
-    price: 'AED 3,800,000',
-    beds: 2,
-    baths: 2,
-    sqft: '1,420',
-    type: 'Apartments',
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    saved: true
-  },
-  {
-    id: 11,
-    title: 'Palm Jumeirah Signature Villa',
-    location: 'Palm Jumeirah',
-    price: 'AED 32,000,000',
-    beds: 5,
-    baths: 6,
-    sqft: '8,200',
-    type: 'Villas',
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    saved: true
-  },
-  {
-    id: 12,
-    title: 'Bluewaters Island Luxury Residence',
-    location: 'Bluewaters Island',
-    price: 'AED 4,900,000',
-    beds: 3,
-    baths: 3,
-    sqft: '2,100',
-    type: 'Apartments',
-    image: '/images/photo-1582719478250-c89cae4dc85b.avif',
-    saved: true
-  }
-])
+const savedPropertiesList = computed(() => favoritesService.savedItems.value)
 
 const savedFilterCounts = computed(() => {
   return {
@@ -1013,9 +973,54 @@ const filteredSavedProperties = computed(() => {
   return savedPropertiesList.value.filter(p => p.type === activeSavedTab.value)
 })
 
+// Search Alerts State & Management
+const defaultAlerts = [
+  {
+    id: 1,
+    name: 'Dubai Marina 2-Bed Apartments',
+    status: 'Active',
+    details: 'AED 1.5M - 3.5M • Instant Email & Push'
+  },
+  {
+    id: 2,
+    name: 'Palm Jumeirah Luxury Villas',
+    status: 'Active',
+    details: 'AED 15M+ • Daily Summary'
+  },
+  {
+    id: 3,
+    name: 'Downtown Dubai Penthouses',
+    status: 'Active',
+    details: 'AED 8M - 20M • Instant Email'
+  }
+]
+
+const loadAlerts = () => {
+  try {
+    const raw = localStorage.getItem('vibe_search_alerts')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) { /* ignore */ }
+  return defaultAlerts
+}
+
+const searchAlertsList = ref(loadAlerts())
+
+const removeAlert = (alert) => {
+  searchAlertsList.value = searchAlertsList.value.filter(a => a.id !== alert.id)
+  try {
+    localStorage.setItem('vibe_search_alerts', JSON.stringify(searchAlertsList.value))
+  } catch (e) { /* ignore */ }
+  stats.value.searchAlerts = searchAlertsList.value.length
+  showToast(`Alert "${alert.name}" removed successfully.`)
+}
+
 // Tab titles and descriptions
 const tabTitles = {
   overview: 'My Profile',
+  properties: 'My Properties',
   edit: 'Edit Profile',
   saved: 'Saved Properties',
   alerts: 'Search Alerts',
@@ -1025,6 +1030,7 @@ const tabTitles = {
 
 const tabSubtitles = {
   overview: 'Manage your account, preferences, and saved properties',
+  properties: 'Manage the properties you have listed on VibeLocate AI',
   edit: 'Keep your information up to date',
   saved: 'Your favorite properties, all in one place',
   alerts: 'Manage your real-time property notifications',
@@ -1036,8 +1042,30 @@ const tabTitle = computed(() => tabTitles[activeTab.value] || 'My Profile')
 const tabSubtitle = computed(() => tabSubtitles[activeTab.value] || '')
 
 // Switch tab method with route sync
+// Snapshot of user data taken when entering the Edit tab – used by cancelEdit()
+const originalUser = ref({})
+
 const switchTab = (tabName) => {
   activeTab.value = tabName
+  if (tabName === 'edit') {
+    // Always sync editForm with the latest user values
+    editForm.value.name     = user.value.name     || ''
+    editForm.value.email    = user.value.email    || ''
+    editForm.value.phone    = user.value.phone    || ''
+    editForm.value.location = user.value.location || ''
+    editForm.value.bio      = user.value.bio      || ''
+    // Take a snapshot so Cancel can restore it
+    originalUser.value = {
+      name:     user.value.name     || '',
+      email:    user.value.email    || '',
+      phone:    user.value.phone    || '',
+      location: user.value.location || '',
+      bio:      user.value.bio      || '',
+      avatarUrl:      user.value.avatarUrl      || '',
+      avatarInitials: user.value.avatarInitials  || 'VU'
+    }
+    selectedPhotoFile.value = null
+  }
   if (tabName === 'overview') {
     router.push('/profile')
   } else {
@@ -1045,11 +1073,43 @@ const switchTab = (tabName) => {
   }
 }
 
+// Discard any unsaved edits and return to overview
+const cancelEdit = () => {
+  if (isSaving.value) return
+  // Restore editForm to the snapshot taken when Edit was opened
+  editForm.value.name     = originalUser.value.name     || ''
+  editForm.value.email    = originalUser.value.email    || ''
+  editForm.value.phone    = originalUser.value.phone    || ''
+  editForm.value.location = originalUser.value.location || ''
+  editForm.value.bio      = originalUser.value.bio      || ''
+  // Restore user display values (undo any optimistic updates from this session)
+  user.value.name           = originalUser.value.name           || ''
+  user.value.email          = originalUser.value.email          || ''
+  user.value.phone          = originalUser.value.phone          || ''
+  user.value.location       = originalUser.value.location       || ''
+  user.value.bio            = originalUser.value.bio            || ''
+  user.value.avatarUrl      = originalUser.value.avatarUrl      || ''
+  user.value.avatarInitials = originalUser.value.avatarInitials || 'VU'
+  // Also restore localStorage to match
+  if (originalUser.value.name)  localStorage.setItem('vibe_user_name',  originalUser.value.name)
+  if (originalUser.value.email) localStorage.setItem('vibe_user_email', originalUser.value.email)
+  selectedPhotoFile.value = null
+  saveErrorMessage.value = ''
+  switchTab('overview')
+}
+
 // Sync route tab parameter
 const syncTabFromRoute = () => {
   const path = route.path
   if (path.includes('/edit')) {
     activeTab.value = 'edit'
+    if (user.value.name && !editForm.value.name) editForm.value.name = user.value.name
+    if (user.value.email && !editForm.value.email) editForm.value.email = user.value.email
+    if (user.value.phone && !editForm.value.phone) editForm.value.phone = user.value.phone
+    if (user.value.location && !editForm.value.location) editForm.value.location = user.value.location
+    if (user.value.bio && !editForm.value.bio) editForm.value.bio = user.value.bio
+  } else if (path.includes('/properties')) {
+    activeTab.value = 'properties'
   } else if (path.includes('/saved')) {
     activeTab.value = 'saved'
   } else if (path.includes('/alerts')) {
@@ -1068,69 +1128,369 @@ const syncTabFromRoute = () => {
 watch(() => route.path, syncTabFromRoute)
 watch(() => route.query.tab, syncTabFromRoute)
 
-onMounted(() => {
-  syncTabFromRoute()
-  
-  // Try loading real user info if saved in localStorage
-  const storedName = localStorage.getItem('vibe_user_name')
-  const storedEmail = localStorage.getItem('vibe_user_email')
-  if (storedName) {
-    user.value.name = storedName
-    editForm.value.name = storedName
-    const names = storedName.split(' ')
-    user.value.avatarInitials = (names[0]?.[0] || '') + (names[1]?.[0] || '')
+// Loading state for profile API
+const profileLoading = ref(false)
+
+/**
+ * Parse and apply the /api/profile API response to the reactive user state.
+ * Handles various field names the Laravel backend may return.
+ * Tries multiple nesting levels: flat → data.user → data.data → data
+ */
+const applyProfileData = (rawResponse) => {
+  // Log raw response so we can trace the actual shape during development
+  console.log('[ProfilePage] /api/profile raw response:', JSON.parse(JSON.stringify(rawResponse || {})))
+
+  // Try every possible nesting the Laravel backend might use
+  const p =
+    (rawResponse?.user && typeof rawResponse.user === 'object' ? rawResponse.user : null) ||
+    (rawResponse?.data && typeof rawResponse.data === 'object' ? rawResponse.data : null) ||
+    (rawResponse?.profile && typeof rawResponse.profile === 'object' ? rawResponse.profile : null) ||
+    rawResponse ||
+    {}
+
+  console.log('[ProfilePage] resolved profile object:', JSON.parse(JSON.stringify(p || {})))
+
+  // Full name – extract from all possible fields (name, full_name, first_name + last_name)
+  const serverFullName =
+    p.name ||
+    p.full_name ||
+    p.fullName ||
+    [p.first_name, p.last_name].filter(Boolean).join(' ') ||
+    p.first_name ||
+    p.user_name ||
+    p.username ||
+    ''
+
+  const cachedName = localStorage.getItem('vibe_user_name') || ''
+  const fullName = serverFullName || cachedName
+
+  if (fullName) {
+    user.value.name = fullName
+    editForm.value.name = fullName
+    // Generate initials
+    const nameParts = fullName.trim().split(/\s+/)
+    user.value.avatarInitials = ((nameParts[0]?.[0] || '') + (nameParts[1]?.[0] || '')).toUpperCase() || 'VU'
   }
-  if (storedEmail) {
-    user.value.email = storedEmail
-    editForm.value.email = storedEmail
+
+  // Email
+  const email = p.email || localStorage.getItem('vibe_user_email') || ''
+  if (email) {
+    user.value.email = email
+    editForm.value.email = email
+  }
+
+  // Phone
+  const phone = p.phone || p.phone_number || p.mobile || ''
+  if (phone) {
+    user.value.phone = phone
+    editForm.value.phone = phone
+  }
+
+  // Location / city
+  const rawLoc = p.location || (p.city ? [p.city, p.country].filter(Boolean).join(', ') : '') || p.city || ''
+  if (rawLoc) {
+    const knownCities = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ras Al Khaimah']
+    const matched = knownCities.find(c => rawLoc.toLowerCase().includes(c.toLowerCase()))
+    const loc = matched ? `${matched}, UAE` : rawLoc
+    user.value.location = loc
+    editForm.value.location = loc
+  }
+
+  // Bio / about
+  const bio = p.bio || p.about || p.description || ''
+  if (bio) {
+    user.value.bio = bio
+    editForm.value.bio = bio
+  }
+
+  // Profile photo / avatar: prioritize user's explicitly selected photo if available
+  const localAvatar = localStorage.getItem('vibe_user_avatar') || ''
+  const serverAvatar =
+    p.profile_photo_url ||
+    p.avatar ||
+    p.photo ||
+    p.avatar_url ||
+    p.image ||
+    p.picture ||
+    ''
+  const avatar = localAvatar || serverAvatar
+  if (avatar) {
+    user.value.avatarUrl = avatar
+  }
+
+  // Account / role type
+  const accountType = p.account_type || p.plan || p.subscription || p.role || ''
+  if (accountType) {
+    user.value.accountType = accountType
+  }
+
+  // Member since (created_at)
+  const dateStr = p.created_at || p.registered_at || ''
+  if (dateStr) {
+    try {
+      const d = new Date(dateStr)
+      if (!isNaN(d.getTime())) {
+        user.value.memberSince = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      }
+    } catch { /* keep empty */ }
+  }
+
+  // Preferred area
+  const preferredArea = p.preferred_area || p.preferred_district || p.preference?.area || ''
+  if (preferredArea) {
+    user.value.preferredArea = preferredArea
+  }
+
+  // Stats from profile if returned (respect local storage changes if user modified them)
+  if (p.saved_properties_count !== undefined && !localStorage.getItem('vibe_saved_properties')) {
+    stats.value.savedProperties = p.saved_properties_count
+  } else {
+    stats.value.savedProperties = savedPropertiesList.value.length
+  }
+  if (p.properties_viewed_count !== undefined) stats.value.propertiesViewed = p.properties_viewed_count
+  if (p.search_alerts_count !== undefined && !localStorage.getItem('vibe_search_alerts')) {
+    stats.value.searchAlerts = p.search_alerts_count
+  } else {
+    stats.value.searchAlerts = searchAlertsList.value.length
+  }
+  if (p.inquiries_count !== undefined) stats.value.inquiriesSent = p.inquiries_count
+
+  // Persist to localStorage for current session only (cleared on logout)
+  if (fullName) localStorage.setItem('vibe_user_name', fullName)
+  if (email) localStorage.setItem('vibe_user_email', email)
+
+  // Keep auth_user synced for Home, Map, Navbar avatars
+  try {
+    const rawAuth = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
+    const currentAuth = rawAuth ? JSON.parse(rawAuth) : {}
+    const updatedAuth = {
+      ...currentAuth,
+      name: fullName || currentAuth.name || '',
+      email: email || currentAuth.email || '',
+      avatar: avatar || currentAuth.avatar || ''
+    }
+    const serialized = JSON.stringify(updatedAuth)
+    localStorage.setItem('auth_user', serialized)
+    sessionStorage.setItem('auth_user', serialized)
+  } catch { /* ignore parsing errors */ }
+}
+
+onMounted(async () => {
+  syncTabFromRoute()
+
+  // Redirect to login if not logged in
+  if (!authService.isAuthenticated()) {
+    router.push('/login')
+    return
+  }
+
+  // Fetch real data from GET /api/profile (always fresh – no stale localStorage pre-fill)
+  profileLoading.value = true
+  try {
+    const response = await authService.getProfileData()
+    applyProfileData(response)
+  } catch (err) {
+    console.warn('[ProfilePage] /api/profile failed:', err?.message || err)
+    // Fallback: try /user endpoint
+    try {
+      const fallback = await authService.getProfile()
+      applyProfileData(fallback)
+    } catch (fallbackErr) {
+      console.warn('[ProfilePage] /user fallback also failed:', fallbackErr?.message || fallbackErr)
+      // Last resort: read from localStorage cache if available
+      const storedName = localStorage.getItem('vibe_user_name')
+      const storedEmail = localStorage.getItem('vibe_user_email')
+      if (storedName) {
+        user.value.name = storedName
+        editForm.value.name = storedName
+        const names = storedName.trim().split(/\s+/)
+        user.value.avatarInitials = ((names[0]?.[0] || '') + (names[1]?.[0] || '')).toUpperCase() || 'VU'
+      }
+      if (storedEmail) {
+        user.value.email = storedEmail
+        editForm.value.email = storedEmail
+      }
+    }
+  } finally {
+    profileLoading.value = false
+    // Ensure counts reflect active items
+    stats.value.savedProperties = savedPropertiesList.value.length
+    stats.value.searchAlerts = searchAlertsList.value.length
+    // Sync recentlyViewed saved states with savedPropertiesList
+    recentlyViewed.value.forEach(p => {
+      p.saved = savedPropertiesList.value.some(sp => sp.id === p.id || sp.title === p.title)
+    })
   }
 })
 
 // Toggle save property
 const toggleSaveProperty = (item) => {
-  item.saved = !item.saved
-  if (item.saved) {
-    showToast(`Saved "${item.title}" to favorites.`)
+  const isSaved = favoritesService.toggleSave(item)
+  if (isSaved) {
+    showToast(`Saved "${item.title || 'Property'}" to favorites ❤️`)
   } else {
-    showToast(`Removed "${item.title}" from favorites.`)
+    showToast(`Removed "${item.title || 'Property'}" from favorites.`)
   }
-  // Keep counts in sync
-  stats.value.savedProperties = savedPropertiesList.value.filter(p => p.saved).length
 }
 
-// Photo upload simulation
+const isSaving = ref(false)
+const isUploadingPhoto = ref(false)
+const saveErrorMessage = ref('')
+const selectedPhotoFile = ref(null)
+
+// Photo upload handler
 const triggerPhotoUpload = () => {
   fileInput.value?.click()
 }
 
-const handlePhotoUpload = (e) => {
+const handlePhotoUpload = async (e) => {
   const file = e.target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      user.value.avatarUrl = event.target.result
-      showToast('Profile photo updated successfully!')
-    }
-    reader.readAsDataURL(file)
+  if (e.target) e.target.value = ''
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Image file must be less than 5MB.', 'error')
+    return
   }
+
+  selectedPhotoFile.value = file
+
+  // 1. Immediately preview and persist locally
+  const reader = new FileReader()
+  reader.onload = async (event) => {
+    const dataUrl = event.target.result
+    user.value.avatarUrl = dataUrl
+    localStorage.setItem('vibe_user_avatar', dataUrl)
+
+    try {
+      const rawAuth = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
+      const currentAuth = rawAuth ? JSON.parse(rawAuth) : {}
+      const updatedAuth = { ...currentAuth, avatar: dataUrl }
+      const serialized = JSON.stringify(updatedAuth)
+      localStorage.setItem('auth_user', serialized)
+      sessionStorage.setItem('auth_user', serialized)
+    } catch { /* ignore */ }
+
+    // 2. Upload to backend
+    isUploadingPhoto.value = true
+    try {
+      const res = await authService.uploadAvatar(file)
+      const serverAvatar =
+        res?.avatar_url ||
+        res?.avatar ||
+        res?.photo_url ||
+        res?.photo ||
+        res?.image ||
+        res?.data?.avatar ||
+        res?.data?.photo ||
+        res?.data?.avatar_url ||
+        res?.user?.avatar ||
+        res?.user?.photo
+
+      if (serverAvatar && typeof serverAvatar === 'string' && (serverAvatar.startsWith('http') || serverAvatar.startsWith('/'))) {
+        user.value.avatarUrl = serverAvatar
+        localStorage.setItem('vibe_user_avatar', serverAvatar)
+      }
+      showToast('Profile photo updated successfully!')
+    } catch (err) {
+      console.warn('[ProfilePage] Server avatar upload note:', err?.message || err)
+      showToast('Profile photo updated!')
+    } finally {
+      isUploadingPhoto.value = false
+    }
+  }
+  reader.readAsDataURL(file)
 }
 
 // Save profile form
-const saveProfileChanges = () => {
-  user.value.name = editForm.value.name
-  user.value.email = editForm.value.email
-  user.value.phone = editForm.value.phone
-  user.value.location = editForm.value.location
-  user.value.bio = editForm.value.bio
+const saveProfileChanges = async () => {
+  if (isSaving.value) return
+  isSaving.value = true
+  saveErrorMessage.value = ''
 
-  const names = editForm.value.name.split(' ')
-  user.value.avatarInitials = ((names[0]?.[0] || '') + (names[1]?.[0] || '')).toUpperCase() || 'VU'
+  const nameVal = editForm.value.name.trim()
+  const nameParts = nameVal.split(/\s+/)
+  const firstName = nameParts[0] || ''
+  const lastName = nameParts.slice(1).join(' ') || nameParts[0] || ''
 
-  localStorage.setItem('vibe_user_name', editForm.value.name)
-  localStorage.setItem('vibe_user_email', editForm.value.email)
+  const cityVal = editForm.value.location ? editForm.value.location.split(',')[0].trim() : ''
+  const countryVal = editForm.value.location && editForm.value.location.includes(',') ? editForm.value.location.split(',')[1].trim() : 'UAE'
 
-  showToast('Profile updated successfully!')
-  switchTab('overview')
+  const basePayload = {
+    name: nameVal,
+    full_name: nameVal,
+    first_name: firstName,
+    last_name: lastName,
+    email: editForm.value.email.trim(),
+    phone: editForm.value.phone?.trim() || '',
+    phone_number: editForm.value.phone?.trim() || '',
+    location: editForm.value.location || '',
+    city: cityVal,
+    country: countryVal,
+    bio: editForm.value.bio?.trim() || ''
+  }
+
+  // ── 1. Optimistic update: apply changes locally immediately ──────────────
+  user.value.name = nameVal
+  user.value.email = editForm.value.email?.trim() || ''
+  user.value.phone = editForm.value.phone?.trim() || ''
+  user.value.location = editForm.value.location || ''
+  user.value.bio = editForm.value.bio?.trim() || ''
+  user.value.avatarInitials = ((firstName[0] || '') + (lastName[0] || '')).toUpperCase() || 'VU'
+
+  localStorage.setItem('vibe_user_name', nameVal)
+  localStorage.setItem('vibe_user_email', editForm.value.email?.trim() || '')
+
+  try {
+    const rawAuth = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
+    const currentAuth = rawAuth ? JSON.parse(rawAuth) : {}
+    const updatedAuth = {
+      ...currentAuth,
+      name: nameVal,
+      email: editForm.value.email?.trim() || '',
+      avatar: user.value.avatarUrl || currentAuth.avatar || ''
+    }
+    const serialized = JSON.stringify(updatedAuth)
+    localStorage.setItem('auth_user', serialized)
+    sessionStorage.setItem('auth_user', serialized)
+  } catch { /* ignore */ }
+
+  // ── 2. Call the API (best-effort) ────────────────────────────────────────
+  try {
+    let payload
+    if (selectedPhotoFile.value) {
+      const formData = new FormData()
+      Object.entries(basePayload).forEach(([k, v]) => formData.append(k, v))
+      formData.append('photo', selectedPhotoFile.value)
+      formData.append('avatar', selectedPhotoFile.value)
+      formData.append('image', selectedPhotoFile.value)
+      formData.append('_method', 'PUT')
+      payload = formData
+    } else {
+      payload = basePayload
+    }
+
+    const response = await authService.updateProfile(payload)
+
+    // If backend returns updated profile object, re-apply server data
+    if (response) {
+      applyProfileData(response)
+    }
+
+    selectedPhotoFile.value = null
+    showToast(response?.message || 'Profile updated successfully!')
+    switchTab('overview')
+  } catch (err) {
+    console.error('[ProfilePage] API update failed (local changes still applied):', err)
+    // Local changes are already applied above; just notify the user
+    const errMsg = err?.message || 'Could not sync with server. Changes saved locally.'
+    saveErrorMessage.value = errMsg
+    showToast(errMsg, 'error')
+    // Still switch to overview so the user can see their local changes
+    switchTab('overview')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 // Confirm Pro Upgrade
@@ -1150,6 +1510,114 @@ const handleLogout = async () => {
 // Home section navigation helper
 const navigateToHomeSection = (sectionId) => {
   router.push(`/home#${sectionId}`)
+}
+
+// ==================== PASSWORD CHANGE ====================
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+const showCurrentPass = ref(false)
+const showNewPass = ref(false)
+const showConfirmPass = ref(false)
+const isSavingPassword = ref(false)
+const passwordError = ref('')
+const passwordSuccess = ref('')
+
+const handleChangePassword = async () => {
+  passwordError.value = ''
+  passwordSuccess.value = ''
+
+  if (!passwordForm.value.currentPassword) {
+    passwordError.value = 'Please enter your current password.'
+    return
+  }
+  if (!passwordForm.value.newPassword) {
+    passwordError.value = 'Please enter a new password.'
+    return
+  }
+  if (passwordForm.value.newPassword.length < 6) {
+    passwordError.value = 'New password must be at least 6 characters.'
+    return
+  }
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    passwordError.value = 'New password confirmation does not match.'
+    return
+  }
+
+  isSavingPassword.value = true
+  try {
+    const res = await authService.changePassword({
+      currentPassword: passwordForm.value.currentPassword,
+      newPassword: passwordForm.value.newPassword,
+      confirmPassword: passwordForm.value.confirmPassword
+    })
+
+    const msg = res?.message || 'Password updated successfully!'
+    passwordSuccess.value = msg
+    showToast(msg)
+    passwordForm.value.currentPassword = ''
+    passwordForm.value.newPassword = ''
+    passwordForm.value.confirmPassword = ''
+  } catch (err) {
+    console.error('[ProfilePage] changePassword failed:', err)
+    let msg = err?.data?.message || err?.message || 'Failed to update password. Please check your current password.'
+    if (err?.data?.errors) {
+      const errList = Object.values(err.data.errors).flat()
+      if (errList.length) msg = errList.join(' ')
+    }
+    passwordError.value = msg
+    showToast(msg, 'error')
+  } finally {
+    isSavingPassword.value = false
+  }
+}
+
+// ==================== DELETE ACCOUNT ====================
+const showDeleteModal = ref(false)
+const deleteConfirmPassword = ref('')
+const showDeletePass = ref(false)
+const isDeletingAccount = ref(false)
+const deleteError = ref('')
+
+const openDeleteModal = () => {
+  deleteError.value = ''
+  deleteConfirmPassword.value = ''
+  showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  if (isDeletingAccount.value) return
+  showDeleteModal.value = false
+  deleteError.value = ''
+  deleteConfirmPassword.value = ''
+}
+
+const handleDeleteAccount = async () => {
+  deleteError.value = ''
+  isDeletingAccount.value = true
+
+  try {
+    const res = await authService.deleteAccount({
+      password: deleteConfirmPassword.value
+    })
+
+    showDeleteModal.value = false
+    showToast(res?.message || 'Your account has been deleted successfully.')
+    router.push('/login')
+  } catch (err) {
+    console.error('[ProfilePage] deleteAccount failed:', err)
+    let msg = err?.data?.message || err?.message || 'Failed to delete account. Please verify your password.'
+    if (err?.data?.errors) {
+      const errList = Object.values(err.data.errors).flat()
+      if (errList.length) msg = errList.join(' ')
+    }
+    deleteError.value = msg
+    showToast(msg, 'error')
+  } finally {
+    isDeletingAccount.value = false
+  }
 }
 </script>
 
@@ -2380,19 +2848,146 @@ const navigateToHomeSection = (sectionId) => {
   cursor: pointer;
 }
 
-/* Danger card */
+/* Danger card & Danger Header */
 .danger-card {
   border-color: #fca5a5;
+  background: #fff8f8;
+}
+
+.danger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .btn-danger-outline {
   background: transparent;
-  border: 1px solid #ef4444;
+  border: 1.5px solid #ef4444;
   color: #ef4444;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
   font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-danger-outline:hover {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* Password Input & Eye Toggle */
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap .form-control {
+  padding-right: 44px;
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.btn-toggle-eye:hover {
+  color: #3b82f6;
+}
+
+.required-star {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Inline Alerts */
+.alert-inline {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.alert-inline.alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.alert-inline.alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+/* Delete Modal Specifics */
+.delete-modal-content {
+  max-width: 440px;
+}
+
+.modal-danger-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 16px auto;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+}
+
+.delete-modal-input-wrap {
+  text-align: left;
+  margin-top: 16px;
+}
+
+.btn-danger-confirm {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: none;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-danger-confirm:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ==================== TOAST & MODALS ==================== */
@@ -2416,6 +3011,15 @@ const navigateToHomeSection = (sectionId) => {
 
 .toast-icon {
   color: #10b981;
+}
+
+.profile-toast--error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: #1a0a0a;
+}
+
+.profile-toast--error .toast-icon {
+  color: #ef4444;
 }
 
 .upgrade-modal-backdrop {
@@ -2576,5 +3180,44 @@ const navigateToHomeSection = (sectionId) => {
   font-size: 14px;
   color: #0f172a;
   cursor: pointer;
+}
+
+/* ==================== SKELETON LOADING ==================== */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-avatar {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f0f6ff 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 50%;
+  width: 72px !important;
+  height: 72px !important;
+  border: none !important;
+}
+.skeleton-line {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f0f6ff 50%, #e2e8f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+  margin: 6px auto;
+}
+.skeleton-name { width: 70%; height: 18px; }
+.skeleton-email { width: 85%; height: 13px; }
+.skeleton-badge { width: 55%; height: 24px; border-radius: 20px; }
+
+/* Error Banner */
+.profile-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 </style>

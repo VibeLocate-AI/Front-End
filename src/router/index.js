@@ -9,6 +9,16 @@ import LandingPage from '../components/LandingPage.vue'
 import HomePage from '../components/HomePage.vue'
 import MapPage from '../components/MapPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
+import AddPropertyPage from '../components/AddPropertyPage.vue'
+import RentPage from '../components/RentPage.vue'
+import BuyPage from '../components/BuyPage.vue'
+import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
+import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
+import NewProjectsPage from '../components/NewProjectsPage.vue'
+import AboutPage from '../components/AboutPage.vue'
+import FavoritesPage from '../components/FavoritesPage.vue'
+import PaymentPage from '../components/PaymentPage.vue'
+import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 
 const routes = [
   {
@@ -17,14 +27,66 @@ const routes = [
     component: LandingPage
   },
   {
+    path: '/property/booking',
+    name: 'PropertyBooking',
+    component: PropertyBookingPage,
+    alias: ['/property/:id/booking', '/booking']
+  },
+  {
+    path: '/payment',
+    name: 'Payment',
+    component: PaymentPage
+  },
+  {
     path: '/home',
     name: 'Home',
     component: HomePage
   },
   {
+    path: '/buy',
+    name: 'Buy',
+    component: BuyPage
+  },
+  {
+    path: '/rent',
+    name: 'Rent',
+    component: RentPage
+  },
+  {
+    path: '/new-projects',
+    name: 'NewProjects',
+    component: NewProjectsPage
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: AboutPage
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: FavoritesPage
+  },
+  {
+    path: '/property/:id',
+    name: 'PropertyDetails',
+    component: PropertyDetailsPage
+  },
+  {
+    path: '/my-properties',
+    name: 'MyProperties',
+    component: OwnerPropertiesPage
+  },
+  {
     path: '/map',
     name: 'Map',
     component: MapPage
+  },
+  {
+    path: '/add-property',
+    name: 'AddProperty',
+    component: AddPropertyPage,
+    alias: '/property/add'
   },
   {
     path: '/profile',
