@@ -1,12 +1,5 @@
 <template>
   <div class="favorites-page">
-    <header class="fav-header">
-      <RouterLink class="brand" to="/home"><img src="/logo_transparent.png"><strong>Vibe<span>Locate</span></strong><b>AI</b></RouterLink>
-      <button class="mobile-menu" @click="menuOpen=!menuOpen"><i class="fa-solid fa-bars"></i></button>
-      <nav :class="{open:menuOpen}"><RouterLink to="/home">Home</RouterLink><a>Buy</a><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/new-projects">New Projects</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><a>Areas</a><RouterLink class="active" to="/favorites">Favorites</RouterLink><RouterLink to="/about">About Us</RouterLink></nav>
-      <div class="actions"><button class="lang"><i class="fa-solid fa-globe"></i> AR <em></em> EN</button><button class="round"><i class="fa-solid fa-moon"></i></button><button class="list" @click="$router.push('/add-property')">List Your Property <i class="fa-solid fa-arrow-right"></i></button><button class="round badge"><i class="fa-solid fa-heart"></i><small>{{cards.length}}</small></button><button class="round"><i class="fa-regular fa-bell"></i></button><button class="user" @click="$router.push('/profile')">GU</button></div>
-    </header>
-
     <section class="hero">
       <div class="hero-title"><div class="hero-heart"><i class="fa-solid fa-heart"></i></div><div><span>MY FAVORITES</span><h1>Your <strong>Favorite</strong> Properties</h1><p>Save properties you love and come back to them anytime.</p></div></div>
       <div class="hero-note">Big dreams<br>start with<br>a favorite place <i class="fa-regular fa-heart"></i></div>
