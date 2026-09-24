@@ -16,12 +16,25 @@ import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
 import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
 import NewProjectsPage from '../components/NewProjectsPage.vue'
 import AboutPage from '../components/AboutPage.vue'
+import PaymentPage from '../components/PaymentPage.vue'
+import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Landing',
     component: LandingPage
+  },
+  {
+    path: '/property/booking',
+    name: 'PropertyBooking',
+    component: PropertyBookingPage,
+    alias: ['/property/:id/booking', '/booking']
+  },
+  {
+    path: '/payment',
+    name: 'Payment',
+    component: PaymentPage
   },
   {
     path: '/home',

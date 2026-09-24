@@ -106,57 +106,6 @@
       </div>
     </Transition>
 
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header">
-      <div class="header-inner">
-        <!-- Logo -->
-        <RouterLink class="brand" to="/home">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </div>
-        </RouterLink>
-
-        <!-- Navigation Links -->
-        <nav class="nav-links">
-          <RouterLink class="nav-item" to="/home">{{ t('home') }}</RouterLink>
-          <RouterLink class="nav-item" to="/buy">{{ t('buy') }}</RouterLink>
-          <RouterLink class="nav-item" to="/rent">{{ t('rent') }}</RouterLink>
-          <a class="nav-item" href="/home#map" @click.prevent="navigateToHomeSection('map')">{{ t('interactiveMap') }}</a>
-          <a class="nav-item" href="/home#featured" @click.prevent="navigateToHomeSection('featured')">{{ t('featured') }}</a>
-          <a class="nav-item" href="/home#districts" @click.prevent="navigateToHomeSection('districts')">{{ t('districts') }}</a>
-          
-          <div class="ai-radar-tag">
-            <span class="pulse-dot"></span>
-            <span class="radar-text">Live AI Radar: <strong>Active</strong></span>
-          </div>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
-          <NavbarControls />
-
-          <RouterLink to="/add-property" class="btn-back-home" style="background: linear-gradient(135deg, #00d2ff 0%, #0072ff 100%); color: #ffffff;">
-            <i class="fa-solid fa-plus"></i>
-            <span>{{ t('listProperty') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/home" class="btn-back-home">
-            <i class="fa-solid fa-house"></i>
-            <span>{{ t('backToHome') }}</span>
-          </RouterLink>
-
-          <button class="header-user-avatar-btn" title="Your Account" @click="switchTab('overview')">
-            <span v-if="!user.avatarUrl" class="avatar-initials">{{ user.avatarInitials }}</span>
-            <img v-else :src="user.avatarUrl" :alt="user.name" class="avatar-img">
-          </button>
-        </div>
-      </div>
-    </header>
 
     <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
     <main class="profile-main-container">
