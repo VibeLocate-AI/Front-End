@@ -28,7 +28,7 @@ const { isRtl, theme: currentTheme } = useThemeAndLanguage()
 
 const menuOpen = ref(false)
 
-const pillars = computed(() => isRtl.value ? [
+const pillars = computed(() => false ? [
   { icon: 'fa-solid fa-bullseye', title: 'مهمتنا', text: 'تبسيط التجربة العقارية في دبي من خلال التكنولوجيا الذكية والمعلومات الموثوقة.' },
   { icon: 'fa-regular fa-gem', title: 'رؤيتنا', text: 'أن نكون المنصة العقارية الرائدة في الإمارات من حيث الابتكار والثقة وتجربة المستخدم الاستثنائية.' },
   { icon: 'fa-solid fa-people-group', title: 'قيمنا', text: 'الثقة • الشفافية\nالابتكار • العميل أولاً\nالنمو المجتمعي' }
@@ -38,7 +38,7 @@ const pillars = computed(() => isRtl.value ? [
   { icon: 'fa-solid fa-people-group', title: 'Our Values', text: 'Trust  •  Transparency\nInnovation  •  Customer First\nCommunity Growth' }
 ])
 
-const benefits = computed(() => isRtl.value ? [
+const benefits = computed(() => false ? [
   { icon: 'fa-solid fa-shield-halved', title: 'عقارات موثقة', text: 'عقارات متحقق منها من مطورين ووكلاء معتمدين.' },
   { icon: 'fa-solid fa-bolt', title: 'بحث ذكي', text: 'توصيات مدعومة بالذكاء الاصطناعي تناسب احتياجاتك.' },
   { icon: 'fa-regular fa-map', title: 'خريطة تفاعلية', text: 'استكشف العقارات والمناطق في دبي بسهولة.' },

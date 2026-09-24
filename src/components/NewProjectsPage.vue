@@ -1,63 +1,99 @@
 <template>
-  <div class="projects-page">
+  <div class="projects-page" :dir="isRtl ? 'rtl' : 'ltr'">
 
     <section class="hero">
-      <div class="hero-copy"><span class="eyebrow"><i class="fa-regular fa-building"></i> OFF-PLAN & NEW LAUNCHES</span><h1>Discover Dubai's<br><strong>New Projects</strong></h1><p>Explore the latest off-plan opportunities in Dubai. Flexible payment plans,<br>world-class developments, and a brighter future await.</p></div>
+      <div class="hero-copy"><span class="eyebrow"><i class="fa-regular fa-building"></i> {{ copy.eyebrow }}</span><h1>{{ copy.heroTitle }}<br><strong>{{ copy.heroAccent }}</strong></h1><p>{{ copy.heroDescription }}</p></div>
       <div class="filter-bar">
-        <FilterSelect icon="fa-location-dot" label="Location" v-model="filters.location" :options="['Select Area','Dubai Marina','Downtown Dubai','Palm Jumeirah']" />
-        <FilterSelect icon="fa-building" label="Developer" v-model="filters.developer" :options="['Select Developer','Emaar','Nakheel','Meraas']" />
-        <FilterSelect icon="fa-house" label="Property Type" v-model="filters.type" :options="['Select Type','Apartment','Villa','Penthouse']" />
-        <FilterSelect icon="fa-coins" label="Starting Price" v-model="filters.price" :options="['Any Price','Under AED 1M','AED 1M - 3M','AED 3M+']" />
-        <FilterSelect icon="fa-calendar" label="Handover Year" v-model="filters.year" :options="['Any Year','2026','2027','2028','2029']" />
-        <FilterSelect icon="fa-credit-card" label="Payment Plan" v-model="filters.plan" :options="['Any Plan','60/40','70/30','80/20']" />
-        <button class="search-btn" @click="search"><i class="fa-solid fa-magnifying-glass"></i> Search Projects</button>
+        <FilterSelect icon="fa-location-dot" :label="copy.location" v-model="filters.location" :options="copy.locationOptions" />
+        <FilterSelect icon="fa-building" :label="copy.developer" v-model="filters.developer" :options="copy.developerOptions" />
+        <FilterSelect icon="fa-house" :label="copy.propertyType" v-model="filters.type" :options="copy.typeOptions" />
+        <FilterSelect icon="fa-coins" :label="copy.startingPrice" v-model="filters.price" :options="copy.priceOptions" />
+        <FilterSelect icon="fa-calendar" :label="copy.handover" v-model="filters.year" :options="copy.yearOptions" />
+        <FilterSelect icon="fa-credit-card" :label="copy.paymentPlan" v-model="filters.plan" :options="copy.planOptions" />
+        <button class="search-btn" @click="search"><i class="fa-solid fa-magnifying-glass"></i> {{ copy.search }}</button>
       </div>
     </section>
 
     <main class="page-body">
       <div class="stats">
-        <Stat icon="fa-rocket" title="150+" text="New Launches" sub="Latest off-plan projects" />
-        <Stat icon="fa-wallet" title="Flexible Payment Plans" text="From 10% down payment" />
-        <Stat icon="fa-calendar-days" title="2026 - 2029" text="Expected Handover" sub="Plan your future" />
-        <Stat icon="fa-chart-simple" title="High ROI Opportunities" text="Prime locations, higher returns" />
+        <Stat icon="fa-rocket" title="+150" :text="copy.newLaunches" :sub="copy.latestProjects" />
+        <Stat icon="fa-wallet" :title="copy.flexiblePlans" :text="copy.downPayment" />
+        <Stat icon="fa-calendar-days" title="2026 - 2029" :text="copy.expectedHandover" :sub="copy.planFuture" />
+        <Stat icon="fa-chart-simple" :title="copy.highRoi" :text="copy.primeLocations" />
       </div>
 
       <div class="content-grid">
         <div>
-          <div class="section-title"><div><h2>Featured New Projects</h2><p>Handpicked off-plan developments with the best investment potential in Dubai.</p></div><button>View All Projects <i class="fa-solid fa-arrow-right"></i></button></div>
+          <div class="section-title"><div><h2>{{ copy.featured }}</h2><p>{{ copy.featuredDesc }}</p></div><button>{{ copy.viewAllProjects }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div>
           <div class="project-grid">
             <article v-for="project in projects.slice(0, 4)" :key="project.name" class="project-card">
               <div class="project-image"><img :src="project.image"><span :class="project.badgeClass">{{project.badge}}</span><button @click="project.saved=!project.saved"><i :class="project.saved?'fa-solid fa-heart':'fa-regular fa-heart'"></i></button></div>
-              <div class="project-info"><h3>{{project.name}}</h3><p class="location"><i class="fa-solid fa-location-dot"></i> {{project.location}}</p><div class="developer"><b>{{project.developer}}</b><span>by {{project.developerName}}</span></div><div class="price-row"><div><small>Starting from</small><strong>{{project.price}}</strong></div><div><small><i class="fa-regular fa-calendar"></i> Handover</small><strong>{{project.handover}}</strong></div></div><button class="view-btn">View Project <i class="fa-solid fa-arrow-right"></i></button></div>
+              <div class="project-info"><h3>{{ projectText(project, 'name') }}</h3><p class="location"><i class="fa-solid fa-location-dot"></i> {{ projectText(project, 'location') }}</p><div class="developer"><b>{{project.developer}}</b><span>{{ copy.by }} {{project.developerName}}</span></div><div class="price-row"><div><small>{{ copy.startingFrom }}</small><strong>{{project.price}}</strong></div><div><small><i class="fa-regular fa-calendar"></i> {{ copy.handover }}</small><strong>{{project.handover}}</strong></div></div><button class="view-btn">{{ copy.viewProject }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div>
             </article>
           </div>
         </div>
 
-        <aside class="invest-card"><h2><i class="fa-regular fa-gem"></i> Why Invest in New Projects?</h2><div v-for="benefit in benefits" :key="benefit.title" class="benefit"><i :class="`fa-solid ${benefit.icon}`"></i><div><strong>{{benefit.title}}</strong><p>{{benefit.text}}</p></div></div><div class="invest-skyline"><span>More Properties<br>A Brighter Tomorrow</span></div></aside>
+        <aside class="invest-card"><h2><i class="fa-regular fa-gem"></i> {{ copy.whyInvest }}</h2><div v-for="benefit in benefits" :key="benefit.title" class="benefit"><i :class="`fa-solid ${benefit.icon}`"></i><div><strong>{{ benefit.title }}</strong><p>{{ benefit.text }}</p></div></div><div class="invest-skyline"><span>{{ copy.skyline }}</span></div></aside>
       </div>
 
-      <section class="communities"><div class="section-title"><div><h2>Trending Communities</h2><p>Explore new projects in Dubai's most sought-after locations.</p></div><button>View All Areas <i class="fa-solid fa-arrow-right"></i></button></div><div class="community-row"><article v-for="area in communities" :key="area.name"><img :src="area.image"><div><strong>{{area.name}}</strong><span>{{area.count}} New Projects</span></div><button><i class="fa-solid fa-chevron-right"></i></button></article></div></section>
+      <section class="communities"><div class="section-title"><div><h2>{{ copy.trending }}</h2><p>{{ copy.trendingDesc }}</p></div><button>{{ copy.viewAllAreas }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div><div class="community-row"><article v-for="area in communities" :key="area.name"><img :src="area.image"><div><strong>{{ isRtl ? area.arName : area.name }}</strong><span>{{area.count}} {{ copy.newProjects }}</span></div><button><i class="fa-solid" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i></button></article></div></section>
     </main>
     <Transition name="toast"><div v-if="toast" class="toast"><i class="fa-solid fa-circle-check"></i> {{toast}}</div></Transition>
   </div>
 </template>
 
 <script setup>
-import { defineComponent, h, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, ref } from 'vue'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+import { propertyService } from '../services/propertyService'
+const { isRtl } = useThemeAndLanguage()
+const copy = computed(() => false ? {
+  eyebrow:'مشاريع على الخارطة وإطلاقات جديدة', heroTitle:'اكتشف مشاريع دبي', heroAccent:'الجديدة', heroDescription:'استكشف أحدث الفرص العقارية على الخارطة في دبي، بخطط سداد مرنة ومستقبل استثماري واعد.', location:'الموقع', developer:'المطور', propertyType:'نوع العقار', startingPrice:'السعر الابتدائي', handover:'سنة التسليم', paymentPlan:'خطة السداد', search:'بحث عن مشاريع', locationOptions:['اختر المنطقة','دبي مارينا','وسط مدينة دبي','نخلة جميرا'], developerOptions:['اختر المطور','إعمار','نخيل','مِراس'], typeOptions:['اختر النوع','شقة','فيلا','بنتهاوس'], priceOptions:['أي سعر','أقل من مليون د.إ','من 1 إلى 3 ملايين د.إ','أكثر من 3 ملايين د.إ'], yearOptions:['أي سنة','2026','2027','2028','2029'], planOptions:['أي خطة','60/40','70/30','80/20'], newLaunches:'إطلاق جديد', latestProjects:'أحدث مشاريع على الخارطة', flexiblePlans:'خطط سداد مرنة', downPayment:'من 10% دفعة أولى', expectedHandover:'التسليم المتوقع', planFuture:'خطط لمستقبلك', highRoi:'فرص عائد استثماري مرتفع', primeLocations:'مواقع مميزة وعوائد أعلى', featured:'مشاريع جديدة مختارة', featuredDesc:'مشاريع منتقاة بعناية تتمتع بأفضل فرص الاستثمار في دبي.', viewAllProjects:'عرض كل المشاريع', by:'من', startingFrom:'يبدأ من', viewProject:'عرض المشروع', whyInvest:'لماذا تستثمر في المشاريع الجديدة؟', skyline:'عقارات أكثر\nومستقبل أكثر إشراقاً', trending:'المجتمعات الرائجة', trendingDesc:'استكشف المشاريع الجديدة في أكثر مناطق دبي طلباً.', viewAllAreas:'عرض كل المناطق'
+} : {
+  eyebrow:'OFF-PLAN & NEW LAUNCHES', heroTitle:"Discover Dubai's", heroAccent:'New Projects', heroDescription:'Explore the latest off-plan opportunities in Dubai. Flexible payment plans, world-class developments, and a brighter future await.', location:'Location', developer:'Developer', propertyType:'Property Type', startingPrice:'Starting Price', handover:'Handover Year', paymentPlan:'Payment Plan', search:'Search Projects', locationOptions:['Select Area','Dubai Marina','Downtown Dubai','Palm Jumeirah'], developerOptions:['Select Developer','Emaar','Nakheel','Meraas'], typeOptions:['Select Type','Apartment','Villa','Penthouse'], priceOptions:['Any Price','Under AED 1M','AED 1M - 3M','AED 3M+'], yearOptions:['Any Year','2026','2027','2028','2029'], planOptions:['Any Plan','60/40','70/30','80/20'], newLaunches:'New Launches', latestProjects:'Latest off-plan projects', flexiblePlans:'Flexible Payment Plans', downPayment:'From 10% down payment', expectedHandover:'Expected Handover', planFuture:'Plan your future', highRoi:'High ROI Opportunities', primeLocations:'Prime locations, higher returns', featured:'Featured New Projects', featuredDesc:'Handpicked off-plan developments with the best investment potential in Dubai.', viewAllProjects:'View All Projects', by:'by', startingFrom:'Starting from', viewProject:'View Project', whyInvest:'Why Invest in New Projects?', skyline:'More Properties\nA Brighter Tomorrow', trending:'Trending Communities', trendingDesc:"Explore new projects in Dubai's most sought-after locations.", viewAllAreas:'View All Areas'
+})
 const menuOpen=ref(false), toast=ref('')
 const filters=ref({location:'Select Area',developer:'Select Developer',type:'Select Type',price:'Any Price',year:'Any Year',plan:'Any Plan'})
 const FilterSelect=defineComponent({props:{icon:String,label:String,modelValue:String,options:Array},emits:['update:modelValue'],setup(p,{emit}){return()=>h('label',{class:'filter'},[h('i',{class:`fa-solid ${p.icon}`}),h('span',p.label),h('select',{value:p.modelValue,onChange:e=>emit('update:modelValue',e.target.value)},p.options.map(x=>h('option',x)))])}})
 const Stat=defineComponent({props:{icon:String,title:String,text:String,sub:String},setup:p=>()=>h('div',{class:'stat'},[h('i',{class:`fa-solid ${p.icon}`}),h('div',[h('strong',p.title),h('span',p.text),p.sub&&h('small',p.sub)])])})
+const projectText = (project, key) => project[key]
 const projects=ref([
- {name:'Marina Vista Residences',location:'Dubai Marina',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.8M',handover:'Q4 2027',badge:'NEW LAUNCH',badgeClass:'blue',image:'/images/photo-1545324418-cc1a3fa10c00.avif',saved:false},
- {name:'Palm Horizon Towers',location:'Palm Jumeirah',developer:'NAKHEEL',developerName:'Nakheel',price:'AED 2.4M',handover:'Q4 2028',badge:'FEATURED',badgeClass:'yellow',image:'/images/photo-1512917774080-9991f1c4c750.jfif',saved:false},
- {name:'Creek Gate Residences',location:'Dubai Creek Harbour',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.6M',handover:'Q3 2027',badge:'POPULAR',badgeClass:'purple',image:'/images/photo-1600596542815-ffad4c1539a9.jfif',saved:false},
- {name:'Downtown Crest',location:'Downtown Dubai',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 2.9M',handover:'Q3 2027',badge:'LIMITED UNITS',badgeClass:'red',image:'/images/photo-1512917774080-9991f1c4c750 (1).jfif',saved:false},
+ {name:'Marina Vista Residences',arName:'مساكن مارينا فيستا',location:'Dubai Marina',arLocation:'دبي مارينا',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.8M',handover:'Q4 2027',badge:'NEW LAUNCH',badgeClass:'blue',image:'/images/photo-1545324418-cc1a3fa10c00.avif',saved:false},
+ {name:'Palm Horizon Towers',arName:'أبراج بالم هورايزن',location:'Palm Jumeirah',arLocation:'نخلة جميرا',developer:'NAKHEEL',developerName:'Nakheel',price:'AED 2.4M',handover:'Q4 2028',badge:'FEATURED',badgeClass:'yellow',image:'/images/photo-1512917774080-9991f1c4c750.jfif',saved:false},
+ {name:'Creek Gate Residences',arName:'مساكن كريك غيت',location:'Dubai Creek Harbour',arLocation:'خور دبي',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.6M',handover:'Q3 2027',badge:'POPULAR',badgeClass:'purple',image:'/images/photo-1600596542815-ffad4c1539a9.jfif',saved:false},
+ {name:'Downtown Crest',arName:'داون تاون كريست',location:'Downtown Dubai',arLocation:'وسط مدينة دبي',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 2.9M',handover:'Q3 2027',badge:'LIMITED UNITS',badgeClass:'red',image:'/images/photo-1512917774080-9991f1c4c750 (1).jfif',saved:false},
  {name:'Jumeirah Bay Heights',location:'Jumeirah Bay',developer:'MERAAS',developerName:'Meraas',price:'AED 3.9M',handover:'Q1 2028',badge:'NEW LAUNCH',badgeClass:'blue',image:'/images/photo-1613977257363-707ba9348227.jfif',saved:false}
 ])
-const benefits=[{icon:'fa-chart-line',title:'Higher Investment Potential',text:'Get in early and benefit from capital appreciation.'},{icon:'fa-credit-card',title:'Flexible Payment Plans',text:'Attractive plans starting from 10% down payment.'},{icon:'fa-people-group',title:'Modern Lifestyle Communities',text:'World-class amenities and family-friendly master plans.'},{icon:'fa-building',title:"Be Part of Dubai's Future",text:'Iconic developments in prime locations.'}]
-const communities=[{name:'Dubai Marina',count:12,image:'/images/photo-1545324418-cc1a3fa10c00.avif'},{name:'Downtown Dubai',count:18,image:'/images/photo-1512917774080-9991f1c4c750.jfif'},{name:'Dubai Creek Harbour',count:14,image:'/images/photo-1600596542815-ffad4c1539a9.jfif'},{name:'Palm Jumeirah',count:10,image:'/images/photo-1613977257363-707ba9348227.jfif'},{name:'Jumeirah',count:8,image:'/images/photo-1600210492486-724fe5c67fb0.jfif'},{name:'Business Bay',count:11,image:'/images/photo-1582719478250-c89cae4dc85b.avif'}]
-function search(){toast.value='Projects filtered successfully';setTimeout(()=>toast.value='',2400)}
+const benefits=[{icon:'fa-chart-line',title:'Higher Investment Potential',arTitle:'فرص استثمارية أعلى',text:'Get in early and benefit from capital appreciation.',arText:'استثمر مبكراً واستفد من ارتفاع قيمة العقار.'},{icon:'fa-credit-card',title:'Flexible Payment Plans',arTitle:'خطط سداد مرنة',text:'Attractive plans starting from 10% down payment.',arText:'خطط جذابة تبدأ من 10% دفعة أولى.'},{icon:'fa-people-group',title:'Modern Lifestyle Communities',arTitle:'مجتمعات عصرية',text:'World-class amenities and family-friendly master plans.',arText:'مرافق عالمية ومجتمعات مناسبة للعائلات.'},{icon:'fa-building',title:"Be Part of Dubai's Future",arTitle:'كن جزءاً من مستقبل دبي',text:'Iconic developments in prime locations.',arText:'مشاريع أيقونية في مواقع مميزة.'}]
+const communities=[{name:'Dubai Marina',arName:'دبي مارينا',count:12,image:'/images/photo-1545324418-cc1a3fa10c00.avif'},{name:'Downtown Dubai',arName:'وسط مدينة دبي',count:18,image:'/images/photo-1512917774080-9991f1c4c750.jfif'},{name:'Dubai Creek Harbour',arName:'خور دبي',count:14,image:'/images/photo-1600596542815-ffad4c1539a9.jfif'},{name:'Palm Jumeirah',arName:'نخلة جميرا',count:10,image:'/images/photo-1613977257363-707ba9348227.jfif'},{name:'Jumeirah',arName:'جميرا',count:8,image:'/images/photo-1600210492486-724fe5c67fb0.jfif'},{name:'Business Bay',arName:'الخليج التجاري',count:11,image:'/images/photo-1582719478250-c89cae4dc85b.avif'}]
+const fallbackProjects = projects.value
+const toProject = (property, index) => ({
+  id: property.id,
+  name: property.title,
+  location: property.area || property.location || 'Dubai, UAE',
+  developer: property.developer?.name || 'VIBELOCATE',
+  developerName: property.developer?.name || 'Verified Developer',
+  price: `${property.currency || 'AED'} ${Number(property.price || 0).toLocaleString()}`,
+  handover: property.handover_year || property.completion_date || 'Coming soon',
+  badge: index === 0 ? 'NEW LAUNCH' : 'FEATURED',
+  badgeClass: index === 0 ? 'blue' : 'yellow',
+  image: property.image,
+  saved: false
+})
+async function search(){
+  try {
+    const response = await propertyService.getProperties({ type: filters.value.type, per_page: 20 })
+    if (response.data?.length) projects.value = response.data.map(toProject)
+    toast.value='Projects updated from the latest listings'
+  } catch { toast.value='Unable to refresh projects right now' }
+  setTimeout(()=>toast.value='',2400)
+}
+onMounted(async()=>{
+  try {
+    const response = await propertyService.getProperties({ per_page: 20 })
+    if (response.data?.length) projects.value = response.data.map(toProject)
+  } catch { projects.value = fallbackProjects }
+})
 </script>
 
 <style scoped>
