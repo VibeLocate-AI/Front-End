@@ -32,15 +32,18 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeAndLanguage } from './composables/useThemeAndLanguage'
+import { usePageTranslations } from './composables/usePageTranslations'
 import AppNavbar from './components/AppNavbar.vue'
 import AppFooter from './components/AppFooter.vue'
 import SavedPropertiesModal from './components/SavedPropertiesModal.vue'
 
-const { isRtl, theme } = useThemeAndLanguage()
+const { isRtl, theme, lang } = useThemeAndLanguage()
 
 const route = useRoute()
 const router = useRouter()
 const bgVideo = ref(null)
+
+usePageTranslations(lang, () => route.fullPath)
 const savedModalOpen = ref(false)
 
 // Auth page routes (login, register, etc.) - show video BG

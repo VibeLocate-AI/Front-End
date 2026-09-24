@@ -8,12 +8,7 @@
       :aria-label="isRtl ? 'Switch to English' : 'Switch to Arabic'"
       @click="toggleLanguage"
     >
-      <i class="fa-solid fa-globe globe-icon"></i>
-      <div class="lang-pills">
-        <span class="lang-pill" :class="{ active: lang === 'ar' }">AR</span>
-        <span class="lang-sep">|</span>
-        <span class="lang-pill" :class="{ active: lang === 'en' }">EN</span>
-      </div>
+      <span class="current-language">{{ lang === 'ar' ? 'AR' : 'EN' }}</span>
     </button>
 
     <!-- ==================== THEME TOGGLE BUTTON ==================== -->
@@ -78,46 +73,19 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* ==================== LANGUAGE SWITCHER ==================== */
 .lang-switcher-btn {
-  padding: 0 15px;
-  gap: 10px;
+  height: 34px;
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 50%;
   font-family: inherit;
 }
 
-.globe-icon {
-  font-size: 14px;
+.current-language {
   color: #00d2ff;
-  transition: transform 0.3s ease;
-}
-
-.lang-switcher-btn:hover .globe-icon {
-  transform: rotate(30deg);
-}
-
-.lang-pills {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.lang-pill {
-  color: #64748b;
-  transition: all 0.2s;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-.lang-pill.active {
-  color: #00d2ff;
+  font-size: 9px;
   font-weight: 800;
-  background: rgba(0, 210, 255, 0.12);
-}
-
-.lang-sep {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 10px;
+  letter-spacing: 0.2px;
 }
 
 /* ==================== THEME TOGGLE ==================== */
@@ -177,13 +145,8 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
   color: #1e293b;
 }
 
-:global([data-theme="light"]) .globe-icon {
+:global([data-theme="light"]) .current-language {
   color: #2563eb;
-}
-
-:global([data-theme="light"]) .lang-pill.active {
-  color: #2563eb;
-  background: rgba(37, 99, 235, 0.1);
 }
 
 :global([data-theme="light"]) .lang-sep {
