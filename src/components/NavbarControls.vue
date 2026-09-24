@@ -54,7 +54,7 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* Base button style matching luxury navbar */
 .nav-ctrl-btn {
-  height: 38px;
+  height: 42px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -78,8 +78,8 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* ==================== LANGUAGE SWITCHER ==================== */
 .lang-switcher-btn {
-  padding: 0 12px;
-  gap: 8px;
+  padding: 0 15px;
+  gap: 10px;
   font-family: inherit;
 }
 
@@ -122,7 +122,7 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* ==================== THEME TOGGLE ==================== */
 .theme-toggle-btn {
-  width: 38px;
+  width: 42px;
   padding: 0;
   position: relative;
   overflow: hidden;

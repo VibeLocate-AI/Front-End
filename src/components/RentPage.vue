@@ -1,101 +1,13 @@
 <template>
-  <div class="rent-page-wrapper">
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header" :class="{ scrolled: isScrolled }">
-      <div class="header-inner">
-        <!-- Logo -->
-        <router-link class="brand" to="/home">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </div>
-        </router-link>
-
-        <!-- Mobile Menu Toggle -->
-        <button class="menu-toggle" type="button" aria-label="Toggle navigation" @click="mobileMenuOpen = !mobileMenuOpen">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-
-        <!-- Navigation Links -->
-        <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <router-link class="nav-item" to="/home">Home</router-link>
-          <router-link class="nav-item" to="/buy">Buy</router-link>
-          <router-link class="nav-item active" to="/rent">Rent</router-link>
-          <router-link class="nav-item" to="/new-projects">New Projects</router-link>
-          <router-link class="nav-item" to="/map">Interactive Map <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i></router-link>
-          <router-link class="nav-item" to="/home#areas">Areas</router-link>
-          <router-link class="nav-item" to="/favorites">Favorites</router-link>
-          <router-link class="nav-item" to="/about">About Us</router-link>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <button class="btn-list-property" type="button" @click="showToast('Property listing portal opening soon.')">
-            List Your Property <span class="plus-sign">+</span>
-          </button>
-
-          <button
-            class="icon-action-btn"
-            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
-            type="button"
-            aria-label="Favorites"
-            title="Saved Properties"
-            @click="router.push('/favorites')"
-          >
-            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
-            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
-          </button>
-
-          <div class="user-profile-menu-container" ref="profileDropdownRef">
-            <div class="user-profile-menu" @click="profileMenuOpen = !profileMenuOpen">
-              <img
-                class="header-avatar"
-                :src="userAvatarUrl"
-                :alt="displayName || 'User'"
-                @error="onAvatarError"
-              >
-              <i class="fa-solid fa-chevron-down profile-arrow" :class="{ 'rotate-180': profileMenuOpen }"></i>
-            </div>
-
-            <!-- Profile Dropdown -->
-            <div v-if="profileMenuOpen" class="profile-dropdown-box">
-              <div class="dropdown-user-header">
-                <img class="dropdown-avatar" :src="userAvatarUrl" :alt="displayName || 'User'" @error="onAvatarError">
-                <div class="dropdown-user-info">
-                  <strong class="dropdown-user-name">{{ displayName }}</strong>
-                  <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge"><i class="fa-solid fa-circle-check"></i> Verified Member</span>
-                </div>
-              </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-menu-list">
-                <button class="dropdown-menu-item" @click="router.push('/profile'); profileMenuOpen = false">
-                  <i class="fa-regular fa-user"></i> <span>My Profile</span>
-                </button>
-                <button class="dropdown-menu-item" @click="router.push('/my-properties'); profileMenuOpen = false">
-                  <i class="fa-regular fa-building"></i> <span>My Properties</span>
-                </button>
-                <button class="dropdown-menu-item" @click="router.push('/favorites'); profileMenuOpen = false">
-                  <i class="fa-solid fa-heart text-danger"></i> <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
+  <div class="rent-page-wrapper" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="currentTheme">
     <!-- ==================== DASHBOARD CATALOG CONTENT ==================== -->
     <main class="explore-dashboard-section">
       
       <!-- 1. HERO BANNER HEADER -->
       <div class="explore-hero-banner">
         <div class="explore-header-titles">
-          <h1 class="explore-main-headline">Dubai Properties for Rent</h1>
-          <p class="explore-sub-headline">Discover rental homes tailored to your lifestyle with AI-powered discovery.</p>
+          <h1 class="explore-main-headline">{{ t('rentMainHeadline') }}</h1>
+          <p class="explore-sub-headline">{{ t('rentSubHeadline') }}</p>
         </div>
 
         <!-- Top Right AI Curated Badge -->
@@ -104,8 +16,8 @@
             <i class="fa-solid fa-wand-magic-sparkles"></i>
           </div>
           <div class="ai-badge-text-box">
-              <strong>Dubai's Best Rentals Curated with AI</strong>
-            <span>Smarter search. Better living.</span>
+              <strong>{{ t('rentCuratedBadge') }}</strong>
+            <span>{{ t('rentCuratedBadgeSub') }}</span>
           </div>
         </div>
       </div>
@@ -131,9 +43,9 @@
         <!-- LEFT SIDEBAR: SEARCH & FILTER CARD -->
         <aside class="explore-sidebar-card">
           <div class="sidebar-card-header">
-            <h3 class="sidebar-title">Search &amp; Filter</h3>
+            <h3 class="sidebar-title">{{ t('searchAndFilter') }}</h3>
             <button type="button" class="btn-reset-filters" @click="resetFilters">
-              <i class="fa-solid fa-rotate-left"></i> Reset All
+              <i class="fa-solid fa-rotate-left"></i> {{ t('resetAll') }}
             </button>
           </div>
 
@@ -144,73 +56,73 @@
                 v-model="filterState.keyword"
                 type="text"
                 class="filter-input-search"
-                placeholder="Search properties, areas, or keywords..."
+                :placeholder="t('searchRentPlaceholder')"
               >
             </div>
 
             <!-- Location Dropdown -->
             <div class="filter-group-item">
-              <label class="filter-group-label"><i class="fa-solid fa-location-dot"></i> Location</label>
+              <label class="filter-group-label"><i class="fa-solid fa-location-dot"></i> {{ t('location') }}</label>
               <select v-model="filterState.location" class="filter-select-dropdown">
-                <option value="All">All Areas</option>
-                <option value="Downtown Dubai">Downtown Dubai</option>
-                <option value="Palm Jumeirah">Palm Jumeirah</option>
-                <option value="Dubai Marina">Dubai Marina</option>
-                <option value="Bluewaters Island">Bluewaters Island</option>
-                <option value="Za'abeel">Za'abeel, Dubai</option>
-                <option value="JBR">JBR (Jumeirah Beach Residence)</option>
-                <option value="Dubai Creek Harbour">Dubai Creek Harbour</option>
-                <option value="Emirates Hills">Emirates Hills</option>
+                <option value="All">{{ isRtl ? 'كل المناطق' : 'All Areas' }}</option>
+                <option value="Downtown Dubai">{{ isRtl ? 'وسط مدينة دبي' : 'Downtown Dubai' }}</option>
+                <option value="Palm Jumeirah">{{ isRtl ? 'نخلة جميرا' : 'Palm Jumeirah' }}</option>
+                <option value="Dubai Marina">{{ isRtl ? 'مرسى دبي (مارينا)' : 'Dubai Marina' }}</option>
+                <option value="Bluewaters Island">{{ isRtl ? 'جزيرة بلوواترز' : 'Bluewaters Island' }}</option>
+                <option value="Za'abeel">{{ isRtl ? "زعبيل، دبي" : "Za'abeel, Dubai" }}</option>
+                <option value="JBR">{{ isRtl ? 'جميرا بيتش ريزيدنس' : 'JBR' }}</option>
+                <option value="Dubai Creek Harbour">{{ isRtl ? 'خور دبي' : 'Dubai Creek Harbour' }}</option>
+                <option value="Emirates Hills">{{ isRtl ? 'تلال الإمارات' : 'Emirates Hills' }}</option>
               </select>
             </div>
 
             <!-- Property Type Dropdown -->
             <div class="filter-group-item">
-              <label class="filter-group-label"><i class="fa-solid fa-building"></i> Property Type</label>
+              <label class="filter-group-label"><i class="fa-solid fa-building"></i> {{ t('propertyType') }}</label>
               <select v-model="filterState.propertyType" class="filter-select-dropdown">
-                <option value="All">All Property Types</option>
-                <option value="Apartment">Apartment</option>
-                <option value="Villa">Villa</option>
-                <option value="Penthouse">Penthouse</option>
-                <option value="Townhouse">Townhouse</option>
+                <option value="All">{{ t('allTypes') }}</option>
+                <option value="Apartment">{{ t('apartment') }}</option>
+                <option value="Villa">{{ t('villa') }}</option>
+                <option value="Penthouse">{{ t('penthouse') }}</option>
+                <option value="Townhouse">{{ t('townhouse') }}</option>
               </select>
             </div>
 
             <!-- Price Range (AED) Dropdown -->
             <div class="filter-group-item">
-              <label class="filter-group-label"><i class="fa-solid fa-dollar-sign"></i> Price Range (AED)</label>
+              <label class="filter-group-label"><i class="fa-solid fa-dollar-sign"></i> {{ t('budgetAED') }}</label>
               <select v-model="filterState.priceRange" class="filter-select-dropdown">
-                <option value="Any">Any Price</option>
-                <option value="under-5m">Under AED 5,000,000</option>
-                <option value="5m-10m">AED 5,000,000 - 10,000,000</option>
-                <option value="10m-25m">AED 10,000,000 - 25,000,000</option>
-                <option value="25m-plus">AED 25,000,000+</option>
+                <option value="Any">{{ t('anyBudget') }}</option>
+                <option value="under-5m">{{ isRtl ? 'أقل من 5,000,000 درهم' : 'Under AED 5,000,000' }}</option>
+                <option value="5m-10m">{{ isRtl ? '5,000,000 - 10,000,000 درهم' : 'AED 5,000,000 - 10,000,000' }}</option>
+                <option value="10m-25m">{{ isRtl ? '10,000,000 - 25,000,000 درهم' : 'AED 10,000,000 - 25,000,000' }}</option>
+                <option value="25m-plus">{{ isRtl ? 'أكثر من 25,000,000 درهم' : 'AED 25,000,000+' }}</option>
               </select>
             </div>
 
             <!-- Bedrooms Dropdown -->
             <div class="filter-group-item">
-              <label class="filter-group-label"><i class="fa-solid fa-bed"></i> Bedrooms</label>
+              <label class="filter-group-label"><i class="fa-solid fa-bed"></i> {{ t('bedrooms') }}</label>
               <select v-model="filterState.bedrooms" class="filter-select-dropdown">
-                <option value="Any">Any Bedrooms</option>
-                <option value="1">1 Bedroom</option>
-                <option value="2">2 Bedrooms</option>
-                <option value="3">3 Bedrooms</option>
-                <option value="4">4 Bedrooms</option>
-                <option value="5+">5+ Bedrooms</option>
+                <option value="Any">{{ t('anyBedroomCount') }}</option>
+                <option value="1">{{ isRtl ? 'غرفة نوم واحدة' : '1 Bedroom' }}</option>
+                <option value="2">{{ isRtl ? 'غرفتا نوم' : '2 Bedrooms' }}</option>
+                <option value="3">{{ isRtl ? '3 غرف نوم' : '3 Bedrooms' }}</option>
+                <option value="4">{{ isRtl ? '4 غرف نوم' : '4 Bedrooms' }}</option>
+                <option value="5+">{{ isRtl ? '5+ غرف نوم' : '5+ Bedrooms' }}</option>
               </select>
             </div>
 
             <!-- Lifestyle / Features Dropdown -->
             <div class="filter-group-item">
-              <label class="filter-group-label"><i class="fa-solid fa-sliders"></i> Lifestyle / Features</label>
+              <label class="filter-group-label"><i class="fa-solid fa-sliders"></i> {{ t('lifestyle') }}</label>
               <select v-model="filterState.lifestyle" class="filter-select-dropdown">
-                <option value="Any">Any Lifestyle</option>
-                <option value="Waterfront">Waterfront Living</option>
-                <option value="Private Pool">Private Pool</option>
-                <option value="Sea View">Sea View</option>
-                <option value="Near Metro">Near Metro</option>
-                <option value="Off-Plan">Off-Plan</option>
+                <option value="Any">{{ t('anyLifestyle') }}</option>
+                <option value="Waterfront">{{ isRtl ? 'حياة واجهة مائية' : 'Waterfront Living' }}</option>
+                <option value="Private Pool">{{ isRtl ? 'مسبح خاص' : 'Private Pool' }}</option>
+                <option value="Sea View">{{ isRtl ? 'إطلالة بحرية' : 'Sea View' }}</option>
+                <option value="Near Metro">{{ isRtl ? 'قريب من المترو' : 'Near Metro' }}</option>
+                <option value="Off-Plan">{{ isRtl ? 'على الخارطة' : 'Off-Plan' }}</option>
               </select>
             </div>
 
@@ -237,7 +149,7 @@
 
             <!-- Apply Filters Button -->
             <button type="submit" class="btn-apply-filters">
-              <i class="fa-solid fa-sliders"></i> Apply Filters
+              <i class="fa-solid fa-sliders"></i> {{ isRtl ? 'تطبيق الفلاتر' : 'Apply Filters' }}
             </button>
           </form>
 
@@ -245,9 +157,9 @@
           <div class="sidebar-ai-switch-box">
             <div class="ai-switch-info">
               <strong>
-                <i class="fa-solid fa-wand-magic-sparkles" style="color:#00d2ff"></i> AI-Powered Search
+                <i class="fa-solid fa-wand-magic-sparkles" style="color:#00d2ff"></i> {{ isRtl ? 'بحث بالذكاء الاصطناعي' : 'AI-Powered Search' }}
               </strong>
-              <p>Get smarter, more relevant results with VibeLocate AI</p>
+              <p>{{ isRtl ? 'احصل على نتائج أذكى مع VibeLocate AI' : 'Get smarter, more relevant results with VibeLocate AI' }}</p>
             </div>
             <div
               class="toggle-switch-btn"
@@ -265,7 +177,7 @@
           <!-- Controls Top Bar -->
           <div class="catalog-top-controls-bar">
             <div class="results-count-text">
-              <strong>{{ filteredList.length.toLocaleString() }}</strong> rental properties found in Dubai
+              <strong>{{ filteredList.length.toLocaleString() }}</strong> {{ isRtl ? 'عقار إيجاري متاح في دبي' : 'rental properties found in Dubai' }}
             </div>
 
             <div class="controls-right-group">
@@ -277,7 +189,7 @@
                   :class="{ active: viewMode === 'grid' }"
                   @click="viewMode = 'grid'"
                 >
-                  <i class="fa-solid fa-border-all"></i> Grid
+                  <i class="fa-solid fa-border-all"></i> {{ t('grid') }}
                 </button>
                 <button
                   type="button"
@@ -285,16 +197,16 @@
                   :class="{ active: viewMode === 'map' }"
                   @click="router.push('/map')"
                 >
-                  <i class="fa-solid fa-map-location-dot"></i> Map
+                  <i class="fa-solid fa-map-location-dot"></i> {{ t('map') }}
                 </button>
               </div>
 
               <!-- Sort Select Dropdown -->
               <select v-model="sortBy" class="select-sort-dropdown">
-                <option value="ai-match">Sort by: AI Match</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="newest">Newest Listed</option>
+                <option value="ai-match">{{ t('sortByAIMatch') }}</option>
+                <option value="price-asc">{{ t('sortByPriceAsc') }}</option>
+                <option value="price-desc">{{ t('sortByPriceDesc') }}</option>
+                <option value="newest">{{ isRtl ? 'الأحدث' : 'Newest Listed' }}</option>
               </select>
             </div>
           </div>
@@ -311,7 +223,7 @@
               <div class="rent-card-thumb">
                 <img :src="prop.image" :alt="prop.title" loading="lazy">
                 <div class="rent-card-score-chip">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> {{ prop.matchScore }}% Match
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> {{ prop.matchScore }}% {{ isRtl ? 'تطابق' : 'Match' }}
                 </div>
               </div>
 
@@ -338,15 +250,15 @@
                 <div class="rent-card-price">{{ formatRentPrice(prop) }} <small>{{ formatRentPeriod(prop) }}</small></div>
 
                 <div class="rent-card-specs">
-                  <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
-                  <span><i class="fa-solid fa-bath"></i> {{ prop.baths }} Baths</span>
-                  <span><i class="fa-solid fa-ruler-combined"></i> {{ prop.sqft }} sqft</span>
+                  <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} {{ t('beds') }}</span>
+                  <span><i class="fa-solid fa-bath"></i> {{ prop.baths }} {{ t('baths') }}</span>
+                  <span><i class="fa-solid fa-ruler-combined"></i> {{ prop.sqft }} {{ t('sqft') }}</span>
                 </div>
 
                 <div class="rent-card-footer">
                   <button type="button" class="rent-btn-view" @click.stop="openDetails(prop)">
-                    <span>View Details</span>
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <span>{{ t('viewDetails') }}</span>
+                    <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
                   </button>
                 </div>
               </div>
@@ -356,7 +268,10 @@
           <!-- Pagination Footer Bar -->
           <div class="explore-pagination-bar">
             <div class="pagination-info-text">
-              Showing {{ filteredList.length ? ((currentPage - 1) * perPage) + 1 : 0 }}-{{ Math.min(currentPage * perPage, filteredList.length) }} of {{ filteredList.length.toLocaleString() }} rentals
+              {{ isRtl
+                ? `عرض ${filteredList.length ? ((currentPage - 1) * perPage) + 1 : 0}-${Math.min(currentPage * perPage, filteredList.length)} من ${filteredList.length.toLocaleString()} إيجار`
+                : `Showing ${filteredList.length ? ((currentPage - 1) * perPage) + 1 : 0}-${Math.min(currentPage * perPage, filteredList.length)} of ${filteredList.length.toLocaleString()} rentals`
+              }}
             </div>
 
             <div class="pagination-controls-group">
@@ -381,9 +296,9 @@
             </div>
 
             <select v-model="perPage" class="per-page-select">
-              <option :value="8">Show 8 per page</option>
-              <option :value="16">Show 16 per page</option>
-              <option :value="24">Show 24 per page</option>
+              <option :value="8">{{ isRtl ? 'عرض 8 في الصفحة' : 'Show 8 per page' }}</option>
+              <option :value="16">{{ isRtl ? 'عرض 16 في الصفحة' : 'Show 16 per page' }}</option>
+              <option :value="24">{{ isRtl ? 'عرض 24 في الصفحة' : 'Show 24 per page' }}</option>
             </select>
           </div>
 
@@ -413,7 +328,9 @@ import { useRouter } from 'vue-router'
 import { favoritesService } from '../services/favoritesService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
 import propertyService from '../services/propertyService'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
+const { t, isRtl, isDark, theme: currentTheme, locProps } = useThemeAndLanguage()
 const router = useRouter()
 
 const isScrolled = ref(false)
@@ -691,7 +608,9 @@ const filteredList = computed(() => {
 
 const paginatedList = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
-  return filteredList.value.slice(start, start + perPage.value)
+  const raw = filteredList.value.slice(start, start + perPage.value)
+  // Localize property titles, types, and locations reactively
+  return locProps(raw)
 })
 
 const toggleFavorite = (prop) => {

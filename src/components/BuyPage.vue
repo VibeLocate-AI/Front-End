@@ -1,103 +1,5 @@
 <template>
   <div class="buy-page-wrapper" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="currentTheme">
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header" :class="{ scrolled: isScrolled }">
-      <div class="header-inner">
-        <!-- Logo -->
-        <router-link class="brand" to="/home">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </div>
-        </router-link>
-
-        <!-- Mobile Menu Toggle -->
-        <button class="menu-toggle" type="button" aria-label="Toggle navigation" @click="mobileMenuOpen = !mobileMenuOpen">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-
-        <!-- Navigation Links -->
-        <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <router-link class="nav-item" to="/home">{{ t('home') }}</router-link>
-          <router-link class="nav-item active" to="/buy">{{ t('buy') }}</router-link>
-          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
-          <router-link class="nav-item" to="/home#featured">{{ t('newProjects') }}</router-link>
-          <router-link class="nav-item" to="/map">
-            {{ t('interactiveMap') }}
-            <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-left:3px;"></i>
-          </router-link>
-          <router-link class="nav-item" to="/home#areas">{{ t('areas') }}</router-link>
-          <router-link class="nav-item" to="/home#about">{{ t('aboutUs') }}</router-link>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
-          <NavbarControls />
-
-          <button class="btn-list-property" type="button" @click="router.push('/add-property')">
-            {{ t('listProperty') }}
-          </button>
-
-          <button
-            class="icon-action-btn"
-            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
-            type="button"
-            aria-label="Favorites"
-            :title="t('savedProperties')"
-            @click="isSavedModalOpen = true"
-          >
-            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
-            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
-          </button>
-
-          <div class="user-profile-menu-container" ref="profileDropdownRef">
-            <div class="user-profile-menu" @click="profileMenuOpen = !profileMenuOpen">
-              <img
-                class="header-avatar"
-                :src="userAvatarUrl"
-                :alt="displayName || 'User'"
-                @error="onAvatarError"
-              >
-              <i class="fa-solid fa-chevron-down profile-arrow" :class="{ 'rotate-180': profileMenuOpen }"></i>
-            </div>
-
-            <!-- Profile Dropdown -->
-            <div v-if="profileMenuOpen" class="profile-dropdown-box">
-              <div class="dropdown-user-header">
-                <img class="dropdown-avatar" :src="userAvatarUrl" :alt="displayName || 'User'" @error="onAvatarError">
-                <div class="dropdown-user-info">
-                  <strong class="dropdown-user-name">{{ displayName }}</strong>
-                  <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge">
-                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? t('verifiedMember') : t('guestAccount') }}
-                  </span>
-                </div>
-              </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-menu-list">
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="router.push('/profile'); profileMenuOpen = false">
-                  <i class="fa-regular fa-user"></i> <span>{{ t('myProfile') }}</span>
-                </button>
-                <button class="dropdown-menu-item" @click="isSavedModalOpen = true; profileMenuOpen = false">
-                  <i class="fa-solid fa-heart text-danger"></i> <span>{{ t('savedProperties') }} ({{ favoritesService.savedItems.value.length }})</span>
-                </button>
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="handleLogout">
-                  <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i> <span>{{ t('logout') }}</span>
-                </button>
-                <button v-else class="dropdown-menu-item" @click="router.push('/login'); profileMenuOpen = false">
-                  <i class="fa-solid fa-arrow-right-to-bracket"></i> <span>{{ t('login') }}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
     <!-- ==================== HERO SECTION ==================== -->
     <section class="buy-hero-section">
       <!-- Watermark quote top right on window -->
@@ -567,7 +469,7 @@ import PropertyDetailsModal from './PropertyDetailsModal.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
-const { t, isRtl, isDark, theme: currentTheme } = useThemeAndLanguage()
+const { t, isRtl, isDark, theme: currentTheme, locProps, lang } = useThemeAndLanguage()
 const router = useRouter()
 
 // UI State
@@ -758,7 +660,9 @@ const displayProperties = computed(() => {
     list.sort((a, b) => b.matchScore - a.matchScore)
   }
 
-  return list.length ? list : buyProperties.value
+  const final = list.length ? list : buyProperties.value
+  // Localize property data reactively (titles, types, locations)
+  return locProps(final)
 })
 
 const openDetails = (prop) => {

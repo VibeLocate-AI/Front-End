@@ -1,125 +1,5 @@
 <template>
-  <div class="dubai-home">
-    <!-- ==================== HEADER / NAVBAR ==================== -->
-    <header class="site-header" :class="{ scrolled: isScrolled }">
-      <div class="header-inner">
-        <!-- Logo -->
-        <a class="brand" href="#top" @click.prevent="scrollTo('top')">
-          <div class="brand-logo-wrap">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img">
-            <div class="brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Mobile Menu Toggle -->
-        <button class="menu-toggle" type="button" aria-label="Toggle navigation" @click="mobileMenuOpen = !mobileMenuOpen">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-
-        <!-- Navigation Links -->
-        <nav class="nav-links" :class="{ open: mobileMenuOpen }">
-          <a class="nav-item active" href="#top" @click.prevent="scrollTo('top')">{{ t('home') }}</a>
-          <router-link class="nav-item" to="/buy">{{ t('buy') }}</router-link>
-          <router-link class="nav-item" to="/rent">{{ t('rent') }}</router-link>
-          <router-link class="nav-item" to="/new-projects">{{ t('newProjects') }}</router-link>
-          <router-link class="nav-item" to="/map">{{ t('interactiveMap') }} <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan); margin-left:3px;"></i></router-link>
-          <a class="nav-item" href="#areas" @click.prevent="scrollTo('areas')">{{ t('areas') }}</a>
-          <router-link class="nav-item" to="/favorites">Favorites</router-link>
-          <router-link class="nav-item" to="/about">{{ t('aboutUs') }}</router-link>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-          <!-- Interactive Language Switcher & Theme Toggle Buttons -->
-          <NavbarControls />
-
-          <button class="btn-list-property" type="button" @click="$router.push('/add-property')">
-            {{ t('listProperty') }}
-          </button>
-          
-          <button
-            class="icon-action-btn"
-            :class="{ 'has-saved': favoritesService.savedItems.value.length > 0 }"
-            type="button"
-            aria-label="Saved Properties"
-            title="Saved Properties / العقارات المحفوظة"
-            @click="$router.push('/favorites')"
-          >
-            <i :class="favoritesService.savedItems.value.length > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
-            <span v-if="favoritesService.savedItems.value.length > 0" class="header-fav-badge">{{ favoritesService.savedItems.value.length }}</span>
-          </button>
-
-          <div class="user-profile-menu-container" ref="profileDropdownRef">
-            <div class="user-profile-menu" @click="toggleProfileMenu">
-              <img
-                class="header-avatar"
-                :src="userAvatarUrl"
-                :alt="user.name || 'User'"
-                @error="onAvatarError"
-              >
-              <i class="fa-solid fa-chevron-down profile-arrow" :class="{ 'rotate-180': profileMenuOpen }"></i>
-            </div>
-
-            <!-- Interactive User Profile Dropdown -->
-            <div v-if="profileMenuOpen" class="profile-dropdown-box">
-              <div class="dropdown-user-header">
-                <img
-                  class="dropdown-avatar"
-                  :src="userAvatarUrl"
-                  :alt="user.name || 'User'"
-                  @error="onAvatarError"
-                >
-                <div class="dropdown-user-info">
-                  <strong class="dropdown-user-name">{{ displayName }}</strong>
-                  <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge">
-                    <i class="fa-solid fa-circle-check"></i> {{ isLoggedIn ? 'Verified Member' : 'Guest Account' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <div class="dropdown-menu-list">
-                <button class="dropdown-menu-item" @click="$router.push('/profile'); profileMenuOpen = false">
-                  <i class="fa-regular fa-user"></i>
-                  <span>My Profile</span>
-                </button>
-                <button class="dropdown-menu-item" @click="$router.push('/my-properties'); profileMenuOpen = false">
-                  <i class="fa-regular fa-building"></i>
-                  <span>My Properties</span>
-                </button>
-                <button class="dropdown-menu-item" @click="$router.push('/favorites'); profileMenuOpen = false">
-                  <i class="fa-solid fa-heart text-danger"></i>
-                  <span>Saved Properties ({{ favoritesService.savedItems.value.length }})</span>
-                </button>
-                <button class="dropdown-menu-item" @click="$router.push('/profile/preferences'); profileMenuOpen = false">
-                  <i class="fa-solid fa-sliders"></i>
-                  <span>Preferences</span>
-                </button>
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <div class="dropdown-footer-actions">
-                <button v-if="isLoggedIn" class="dropdown-logout-btn" @click="handleLogout">
-                  <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                  <span>Log Out</span>
-                </button>
-                <div v-else class="dropdown-guest-actions">
-                  <button class="dropdown-login-btn" @click="$router.push('/login')">Log In</button>
-                  <button class="dropdown-signup-btn" @click="$router.push('/register')">Sign Up</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
+  <div class="dubai-home" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme">
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="top">
       <!-- 1. AI PROCESSING / LOADING SCREEN (IMAGE 1) -->
@@ -521,7 +401,7 @@
                         {{ prop.type }}
                       </span>
                       <span class="card-verified-tag">
-                        <i class="fa-solid fa-circle-check"></i> Verified
+                        <i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'موثق' : 'Verified' }}
                       </span>
                     </div>
 
@@ -539,7 +419,7 @@
                     <!-- Bottom AI Match Badge -->
                     <div class="card-match-chip">
                       <i class="fa-solid fa-wand-magic-sparkles"></i>
-                      <span>{{ prop.aiMatch || 96 }}% Match</span>
+                      <span>{{ prop.aiMatch || 96 }}% {{ isRtl ? 'تطابق' : 'Match' }}</span>
                     </div>
                   </div>
 
@@ -549,9 +429,9 @@
                     <div class="property-card-pricing">
                       <div class="price-stack">
                         <span class="price-val">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : 'N/A' }}</span>
-                        <span class="price-period">{{ prop.period || '/yr' }}</span>
+                        <span class="price-period">{{ prop.period || (isRtl ? '/سنوياً' : '/yr') }}</span>
                       </div>
-                      <span class="rent-tag">{{ prop.rent_frequency || 'yearly' }}</span>
+                      <span class="rent-tag">{{ prop.rent_frequency || (isRtl ? 'سنوي' : 'yearly') }}</span>
                     </div>
 
                     <!-- Title & Location -->
@@ -563,17 +443,17 @@
 
                     <!-- Specs Row -->
                     <div class="property-card-specs">
-                      <div class="spec-item" title="Bedrooms">
+                      <div class="spec-item" :title="t('beds')">
                         <i class="fa-solid fa-bed"></i>
-                        <span>{{ prop.beds }} Beds</span>
+                        <span>{{ prop.beds }} {{ t('beds') }}</span>
                       </div>
-                      <div class="spec-item" title="Bathrooms">
+                      <div class="spec-item" :title="t('baths')">
                         <i class="fa-solid fa-bath"></i>
-                        <span>{{ prop.baths }} Baths</span>
+                        <span>{{ prop.baths }} {{ t('baths') }}</span>
                       </div>
-                      <div class="spec-item" title="Built-up Area">
+                      <div class="spec-item" :title="t('totalArea')">
                         <i class="fa-solid fa-vector-square"></i>
-                        <span>{{ prop.size }} Sqft</span>
+                        <span>{{ prop.size }} {{ t('sqft') }}</span>
                       </div>
                     </div>
 
@@ -584,8 +464,8 @@
                         class="btn-card-details"
                         @click.stop="openPropertyDetails(prop)"
                       >
-                        <span>View Details</span>
-                        <i class="fa-solid fa-arrow-right"></i>
+                        <span>{{ t('viewDetails') }}</span>
+                        <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
                       </button>
                     </div>
                   </div>
@@ -885,75 +765,6 @@
       </template>
     </main>
 
-    <!-- ==================== FOOTER ==================== -->
-    <footer class="footer" id="contact">
-      <div class="container footer-top">
-        <div class="footer-brand">
-          <a href="#hero" class="logo footer-logo" @click.prevent="scrollTo('hero')">
-            <img src="/logo_transparent.png" alt="VibeLocate AI Logo" class="brand-logo-img footer-logo-img">
-            <div class="brand-text footer-brand-text">
-              <span class="brand-title">Vibe<span class="brand-accent">Locate</span></span>
-              <span class="brand-badge">AI</span>
-            </div>
-          </a>
-          <p class="brand-desc">
-            Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.
-          </p>
-          <div class="social-links">
-            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-          </div>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Quick Links</h4>
-          <ul>
-            <li><a href="#hero" @click.prevent="scrollTo('hero')">Home</a></li>
-            <li><a href="#about" @click.prevent="scrollTo('about')">Services</a></li>
-            <li><a href="#about" @click.prevent="scrollTo('about')">About Us</a></li>
-            <li><a href="#testimonials" @click.prevent="scrollTo('testimonials')">Testimonials</a></li>
-            <li><a href="#contact" @click.prevent="scrollTo('contact')">Contact</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Support</h4>
-          <ul>
-            <li><a href="#" @click.prevent="showToast('Help Center is coming soon')">Help Center</a></li>
-            <li><a href="#" @click.prevent="showToast('Safety & Security information')">Safety &amp; Security</a></li>
-            <li><a href="#" @click.prevent="showToast('Terms & Conditions')">Terms &amp; Conditions</a></li>
-            <li><a href="#" @click.prevent="showToast('Privacy Policy')">Privacy Policy</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-links-col">
-          <h4 class="footer-heading">Contact</h4>
-          <ul class="contact-info-list">
-            <li>
-              <i class="fa-solid fa-location-dot"></i>
-              <span>742 Evergreen Blvd, Beverly Hills, CA</span>
-            </li>
-            <li>
-              <i class="fa-solid fa-envelope"></i>
-              <span>contact@vibelocate.ai</span>
-            </li>
-            <li>
-              <i class="fa-solid fa-phone"></i>
-              <span>+1 (800) 456-7890</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <div class="container bottom-container">
-          <p>&copy; 2026 VibeLocate AI. All rights reserved.</p>
-        </div>
-      </div>
-    </footer>
-
     <!-- LUXURY PROPERTY DETAILS MODAL -->
     <Teleport to="body">
       <Transition name="modal-fade">
@@ -1024,7 +835,7 @@
                 <div class="modal-info-header">
                   <div class="modal-header-top-row">
                     <span class="modal-verified-pill">
-                      <i class="fa-solid fa-certificate"></i> Verified Luxury Listing
+                      <i class="fa-solid fa-certificate"></i> {{ t('verifiedLuxuryListing') }}
                     </span>
                     <button
                       type="button"
@@ -1033,7 +844,7 @@
                       @click="toggleFavorite(selectedProperty.title)"
                     >
                       <i :class="favorites.has(selectedProperty.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
-                      <span>{{ favorites.has(selectedProperty.title) ? 'Favorited' : 'Save' }}</span>
+                      <span>{{ favorites.has(selectedProperty.title) ? t('favorited') : t('save') }}</span>
                     </button>
                   </div>
 
@@ -1045,82 +856,78 @@
 
                   <div class="modal-pricing-box">
                     <div class="modal-price-group">
-                      <span class="modal-currency">{{ selectedProperty.currencySymbol || 'AED ' }}</span>
+                      <span class="modal-currency">{{ selectedProperty.currencySymbol || (isRtl ? 'د.إ ' : 'AED ') }}</span>
                       <span class="modal-price-number">{{ selectedProperty.price ? selectedProperty.price.toLocaleString() : 'N/A' }}</span>
-                      <span class="modal-period">{{ selectedProperty.period || '/yr' }}</span>
+                      <span class="modal-period">{{ selectedProperty.period || (isRtl ? '/سنوياً' : '/yr') }}</span>
                     </div>
-                    <span class="modal-rent-frequency">{{ selectedProperty.rent_frequency || 'Yearly Lease' }}</span>
+                    <span class="modal-rent-frequency">{{ selectedProperty.rent_frequency || (isRtl ? 'إيجار سنوي' : 'Yearly Lease') }}</span>
                   </div>
                 </div>
 
                 <!-- Key Specs Grid -->
                 <div class="modal-specs-section">
-                  <h4 class="modal-section-title">Property Highlights</h4>
+                  <h4 class="modal-section-title">{{ t('propertyHighlights') }}</h4>
                   <div class="modal-specs-grid">
                     <div class="modal-spec-card">
                       <i class="fa-solid fa-bed"></i>
                       <div>
-                        <span class="spec-label">Bedrooms</span>
-                        <strong class="spec-value">{{ selectedProperty.beds }} Bedrooms</strong>
+                        <span class="spec-label">{{ t('beds') }}</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.beds || (selectedProperty.beds + ' ' + t('beds')) }}</strong>
                       </div>
                     </div>
                     <div class="modal-spec-card">
                       <i class="fa-solid fa-bath"></i>
                       <div>
-                        <span class="spec-label">Bathrooms</span>
-                        <strong class="spec-value">{{ selectedProperty.baths }} Bathrooms</strong>
+                        <span class="spec-label">{{ t('baths') }}</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.baths || (selectedProperty.baths + ' ' + t('baths')) }}</strong>
                       </div>
                     </div>
                     <div class="modal-spec-card">
                       <i class="fa-solid fa-vector-square"></i>
                       <div>
-                        <span class="spec-label">Total Area</span>
-                        <strong class="spec-value">{{ selectedProperty.size }} Sqft</strong>
+                        <span class="spec-label">{{ t('totalArea') }}</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.area || (selectedProperty.size + ' ' + t('sqft')) }}</strong>
                       </div>
                     </div>
                     <div class="modal-spec-card">
                       <i class="fa-solid fa-couch"></i>
                       <div>
-                        <span class="spec-label">Furnishing</span>
-                        <strong class="spec-value" style="text-transform: capitalize;">{{ selectedProperty.is_furnished || 'Unfurnished' }}</strong>
+                        <span class="spec-label">{{ t('furnishing') }}</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.furnishing || (selectedProperty.is_furnished || (isRtl ? 'غير مفروش' : 'Unfurnished')) }}</strong>
                       </div>
                     </div>
                     <div class="modal-spec-card">
                       <i class="fa-solid fa-square-parking"></i>
                       <div>
-                        <span class="spec-label">Parking</span>
-                        <strong class="spec-value">{{ selectedProperty.specs?.parking || 'Available' }}</strong>
+                        <span class="spec-label">{{ t('parking') }}</span>
+                        <strong class="spec-value">{{ selectedProperty.specs?.parking || (isRtl ? 'مشمول' : 'Included') }}</strong>
                       </div>
                     </div>
                     <div class="modal-spec-card">
-                      <i class="fa-solid fa-building"></i>
+                      <i class="fa-solid fa-building-shield"></i>
                       <div>
-                        <span class="spec-label">Property Type</span>
+                        <span class="spec-label">{{ isRtl ? 'النوع' : 'Property Type' }}</span>
                         <strong class="spec-value">{{ selectedProperty.type }}</strong>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Amenities & Features Tags -->
-                <div class="modal-amenities-section">
-                  <h4 class="modal-section-title">Amenities &amp; Features</h4>
+                <!-- Amenities Tags -->
+                <div v-if="selectedProperty.tags && selectedProperty.tags.length" class="modal-amenities-section">
+                  <h4 class="modal-section-title">{{ t('amenities') }}</h4>
                   <div class="modal-amenities-tags">
-                    <span
-                      v-for="(tag, tIdx) in (selectedProperty.tags && selectedProperty.tags.length ? selectedProperty.tags : ['Balcony', 'Central A/C', 'Security', 'Built-in Wardrobes', 'Shared Gym', 'Covered Parking'])"
-                      :key="tIdx"
-                      class="modal-amenity-chip"
-                    >
-                      <i class="fa-solid fa-circle-check"></i> {{ tag }}
+                    <span v-for="(tag, idx) in selectedProperty.tags" :key="idx" class="modal-amenity-tag">
+                      <i class="fa-solid fa-check"></i> {{ tag }}
                     </span>
                   </div>
                 </div>
 
                 <!-- Description -->
                 <div class="modal-description-section">
-                  <h4 class="modal-section-title">About this property</h4>
+                  <h4 class="modal-section-title">{{ isRtl ? 'نبذة عن العقار' : 'About this property' }}</h4>
                   <p class="modal-description-text">
-                    {{ selectedProperty.description || selectedProperty.summary || 'A prestigious residential opportunity offering unmatched comfort, modern architectural finishes, and panoramic views of Dubai.' }}
+                    {{ selectedProperty.description || selectedProperty.summary || (isRtl ? 'فرصة سكنية مميزة تقدم أسلوب حياة استثنائي في دبي مع تصميم عصري وتشطيبات عالية الجودة.' : 'A prestigious residential opportunity offering unmatched comfort, modern architectural finishes, and panoramic views of Dubai.') }}
                   </p>
                 </div>
 
@@ -1129,18 +936,18 @@
                   <button
                     type="button"
                     class="btn-modal-primary"
-                    @click="showToast('Scheduling private viewing for ' + selectedProperty.title)"
+                    @click="$router.push('/payment')"
                   >
                     <i class="fa-solid fa-calendar-check"></i>
-                    <span>Schedule a Private Viewing</span>
+                    <span>{{ t('proceedToBooking') }}</span>
                   </button>
                   <button
                     type="button"
                     class="btn-modal-secondary"
-                    @click="showToast('Connecting you with the verified agent...')"
+                    @click="showToast(isRtl ? 'جاري تحويلك للمستشار المعتمد...' : 'Connecting you with the verified agent...')"
                   >
                     <i class="fa-solid fa-phone"></i>
-                    <span>Contact Agent</span>
+                    <span>{{ isRtl ? 'تواصل مع المستشار' : 'Contact Agent' }}</span>
                   </button>
                 </div>
               </div>
@@ -1175,7 +982,7 @@ import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { favoritesService } from '../services/favoritesService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
-const { t, isRtl } = useThemeAndLanguage()
+const { t, isRtl, theme, lang, locProp } = useThemeAndLanguage()
 
 const areas = [
   { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
@@ -1188,7 +995,7 @@ const properties = ref([...DEFAULT_PROPERTIES])
 const isLoadingProperties = ref(false)
 const isLiveApi = ref(false)
 
-// Progressive pagination states (ماتعرض كل البطاقات مرة واحدة)
+// Progressive pagination states
 const visibleFeaturedCount = ref(4)
 const isLoadingMoreFeatured = ref(false)
 const visibleNearbyCount = ref(4)
@@ -1199,7 +1006,8 @@ const isModalOpen = ref(false)
 const activeModalImage = ref('')
 
 const openPropertyDetails = (prop) => {
-  sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
+  const localized = locProp(prop)
+  sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(localized))
   router.push({ name: 'PropertyDetails', params: { id: prop.id || encodeURIComponent(prop.slug || prop.title) } })
 }
 
@@ -1217,7 +1025,7 @@ const handleKeyDown = (e) => {
   }
 }
 
-const nearbyProperties = computed(() => properties.value.slice(4))
+const nearbyProperties = computed(() => properties.value.slice(4).map(p => locProp(p)))
 const displayedFeaturedProperties = computed(() => filteredProperties.value.slice(0, visibleFeaturedCount.value))
 const displayedNearbyProperties = computed(() => nearbyProperties.value.slice(0, visibleNearbyCount.value))
 
@@ -1462,8 +1270,9 @@ const handleLogout = async () => {
 
 const filteredProperties = computed(() => {
   const term = query.value.toLowerCase().trim()
-  if (!term) return properties.value
-  return properties.value.filter(p =>
+  const localized = properties.value.map(p => locProp(p))
+  if (!term) return localized
+  return localized.filter(p =>
     `${p.title} ${p.area} ${p.type} ${p.price}`.toLowerCase().includes(term)
   )
 })

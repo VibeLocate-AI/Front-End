@@ -1,10 +1,5 @@
 <template>
   <div class="owner-page" :class="{ embedded }">
-    <header v-if="!embedded" class="owner-header">
-      <RouterLink class="brand" to="/home"><img src="/logo_transparent.png" alt="VibeLocate"><b>Vibe<span>Locate</span></b><em>AI</em></RouterLink>
-      <nav><RouterLink to="/home">Home</RouterLink><RouterLink to="/home#featured">Buy</RouterLink><RouterLink to="/rent">Rent</RouterLink><RouterLink to="/map">Interactive Map</RouterLink><RouterLink to="/home#districts">Areas</RouterLink></nav>
-      <div class="header-tools"><button><i class="fa-solid fa-globe"></i> AR | <b>EN</b></button><button class="round"><i class="fa-solid fa-moon"></i></button><button class="add-small" @click="router.push('/add-property')">List Your Property <i class="fa-solid fa-plus"></i></button><div class="mini-avatar"><img v-if="currentUser.avatar" :src="currentUser.avatar" :alt="currentUser.name"><span v-else>{{ initials }}</span></div></div>
-    </header>
 
     <div class="owner-layout">
       <aside v-if="!embedded" class="sidebar">
