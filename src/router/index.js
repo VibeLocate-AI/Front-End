@@ -16,8 +16,10 @@ import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
 import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
 import NewProjectsPage from '../components/NewProjectsPage.vue'
 import AboutPage from '../components/AboutPage.vue'
+import FavoritesPage from '../components/FavoritesPage.vue'
 import PaymentPage from '../components/PaymentPage.vue'
 import PropertyBookingPage from '../components/PropertyBookingPage.vue'
+import NotificationsPage from '../components/NotificationsPage.vue'
 
 const routes = [
   {
@@ -60,6 +62,16 @@ const routes = [
     path: '/about',
     name: 'About',
     component: AboutPage
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: NotificationsPage
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: FavoritesPage
   },
   {
     path: '/property/:id',

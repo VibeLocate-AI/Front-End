@@ -27,6 +27,10 @@
           {{ t('interactiveMap') }}
           <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-inline-start:3px;"></i>
         </router-link>
+        <router-link class="nav-item" to="/favorites" active-class="active">
+          <i class="fa-solid fa-heart" style="font-size:0.75rem; color:#ef4444; margin-inline-end:5px;"></i>
+          {{ isRtl ? 'المفضلة' : 'Favorites' }}
+        </router-link>
         <router-link class="nav-item" to="/about" active-class="active">{{ t('aboutUs') }}</router-link>
       </nav>
 
@@ -44,10 +48,15 @@
           type="button"
           aria-label="Saved Properties"
           :title="t('savedProperties')"
-          @click="emit('open-saved')"
+          @click="openFavorites"
         >
           <i :class="favCount > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
           <span v-if="favCount > 0" class="header-fav-badge">{{ favCount }}</span>
+        </button>
+
+        <button class="icon-action-btn notification-nav-btn" type="button" :title="isRtl ? 'الإشعارات' : 'Notifications'" @click="router.push('/notifications')">
+          <i class="fa-regular fa-bell"></i>
+          <span v-if="notificationCount" class="notification-nav-badge">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
         </button>
 
         <!-- User Profile Menu -->
@@ -82,7 +91,7 @@
                   <i class="fa-regular fa-building"></i>
                   <span>{{ isRtl ? 'عقاراتي' : 'My Properties' }}</span>
                 </button>
-                <button class="dropdown-menu-item" @click="emit('open-saved'); profileMenuOpen = false">
+                <button class="dropdown-menu-item" @click="openFavorites">
                   <i class="fa-solid fa-heart text-danger"></i>
                   <span>{{ isRtl ? 'العقارات المحفوظة' : 'Saved Properties' }} ({{ favCount }})</span>
                 </button>
@@ -115,8 +124,7 @@ import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { authService } from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
-
-const emit = defineEmits(['open-saved'])
+import { notificationService } from '../services/notificationService'
 
 const { t, isRtl, theme: currentTheme } = useThemeAndLanguage()
 const router = useRouter()
@@ -127,6 +135,7 @@ const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
 
 const favCount = computed(() => favoritesService.savedItems.value.length)
+const notificationCount = computed(() => notificationService.unreadCount.value)
 
 const currentUser = ref(null)
 const isLoggedIn = computed(() => !!currentUser.value)
@@ -175,6 +184,11 @@ const goto = (path) => {
   router.push(path)
 }
 
+const openFavorites = () => {
+  profileMenuOpen.value = false
+  router.push('/favorites')
+}
+
 const handleScroll = () => { isScrolled.value = window.scrollY > 20 }
 
 const handleDocumentClick = (e) => {
@@ -185,6 +199,7 @@ const handleDocumentClick = (e) => {
 
 onMounted(() => {
   loadUser()
+  notificationService.refreshUnreadCount()
   window.addEventListener('scroll', handleScroll, { passive: true })
   document.addEventListener('click', handleDocumentClick)
   handleScroll()
@@ -238,6 +253,7 @@ onUnmounted(() => {
 .icon-action-btn:hover { color: #fff; background: rgba(255,255,255,0.12); border-color: rgba(239,68,68,0.4); }
 .icon-action-btn.has-saved { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444; }
 .header-fav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.notification-nav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .user-profile-menu-container { position: relative; }
 .user-profile-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 10px 4px 5px; border-radius: 999px; transition: background 0.2s; }
 .user-profile-menu:hover { background: rgba(255,255,255,0.06); }
