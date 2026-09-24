@@ -102,7 +102,7 @@ export const favoritesService = {
     try {
       const res = await apiClient.get('/favorites')
       const list = Array.isArray(res) ? res : (res?.data || res?.favorites || [])
-      if (Array.isArray(list) && list.length > 0) {
+      if (Array.isArray(list)) {
         const normalized = list.map(item => {
           const prop = item.property || item
           return {
@@ -188,14 +188,18 @@ export const favoritesService = {
   },
 
   async remove(titleOrId) {
-    savedItems.value = savedItems.value.filter(item => (item.title || item.id) !== titleOrId)
+    const removedItem = savedItems.value.find(item => item.id === titleOrId || item.title === titleOrId)
+    savedItems.value = savedItems.value.filter(item => item.id !== titleOrId && item.title !== titleOrId)
     const nextKeys = new Set(savedKeys.value)
     nextKeys.delete(titleOrId)
+    if (removedItem?.id) nextKeys.delete(removedItem.id)
+    if (removedItem?.title) nextKeys.delete(removedItem.title)
     savedKeys.value = nextKeys
     saveToStorage()
 
-    if (authService.isAuthenticated() && typeof titleOrId === 'number') {
-      apiClient.delete(`/favorites/${titleOrId}`).catch(() => {})
+    const propertyId = removedItem?.id || (typeof titleOrId === 'number' ? titleOrId : null)
+    if (authService.isAuthenticated() && propertyId) {
+      apiClient.delete(`/favorites/${propertyId}`).catch(() => {})
     }
   },
 
