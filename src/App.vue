@@ -47,7 +47,7 @@ const savedModalOpen = ref(false)
 const authPageNames = ['Login', 'Register', 'Verify', 'ForgotPassword', 'ResetPassword', 'ResetSuccess']
 
 // Pages with the shared navbar (all main app pages)
-const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties', 'NewProjects', 'About', 'Payment', 'PropertyBooking']
+const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties', 'NewProjects', 'About', 'Favorites', 'Payment', 'PropertyBooking']
 
 const isAuthPage = computed(() => authPageNames.includes(route.name))
 const isMainPage = computed(() => mainPageNames.includes(route.name))

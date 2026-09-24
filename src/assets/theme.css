@@ -1512,3 +1512,196 @@ body,
   right: 3px;
 }
 
+/* ===========================================================================
+   Shared page themes: New Projects, Interactive Map, Favorites, About
+   ========================================================================== */
+[data-theme="light"] .projects-page,
+[data-theme="light"] .favorites-page {
+  background: #f6f9fd;
+  color: #0f172a;
+}
+
+[data-theme="light"] .projects-page .page-body {
+  background: #f6f9fd;
+}
+
+[data-theme="light"] .projects-page .hero {
+  background: radial-gradient(circle at 72% 18%, rgba(14, 145, 212, .18), transparent 32%), linear-gradient(135deg, #eaf6ff 0%, #f8fbff 55%, #eef6ff 100%);
+}
+
+[data-theme="light"] .projects-page .hero::after {
+  background: linear-gradient(transparent, #f6f9fd);
+}
+
+[data-theme="light"] .projects-page .hero h1,
+[data-theme="light"] .projects-page .section-title h2,
+[data-theme="light"] .projects-page .project-info h3,
+[data-theme="light"] .projects-page .invest-card h2,
+[data-theme="light"] .projects-page .benefit strong,
+[data-theme="light"] .projects-page .community-row strong {
+  color: #0f172a;
+}
+
+[data-theme="light"] .projects-page .hero p,
+[data-theme="light"] .projects-page .section-title p,
+[data-theme="light"] .projects-page .stat span,
+[data-theme="light"] .projects-page .location,
+[data-theme="light"] .projects-page .developer span,
+[data-theme="light"] .projects-page .price-row small,
+[data-theme="light"] .projects-page .benefit p,
+[data-theme="light"] .projects-page .community-row span {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .projects-page .eyebrow,
+[data-theme="light"] .projects-page .filter-bar,
+[data-theme="light"] .projects-page .stat,
+[data-theme="light"] .projects-page .project-card,
+[data-theme="light"] .projects-page .invest-card,
+[data-theme="light"] .projects-page .community-row article {
+  background: #ffffff;
+  border-color: #dbe6f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+}
+
+[data-theme="light"] .projects-page .eyebrow {
+  color: #0284c7;
+  background: #eff9ff;
+}
+
+[data-theme="light"] .projects-page .filter,
+[data-theme="light"] .projects-page .filter > span {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .projects-page .filter > select {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .projects-page .stat > div { color: #0f172a; }
+[data-theme="light"] .projects-page .price-row { border-color: #e2e8f0; }
+[data-theme="light"] .projects-page .invest-skyline { background: linear-gradient(160deg, #e7f5ff, #ddecf8 70%, #cfe8f7); color: #0f172a; }
+
+[data-theme="dark"] .map-page-wrapper {
+  background: #07111f;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .map-title,
+[data-theme="dark"] .sidebar-heading,
+[data-theme="dark"] .route-prop-name,
+[data-theme="dark"] .stat-info .stat-val {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .map-subtitle,
+[data-theme="dark"] .sidebar-empty-state,
+[data-theme="dark"] .stat-info .stat-lbl { color: #94a3b8; }
+
+[data-theme="dark"] .map-quick-stats,
+[data-theme="dark"] .filter-bar-card,
+[data-theme="dark"] .map-sidebar-panel,
+[data-theme="dark"] .map-view-panel,
+[data-theme="dark"] .map-layer-selector,
+[data-theme="dark"] .map-modal-container,
+[data-theme="dark"] .map-route-card {
+  background: #0d1b2a;
+  border-color: rgba(125, 211, 252, .18);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .24);
+}
+
+[data-theme="dark"] .filter-dropdown-wrap,
+[data-theme="dark"] .sidebar-header,
+[data-theme="dark"] .sidebar-search-input,
+[data-theme="dark"] .map-control-btn,
+[data-theme="dark"] .route-stat-box {
+  background: #12263a;
+  border-color: rgba(148, 163, 184, .2);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .sidebar-search-input,
+[data-theme="dark"] .filter-select option { color: #e2e8f0; background-color: #12263a; }
+
+[data-theme="dark"] .map-control-btn:hover { background: #19334c; color: #38bdf8; }
+
+[data-theme="dark"] .map-page-wrapper .map-prop-card,
+[data-theme="dark"] .map-page-wrapper .leaflet-popup-content-wrapper {
+  background: #102338 !important;
+  border-color: rgba(148, 163, 184, .16) !important;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .map-page-wrapper .map-prop-card.active { background: #123552 !important; }
+
+[data-theme="dark"] .favorites-page .toolbar select,
+[data-theme="dark"] .favorites-page .tabs button,
+[data-theme="dark"] .favorites-page .property-card,
+[data-theme="dark"] .favorites-page .explore-card {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+[data-theme="light"] .favorites-page .hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(239, 248, 255, .88), rgba(239, 248, 255, .2) 64%, rgba(255, 255, 255, .1));
+}
+
+[data-theme="light"] .favorites-page .hero-title,
+[data-theme="light"] .favorites-page .hero-note,
+[data-theme="light"] .favorites-page .stats { z-index: 1; }
+
+[data-theme="light"] .favorites-page .hero h1 { color: #0f172a; }
+[data-theme="light"] .favorites-page .hero p { color: #475569; }
+[data-theme="light"] .favorites-page .hero-note { color: #0f172a; }
+
+[data-theme="light"] .favorites-page .stats > div,
+[data-theme="light"] .favorites-page .tabs button,
+[data-theme="light"] .favorites-page .toolbar select,
+[data-theme="light"] .favorites-page .property-card,
+[data-theme="light"] .favorites-page .explore-card {
+  background: #ffffff;
+  border-color: #dbe6f0;
+  color: #0f172a;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+
+[data-theme="light"] .favorites-page .stats span,
+[data-theme="light"] .favorites-page .details p,
+[data-theme="light"] .favorites-page .specs,
+[data-theme="light"] .favorites-page .card-foot > span,
+[data-theme="light"] .favorites-page .explore-card p { color: #64748b; }
+
+[data-theme="light"] .favorites-page .details > strong,
+[data-theme="light"] .favorites-page .details p,
+[data-theme="light"] .favorites-page .card-foot > span i { color: #0284c7; }
+
+[data-theme="light"] .favorites-page .card-foot { border-color: #e2e8f0; }
+[data-theme="light"] .favorites-page .image > span { background: #e0f2fe; color: #0369a1; }
+[data-theme="light"] .favorites-page .card-foot button { background: #eff6ff; border-color: #93c5fd; color: #0369a1; }
+
+[data-theme="dark"] .about-page {
+  background: #07111f;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .about-page .section-light { background: #07111f; }
+[data-theme="dark"] .about-page .story-copy h2,
+[data-theme="dark"] .about-page .commit-copy h2 { color: #f8fafc; }
+[data-theme="dark"] .about-page .story-copy p,
+[data-theme="dark"] .about-page .commit-copy p { color: #a9bdd0; }
+
+[data-theme="dark"] .about-page .pillars {
+  background: linear-gradient(145deg, #0f263b, #0b1d30);
+  border: 1px solid rgba(125, 211, 252, .15);
+}
+
+[data-theme="dark"] .about-page .pillars h3 { color: #7dd3fc; }
+[data-theme="dark"] .about-page .pillars p { color: #b8c9d9; }
+[data-theme="dark"] .about-page .commit-collage div { background: #102338; color: #e2e8f0; }
+[data-theme="dark"] .about-page .commit-collage div span { color: #94a3b8; }
+

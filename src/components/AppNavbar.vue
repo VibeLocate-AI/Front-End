@@ -27,6 +27,10 @@
           {{ t('interactiveMap') }}
           <i class="fa-solid fa-map-location-dot" style="font-size:0.75rem; color:var(--accent-cyan, #00d2ff); margin-inline-start:3px;"></i>
         </router-link>
+        <router-link class="nav-item" to="/favorites" active-class="active">
+          <i class="fa-solid fa-heart" style="font-size:0.75rem; color:#ef4444; margin-inline-end:5px;"></i>
+          {{ isRtl ? 'المفضلة' : 'Favorites' }}
+        </router-link>
         <router-link class="nav-item" to="/about" active-class="active">{{ t('aboutUs') }}</router-link>
       </nav>
 
@@ -44,7 +48,7 @@
           type="button"
           aria-label="Saved Properties"
           :title="t('savedProperties')"
-          @click="emit('open-saved')"
+          @click="openFavorites"
         >
           <i :class="favCount > 0 ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
           <span v-if="favCount > 0" class="header-fav-badge">{{ favCount }}</span>
@@ -82,7 +86,7 @@
                   <i class="fa-regular fa-building"></i>
                   <span>{{ isRtl ? 'عقاراتي' : 'My Properties' }}</span>
                 </button>
-                <button class="dropdown-menu-item" @click="emit('open-saved'); profileMenuOpen = false">
+                <button class="dropdown-menu-item" @click="openFavorites">
                   <i class="fa-solid fa-heart text-danger"></i>
                   <span>{{ isRtl ? 'العقارات المحفوظة' : 'Saved Properties' }} ({{ favCount }})</span>
                 </button>
@@ -115,8 +119,6 @@ import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { authService } from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
-
-const emit = defineEmits(['open-saved'])
 
 const { t, isRtl, theme: currentTheme } = useThemeAndLanguage()
 const router = useRouter()
@@ -173,6 +175,11 @@ const handleLogout = () => {
 const goto = (path) => {
   profileMenuOpen.value = false
   router.push(path)
+}
+
+const openFavorites = () => {
+  profileMenuOpen.value = false
+  router.push('/favorites')
 }
 
 const handleScroll = () => { isScrolled.value = window.scrollY > 20 }
