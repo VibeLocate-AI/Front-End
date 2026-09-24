@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import favoritesService from '../services/favoritesService'
 const router=useRouter(),menuOpen=ref(false),activeType=ref('all'),sort=ref('newest'),toast=ref('')
@@ -37,8 +37,9 @@ const tabs=[{label:'All',value:'all'},{label:'Apartments',value:'Apartments'},{l
 const countType=t=>t==='all'?cards.value.length:cards.value.filter(x=>x.type===t).length
 const filteredCards=computed(()=>{let list=activeType.value==='all'?cards.value:cards.value.filter(x=>x.type===activeType.value);return [...list].sort((a,b)=>sort.value==='high'?b.priceValue-a.priceValue:sort.value==='low'?a.priceValue-b.priceValue:0)})
 const singular=t=>t==='Apartments'?'Apartment':t==='Villas'?'Villa':t==='Studios'?'Studio':t
-function remove(p){cards.value=cards.value.filter(x=>x.id!==p.id);favoritesService.remove(p.title);toast.value='Property removed from favorites';setTimeout(()=>toast.value='',2300)}
+function remove(p){cards.value=cards.value.filter(x=>x.id!==p.id);favoritesService.remove(p.id);toast.value='Property removed from favorites';setTimeout(()=>toast.value='',2300)}
 function view(p){sessionStorage.setItem('vibelocate:selected-property',JSON.stringify(p));router.push(`/property/${p.id}`)}
+onMounted(async()=>{await favoritesService.syncWithBackend();cards.value=favoritesService.savedItems.value})
 </script>
 
 <style scoped>
