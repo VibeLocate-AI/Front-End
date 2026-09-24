@@ -54,6 +54,11 @@
           <span v-if="favCount > 0" class="header-fav-badge">{{ favCount }}</span>
         </button>
 
+        <button class="icon-action-btn notification-nav-btn" type="button" :title="isRtl ? 'الإشعارات' : 'Notifications'" @click="router.push('/notifications')">
+          <i class="fa-regular fa-bell"></i>
+          <span v-if="notificationCount" class="notification-nav-badge">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
+        </button>
+
         <!-- User Profile Menu -->
         <div class="user-profile-menu-container" ref="profileDropdownRef">
           <div class="user-profile-menu" @click="profileMenuOpen = !profileMenuOpen">
@@ -119,6 +124,7 @@ import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { authService } from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
+import { notificationService } from '../services/notificationService'
 
 const { t, isRtl, theme: currentTheme } = useThemeAndLanguage()
 const router = useRouter()
@@ -129,6 +135,7 @@ const profileMenuOpen = ref(false)
 const profileDropdownRef = ref(null)
 
 const favCount = computed(() => favoritesService.savedItems.value.length)
+const notificationCount = computed(() => notificationService.unreadCount.value)
 
 const currentUser = ref(null)
 const isLoggedIn = computed(() => !!currentUser.value)
@@ -192,6 +199,7 @@ const handleDocumentClick = (e) => {
 
 onMounted(() => {
   loadUser()
+  notificationService.refreshUnreadCount()
   window.addEventListener('scroll', handleScroll, { passive: true })
   document.addEventListener('click', handleDocumentClick)
   handleScroll()
@@ -245,6 +253,7 @@ onUnmounted(() => {
 .icon-action-btn:hover { color: #fff; background: rgba(255,255,255,0.12); border-color: rgba(239,68,68,0.4); }
 .icon-action-btn.has-saved { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444; }
 .header-fav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.notification-nav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .user-profile-menu-container { position: relative; }
 .user-profile-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 10px 4px 5px; border-radius: 999px; transition: background 0.2s; }
 .user-profile-menu:hover { background: rgba(255,255,255,0.06); }
