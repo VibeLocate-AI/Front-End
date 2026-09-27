@@ -353,20 +353,20 @@ const STATIC_FALLBACK_PROPERTIES = [
   { id: 12, title: 'Il Primo Opera District Grand Penthouse', area: 'Downtown Dubai', type: 'Penthouse', priceAed: 14200000, priceFormatted: 'AED 14,200,000', priceShort: '14.2M', period: 'Sale', distanceKm: 5.4, distanceFormatted: '5.4 km away', aiScore: 98, rating: 5.0, beds: 4, baths: 5, sqft: 4900, vibe: 'Sky High Luxury', lat: 25.1945, lng: 55.2710, image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=900&q=80', aiSummary: 'Full-floor residence adjacent to Dubai Opera with private elevator, cigar lounge, and private wellness spa.', verified: true }
 ]
 
-let currentProperties = [...STATIC_FALLBACK_PROPERTIES]
+let currentProperties = []
 let mapInstance = null, activeTileLayer = null, markersMap = new Map(), activePropertyId = null
-let filteredProperties = [...currentProperties], toastTimeout = null
+let filteredProperties = [], toastTimeout = null
 
 function formatMapProperty(raw) {
   const priceNum = Number(raw.price) || 0
-  const lat = parseFloat(raw.latitude) || 25.14
-  const lng = parseFloat(raw.longitude) || 55.22
-  const areaName = raw.neighborhood || raw.neighborhood_name || (raw.address ? raw.address.split(',')[0].trim() : 'Dubai')
+  const lat = parseFloat(raw.latitude ?? raw.lat ?? raw.location?.latitude ?? raw.location?.lat) || 25.14
+  const lng = parseFloat(raw.longitude ?? raw.lng ?? raw.location?.longitude ?? raw.location?.lng) || 55.22
+  const areaName = raw.neighborhood || raw.neighborhood_name || raw.location?.neighborhood_name || raw.location?.address_line_1 || (raw.address ? raw.address.split(',')[0].trim() : 'Dubai')
   const type = raw.property_type || (raw.type_id === 2 ? 'Villa' : raw.type_id === 3 ? 'Penthouse' : raw.type_id === 4 ? 'Townhouse' : 'Apartment')
   const beds = Number(raw.bedrooms || 0)
   const baths = Number(raw.bathrooms || 0)
   const sqft = Math.round(Number(raw.area_sqft || 0))
-  const img = raw.primary_image?.image_url || raw.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80'
+  const img = raw.primary_image?.image_url || raw.images?.find(image => image.is_primary)?.image_url || raw.images?.[0]?.image_url || raw.image || '/images/logo_transparent.png'
 
   // Distance relative to Downtown Dubai [25.1972, 55.2744]
   const dLat = (lat - 25.1972) * 111
@@ -434,7 +434,7 @@ async function fetchLiveMapProperties() {
       showToast(`Loaded ${currentProperties.length} live properties from VibeLocate API`)
     }
   } catch (err) {
-    console.warn('Map API load failed, using fallback properties:', err)
+    console.warn('Map API load failed:', err)
   }
 }
 
