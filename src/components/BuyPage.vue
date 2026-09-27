@@ -553,7 +553,8 @@ const filterState = ref({
 const sortBy = ref('recommended')
 
 // The 4 Exact Properties from the Mockup Image
-const buyProperties = ref([
+const buyProperties = ref([])
+/* const showcaseProperties = [
   {
     id: 1,
     title: 'Luxury 2BR Apartment',
@@ -610,7 +611,7 @@ const buyProperties = ref([
     image: '/images/photo-1512917774080-9991f1c4c750.jfif',
     description: 'Signature rooftop penthouse commanding 360-degree ocean views and private sky deck on Palm Jumeirah.'
   }
-])
+] */
 
 const formatPrice = (price) => {
   const num = Number(price) || 0
@@ -660,9 +661,8 @@ const displayProperties = computed(() => {
     list.sort((a, b) => b.matchScore - a.matchScore)
   }
 
-  const final = list.length ? list : buyProperties.value
   // Localize property data reactively (titles, types, locations)
-  return locProps(final)
+  return locProps(list)
 })
 
 const openDetails = (prop) => {
@@ -725,12 +725,10 @@ const loadApiProperties = async () => {
         image: p.image || (p.images && p.images[0]) || '/images/photo-1600210492486-724fe5c67fb0.jfif',
         description: p.description || p.summary || ''
       }))
-      if (apiProps.length >= 4) {
-        buyProperties.value = apiProps
-      }
+      buyProperties.value = apiProps
     }
   } catch (err) {
-    console.log('[BuyPage] Backend live properties offline, using curated showcase properties:', err?.message)
+    console.log('[BuyPage] Backend live properties are unavailable:', err?.message)
   }
 }
 
