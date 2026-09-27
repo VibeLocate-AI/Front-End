@@ -24,88 +24,158 @@
         </h1>
         <p class="search-hero-subtitle">{{ t('searchHeroSubtitle') }}</p>
 
-        <!-- ===== MAIN SEARCH BAR ===== -->
-        <div class="main-search-bar-wrap">
-          <form class="main-search-bar" @submit.prevent="runSearch">
-            <!-- Text input -->
-            <div class="msb-field msb-text-field">
-              <i class="fa-solid fa-magnifying-glass msb-icon"></i>
+        <!-- ===== SEARCH WIDGET CARD ===== -->
+        <div class="search-widget-card">
+
+          <!-- ROW 1: AI Contextual Search -->
+          <div class="swc-ai-row">
+            <div class="swc-ai-input-wrap">
+              <i class="fa-solid fa-magnifying-glass swc-ai-icon"></i>
               <input
                 id="search-query-input"
                 v-model="searchQuery"
                 type="text"
-                :placeholder="t('searchHeroInputPlaceholder')"
-                class="msb-input"
+                :placeholder="t('searchAiPlaceholder')"
+                class="swc-ai-input"
                 autocomplete="off"
                 @input="onQueryInput"
+                @keydown.enter.prevent="runSearch"
               />
+              <button v-if="searchQuery" type="button" class="swc-ai-clear" @click="clearSearch">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <button type="button" class="swc-ask-ai-btn" @click="runSearch" :disabled="isLoading">
+              <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
+              <i v-else class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>{{ t('askAI') }}</span>
+            </button>
+          </div>
+
+          <!-- Divider -->
+          <div class="swc-divider">
+            <span>{{ t('orUseFilters') }}</span>
+          </div>
+
+          <!-- ROW 2: Buy/Rent toggle + Location + Search -->
+          <div class="swc-main-row">
+            <!-- Buy / Rent Toggle -->
+            <div class="swc-purpose-toggle">
               <button
-                v-if="searchQuery"
                 type="button"
-                class="msb-clear-btn"
-                @click="clearSearch"
+                class="swc-purpose-btn"
+                :class="{ active: filters.purpose !== 'rent' }"
+                @click="filters.purpose = 'sale'"
               >
+                {{ t('forSale') }}
+              </button>
+              <button
+                type="button"
+                class="swc-purpose-btn"
+                :class="{ active: filters.purpose === 'rent' }"
+                @click="filters.purpose = 'rent'"
+              >
+                {{ t('forRent') }}
+              </button>
+            </div>
+
+            <!-- Location Input -->
+            <div class="swc-location-wrap">
+              <i class="fa-solid fa-location-dot swc-loc-icon"></i>
+              <input
+                id="search-location-input"
+                v-model="locationQuery"
+                type="text"
+                :placeholder="t('enterLocation')"
+                class="swc-location-input"
+                autocomplete="off"
+                @input="onLocationInput"
+              />
+              <button v-if="locationQuery" type="button" class="swc-ai-clear" @click="locationQuery = ''; filters.location = 'all'">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <!-- Purpose -->
-            <div class="msb-field msb-divider-field">
-              <label class="msb-label">
-                <i class="fa-solid fa-tag"></i> {{ t('purpose') }}
-              </label>
-              <div class="msb-select-wrap">
-                <select v-model="filters.purpose" class="msb-select">
-                  <option value="all">{{ t('allPurpose') }}</option>
-                  <option value="sale">{{ t('forSale') }}</option>
-                  <option value="rent">{{ t('forRent') }}</option>
-                </select>
-                <i class="fa-solid fa-chevron-down msb-chevron"></i>
-              </div>
-            </div>
-
-            <!-- Property Type -->
-            <div class="msb-field msb-divider-field">
-              <label class="msb-label">
-                <i class="fa-solid fa-building"></i> {{ t('propertyType') }}
-              </label>
-              <div class="msb-select-wrap">
-                <select v-model="filters.type" class="msb-select">
-                  <option value="all">{{ t('allTypes') }}</option>
-                  <option value="Apartment">{{ t('apartment') }}</option>
-                  <option value="Villa">{{ t('villa') }}</option>
-                  <option value="Penthouse">{{ t('penthouse') }}</option>
-                  <option value="Townhouse">{{ t('townhouse') }}</option>
-                </select>
-                <i class="fa-solid fa-chevron-down msb-chevron"></i>
-              </div>
-            </div>
-
-            <!-- Budget -->
-            <div class="msb-field msb-divider-field">
-              <label class="msb-label">
-                <i class="fa-solid fa-wallet"></i> {{ t('budgetAED') }}
-              </label>
-              <div class="msb-select-wrap">
-                <select v-model="filters.priceRange" class="msb-select">
-                  <option value="any">{{ t('anyBudget') }}</option>
-                  <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : 'Under AED 2M' }}</option>
-                  <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M – 5M' }}</option>
-                  <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M – 10M' }}</option>
-                  <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
-                </select>
-                <i class="fa-solid fa-chevron-down msb-chevron"></i>
-              </div>
-            </div>
-
             <!-- Search Button -->
-            <button type="submit" class="msb-search-btn" :disabled="isLoading">
+            <button type="button" class="swc-search-btn" @click="runSearch" :disabled="isLoading">
               <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
-              <i v-else class="fa-solid fa-magnifying-glass"></i>
-              <span>{{ t('search') }}</span>
+              <span v-else>{{ t('search') }}</span>
             </button>
-          </form>
+          </div>
+
+          <!-- ROW 3: All/Ready/Off-Plan chips + Residential + Beds&Baths + Price -->
+          <div class="swc-filters-row">
+            <!-- Status chips: All / Ready / Off-Plan -->
+            <div class="swc-status-chips">
+              <button
+                type="button"
+                class="swc-status-chip"
+                :class="{ active: filters.status === 'all' }"
+                @click="filters.status = 'all'"
+              >
+                {{ t('allPurpose') }}
+              </button>
+              <button
+                type="button"
+                class="swc-status-chip"
+                :class="{ active: filters.status === 'ready' }"
+                @click="filters.status = 'ready'"
+              >
+                {{ t('readyToMove') }}
+              </button>
+              <button
+                type="button"
+                class="swc-status-chip"
+                :class="{ active: filters.status === 'offplan' }"
+                @click="filters.status = 'offplan'"
+              >
+                {{ t('offPlan') }}
+              </button>
+            </div>
+
+            <!-- Divider line -->
+            <div class="swc-filter-sep"></div>
+
+            <!-- Residential / Type -->
+            <div class="swc-filter-select-wrap">
+              <select v-model="filters.type" class="swc-filter-select">
+                <option value="all">{{ t('residential') }}</option>
+                <option value="Apartment">{{ t('apartment') }}</option>
+                <option value="Villa">{{ t('villa') }}</option>
+                <option value="Penthouse">{{ t('penthouse') }}</option>
+                <option value="Townhouse">{{ t('townhouse') }}</option>
+              </select>
+              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
+            </div>
+
+            <!-- Beds & Baths -->
+            <div class="swc-filter-select-wrap">
+              <select v-model="filters.bedrooms" class="swc-filter-select">
+                <option value="any">{{ t('bedsAndBaths') }}</option>
+                <option value="1">{{ isRtl ? '1 غرفة' : '1 Bed' }}</option>
+                <option value="2">{{ isRtl ? '2 غرفة' : '2 Beds' }}</option>
+                <option value="3">{{ isRtl ? '3 غرف' : '3 Beds' }}</option>
+                <option value="4">{{ isRtl ? '4 غرف' : '4 Beds' }}</option>
+                <option value="5+">{{ isRtl ? '5+ غرف' : '5+ Beds' }}</option>
+              </select>
+              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
+            </div>
+
+            <!-- Price (AED) -->
+            <div class="swc-filter-select-wrap">
+              <select v-model="filters.priceRange" class="swc-filter-select">
+                <option value="any">{{ t('priceAed') }}</option>
+                <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : 'Under AED 2M' }}</option>
+                <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M – 5M' }}</option>
+                <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M – 10M' }}</option>
+                <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
+              </select>
+              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
+            </div>
+          </div>
+
         </div>
+        <!-- END SEARCH WIDGET CARD -->
 
         <!-- Quick Suggestion Tags -->
         <div class="search-quick-tags">
@@ -460,12 +530,15 @@ const toastVisible = ref(false)
 let toastTimer = null
 
 const filters = ref({
-  purpose: 'all',
+  purpose: 'sale',
   type: 'all',
   priceRange: 'any',
   bedrooms: 'any',
-  location: 'all'
+  location: 'all',
+  status: 'all'
 })
+
+const locationQuery = ref('')
 
 // ======= Quick tags =======
 const quickTags = computed(() => [
@@ -488,11 +561,12 @@ const trendingCategories = computed(() => [
 
 // ======= Computed =======
 const hasActiveFilters = computed(() =>
-  filters.value.purpose !== 'all' ||
+  filters.value.purpose !== 'sale' ||
   filters.value.type !== 'all' ||
   filters.value.priceRange !== 'any' ||
   filters.value.bedrooms !== 'any' ||
-  filters.value.location !== 'all'
+  filters.value.location !== 'all' ||
+  filters.value.status !== 'all'
 )
 
 const purposeLabel = computed(() => {
@@ -523,12 +597,16 @@ const displayProperties = computed(() => {
     list = list.filter(p => p.type === filters.value.type)
   }
 
-  // Location filter
-  if (filters.value.location !== 'all') {
-    const loc = filters.value.location.toLowerCase()
+  // Location filter — driven by locationQuery text or filters.location dropdown
+  const locVal = locationQuery.value.trim() || (filters.value.location !== 'all' ? filters.value.location : '')
+  if (locVal) {
+    const loc = locVal.toLowerCase()
     list = list.filter(p => (p.location || p.area || '').toLowerCase().includes(loc))
   }
 
+  // Status filter (All / Ready / Off-Plan)
+  if (filters.value.status === 'ready') list = list.filter(p => !p.isOffPlan)
+  else if (filters.value.status === 'offplan') list = list.filter(p => p.isOffPlan)
   // Bedrooms filter
   if (filters.value.bedrooms !== 'any') {
     const beds = filters.value.bedrooms
@@ -641,7 +719,8 @@ const clearSearch = () => {
 }
 
 const clearAllFilters = () => {
-  filters.value = { purpose: 'all', type: 'all', priceRange: 'any', bedrooms: 'any', location: 'all' }
+  filters.value = { purpose: 'sale', type: 'all', priceRange: 'any', bedrooms: 'any', location: 'all', status: 'all' }
+  locationQuery.value = ''
   sortBy.value = 'recommended'
   clearSearch()
 }
@@ -652,6 +731,15 @@ const onQueryInput = () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   if (searchQuery.value.trim().length >= 2) {
     debounceTimer = setTimeout(() => runSearch(), 600)
+  }
+}
+
+const onLocationInput = () => {
+  // locationQuery is reactive — displayProperties re-computes automatically
+  // Optionally trigger full re-search after 800ms for fresh API results
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (locationQuery.value.trim().length >= 2) {
+    debounceTimer = setTimeout(() => runSearch(), 800)
   }
 }
 
@@ -837,83 +925,101 @@ onUnmounted(() => {
 
 [data-theme="light"] .search-hero-subtitle { color: #475569; }
 
-/* Main Search Bar */
-.main-search-bar-wrap {
+/* ==================== SEARCH WIDGET CARD ==================== */
+.search-widget-card {
   width: 100%;
-  max-width: 860px;
+  max-width: 960px;
   margin-inline: auto;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  background: rgba(13, 27, 53, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 22px 24px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 210, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 2;
 }
 
-.main-search-bar {
-  display: flex;
-  align-items: stretch;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  overflow: visible;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 210, 255, 0.05);
-  transition: box-shadow 0.3s;
-}
-
-.main-search-bar:focus-within {
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(0, 210, 255, 0.3);
-  border-color: rgba(0, 210, 255, 0.3);
-}
-
-[data-theme="light"] .main-search-bar {
+[data-theme="light"] .search-widget-card {
   background: #ffffff;
   border-color: #e2e8f0;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 40px -8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
-[data-theme="light"] .main-search-bar:focus-within {
-  border-color: #0284c7;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12), 0 0 0 3px rgba(2, 132, 199, 0.15);
-}
-
-.msb-field {
+/* ROW 1: AI Prompt Search */
+.swc-ai-row {
   display: flex;
-  flex-direction: column;
-  padding: 12px 16px;
-  gap: 4px;
-  position: relative;
-}
-
-.msb-text-field {
-  flex: 1;
-  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.msb-divider-field {
-  border-inline-start: 1px solid rgba(255, 255, 255, 0.08);
-  min-width: 140px;
-}
-
-[data-theme="light"] .msb-divider-field { border-color: #e2e8f0; }
-
-.msb-icon { color: #00d2ff; font-size: 15px; flex-shrink: 0; }
-[data-theme="light"] .msb-icon { color: #0284c7; }
-
-.msb-input {
+.swc-ai-input-wrap {
   flex: 1;
-  background: none;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 50px;
+  transition: all 0.25s ease;
+}
+
+.swc-ai-input-wrap:focus-within {
+  border-color: #00d2ff;
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .swc-ai-input-wrap {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .swc-ai-input-wrap:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  background: #ffffff;
+}
+
+.swc-ai-icon {
+  color: #00d2ff;
+  font-size: 16px;
+  margin-inline-end: 12px;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .swc-ai-icon {
+  color: #0284c7;
+}
+
+.swc-ai-input {
+  flex: 1;
+  background: transparent;
   border: none;
   outline: none;
-  font-size: 15px;
+  font-size: 14.5px;
   color: #f0f6ff;
   font-family: inherit;
   min-width: 0;
 }
 
-[data-theme="light"] .msb-input { color: #0f172a; }
-.msb-input::placeholder { color: rgba(176, 196, 222, 0.5); }
-[data-theme="light"] .msb-input::placeholder { color: #94a3b8; }
+[data-theme="light"] .swc-ai-input {
+  color: #0f172a;
+}
 
-.msb-clear-btn {
+.swc-ai-input::placeholder {
+  color: rgba(176, 196, 222, 0.55);
+}
+
+[data-theme="light"] .swc-ai-input::placeholder {
+  color: #94a3b8;
+}
+
+.swc-ai-clear {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   width: 22px;
@@ -928,80 +1034,436 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.msb-clear-btn:hover { background: rgba(255, 255, 255, 0.2); color: #f0f6ff; }
-
-.msb-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #00d2ff;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-[data-theme="light"] .msb-label { color: #0284c7; }
-
-.msb-select-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.msb-select {
-  background: none;
-  border: none;
-  outline: none;
+.swc-ai-clear:hover {
+  background: rgba(255, 255, 255, 0.2);
   color: #f0f6ff;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  padding-inline-end: 18px;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
-[data-theme="light"] .msb-select { color: #1e293b; }
-.msb-select option { background: #0d1b35; color: #f0f6ff; }
-[data-theme="light"] .msb-select option { background: #ffffff; color: #1e293b; }
-
-.msb-chevron {
-  position: absolute;
-  inset-inline-end: 0;
-  font-size: 10px;
+[data-theme="light"] .swc-ai-clear {
+  background: #e2e8f0;
   color: #64748b;
-  pointer-events: none;
 }
 
-.msb-search-btn {
-  display: flex;
+[data-theme="light"] .swc-ai-clear:hover {
+  background: #cbd5e1;
+  color: #1e293b;
+}
+
+.swc-ask-ai-btn {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 28px;
-  background: linear-gradient(135deg, #00b4d8, #7c3aed);
+  height: 50px;
+  padding: 0 22px;
+  border-radius: 12px;
   border: none;
+  background: linear-gradient(135deg, #00d2ff 0%, #7c3aed 100%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s;
-  font-family: inherit;
-  border-radius: 0 14px 14px 0;
   white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 18px rgba(0, 210, 255, 0.25);
+  font-family: inherit;
   flex-shrink: 0;
 }
 
-[dir="rtl"] .msb-search-btn { border-radius: 14px 0 0 14px; }
-
-.msb-search-btn:hover {
-  background: linear-gradient(135deg, #00d2ff, #8b5cf6);
-  transform: translateX(2px);
+.swc-ask-ai-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+  filter: brightness(1.08);
 }
 
-[dir="rtl"] .msb-search-btn:hover { transform: translateX(-2px); }
+.swc-ask-ai-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
 
-.msb-search-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+/* DIVIDER */
+.swc-divider {
+  position: relative;
+  text-align: center;
+  margin: 18px 0;
+}
+
+.swc-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .swc-divider::before {
+  background: #e2e8f0;
+}
+
+.swc-divider span {
+  position: relative;
+  background: #0d1b35;
+  padding: 0 16px;
+  font-size: 12px;
+  color: rgba(176, 196, 222, 0.65);
+  font-weight: 500;
+  border-radius: 100px;
+}
+
+[data-theme="light"] .swc-divider span {
+  background: #ffffff;
+  color: #64748b;
+}
+
+/* ROW 2: Purpose + Location + Search */
+.swc-main-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.swc-purpose-toggle {
+  display: inline-flex;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .swc-purpose-toggle {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.swc-purpose-btn {
+  padding: 10px 22px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(176, 196, 222, 0.85);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.swc-purpose-btn:hover {
+  color: #ffffff;
+}
+
+[data-theme="light"] .swc-purpose-btn {
+  color: #64748b;
+}
+
+[data-theme="light"] .swc-purpose-btn:hover {
+  color: #0f172a;
+}
+
+.swc-purpose-btn.active {
+  background: #00d2ff;
+  color: #061124;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 210, 255, 0.35);
+}
+
+[data-theme="light"] .swc-purpose-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+}
+
+.swc-location-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 48px;
+  transition: all 0.25s ease;
+}
+
+.swc-location-wrap:focus-within {
+  border-color: #00d2ff;
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .swc-location-wrap {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .swc-location-wrap:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  background: #ffffff;
+}
+
+.swc-loc-icon {
+  color: #00d2ff;
+  font-size: 15px;
+  margin-inline-end: 12px;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .swc-loc-icon {
+  color: #0284c7;
+}
+
+.swc-location-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #f0f6ff;
+  font-family: inherit;
+  min-width: 0;
+}
+
+[data-theme="light"] .swc-location-input {
+  color: #0f172a;
+}
+
+.swc-location-input::placeholder {
+  color: rgba(176, 196, 222, 0.55);
+}
+
+[data-theme="light"] .swc-location-input::placeholder {
+  color: #94a3b8;
+}
+
+.swc-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #00b4d8 0%, #0284c7 100%);
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 180, 216, 0.3);
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.swc-search-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 180, 216, 0.4);
+  filter: brightness(1.1);
+}
+
+.swc-search-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ROW 3: Filter Chips & Dropdowns */
+.swc-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.swc-status-chips {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.swc-status-chip {
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(176, 196, 222, 0.85);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.swc-status-chip:hover {
+  border-color: rgba(0, 210, 255, 0.4);
+  color: #00d2ff;
+  background: rgba(0, 210, 255, 0.08);
+}
+
+[data-theme="light"] .swc-status-chip {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .swc-status-chip:hover {
+  border-color: #7dd3fc;
+  color: #0284c7;
+  background: #f0f9ff;
+}
+
+.swc-status-chip.active {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: #00d2ff;
+  color: #00d2ff;
+  font-weight: 700;
+}
+
+[data-theme="light"] .swc-status-chip.active {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.swc-filter-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .swc-filter-sep {
+  background: #e2e8f0;
+}
+
+.swc-filter-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  min-width: 130px;
+}
+
+.swc-filter-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 30px 0 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f0f6ff;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.2s ease;
+}
+
+[dir="rtl"] .swc-filter-select {
+  padding: 0 14px 0 30px;
+}
+
+.swc-filter-select:hover,
+.swc-filter-select:focus {
+  border-color: #00d2ff;
+  outline: none;
+}
+
+[data-theme="light"] .swc-filter-select {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme="light"] .swc-filter-select:hover,
+[data-theme="light"] .swc-filter-select:focus {
+  border-color: #0284c7;
+}
+
+.swc-filter-select option {
+  background: #0d1b35;
+  color: #f0f6ff;
+}
+
+[data-theme="light"] .swc-filter-select option {
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.swc-filter-chevron {
+  position: absolute;
+  inset-inline-end: 12px;
+  font-size: 11px;
+  color: #64748b;
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 860px) {
+  .swc-main-row {
+    flex-wrap: wrap;
+  }
+  .swc-location-wrap {
+    order: 2;
+    min-width: 220px;
+  }
+  .swc-search-btn {
+    order: 3;
+    flex: 1;
+  }
+}
+
+@media (max-width: 680px) {
+  .search-widget-card {
+    padding: 16px;
+  }
+  .swc-ai-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .swc-ask-ai-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .swc-main-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .swc-purpose-toggle {
+    width: 100%;
+    display: flex;
+  }
+  .swc-purpose-btn {
+    flex: 1;
+    text-align: center;
+  }
+  .swc-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .swc-status-chips {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .swc-status-chip {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 11.5px;
+  }
+  .swc-filter-sep {
+    display: none;
+  }
+}
 
 /* Quick Tags */
 .search-quick-tags {
