@@ -83,7 +83,7 @@
                   <i class="fa-regular fa-user"></i>
                   <span>{{ isRtl ? 'ملفي الشخصي' : 'My Profile' }}</span>
                 </button>
-                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="goto('/my-properties')">
+                <button v-if="isLoggedIn" class="dropdown-menu-item" @click="goto('/profile/properties')">
                   <i class="fa-regular fa-building"></i>
                   <span>{{ isRtl ? 'عقاراتي' : 'My Properties' }}</span>
                 </button>
@@ -243,17 +243,17 @@ onUnmounted(() => {
 .nav-item.active, .nav-item.router-link-active { color: #00d2ff; font-weight: 700; background: transparent; }
 .nav-item.router-link-active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #00d2ff; border-radius: 3px 3px 0 0; box-shadow: 0 -2px 8px rgba(0, 210, 255, 0.35); }
 .header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-.btn-list-property { height: 40px; padding: 0 20px; background-color: #008bd0; color: #fff; font-size: 13px; font-weight: 700; border: none; border-radius: 999px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 139, 208, 0.28); transition: 0.2s ease; }
+.btn-list-property { height: 34px; padding: 0 20px; background-color: #008bd0; color: #fff; font-size: 13px; font-weight: 700; border: none; border-radius: 999px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 139, 208, 0.28); transition: 0.2s ease; }
 .btn-list-property:hover { background-color: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45); }
-.icon-action-btn { width: 42px; height: 42px; display: grid; place-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: #cbd5e1; cursor: pointer; transition: 0.2s ease; position: relative; }
+.icon-action-btn { width: 36px; height: 36px; display: grid; place-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: #cbd5e1; cursor: pointer; transition: 0.2s ease; position: relative; }
 .icon-action-btn:hover { color: #fff; background: rgba(255,255,255,0.12); border-color: rgba(239,68,68,0.4); }
 .icon-action-btn.has-saved { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444; }
-.header-fav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.notification-nav-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.header-fav-badge { position: absolute; top: -3px; right: -3px; background: #ef4444; color: #fff; font-size: 0.55rem; font-weight: 700; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.notification-nav-badge { position: absolute; top: -3px; right: -3px; background: #ef4444; color: #fff; font-size: 0.55rem; font-weight: 700; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .user-profile-menu-container { position: relative; }
-.user-profile-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 10px 4px 5px; border-radius: 999px; transition: background 0.2s; }
+.user-profile-menu { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 8px 3px 4px; border-radius: 999px; transition: background 0.2s; }
 .user-profile-menu:hover { background: rgba(255,255,255,0.06); }
-.header-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(0,210,255,0.4); }
+.header-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(0,210,255,0.4); }
 .profile-arrow { font-size: 0.65rem; color: #64748b; transition: transform 0.3s ease; }
 .profile-arrow.rotate-180 { transform: rotate(180deg); }
 .profile-dropdown-box { position: absolute; top: calc(100% + 12px); right: 0; width: 280px; background: #0d1526; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; z-index: 2000; }
