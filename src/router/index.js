@@ -20,6 +20,7 @@ import PaymentPage from '../components/PaymentPage.vue'
 import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 import NotificationsPage from '../components/NotificationsPage.vue'
 import AgentContactPage from '../components/AgentContactPage.vue'
+import SearchPage from '../components/SearchPage.vue'
 
 const routes = [
   {
@@ -72,6 +73,11 @@ const routes = [
     path: '/contact-agent',
     name: 'AgentContact',
     component: AgentContactPage
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchPage
   },
   {
     path: '/favorites',
