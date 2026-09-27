@@ -259,7 +259,16 @@ export const translations = {
   searchInitialDesc: { ar: 'أدخل كلمات البحث أو اختر إحدى الفئات الشائعة للبدء.', en: 'Enter search keywords or select a trending category to get started.' },
   trendingSearches: { ar: 'عمليات البحث الرائجة', en: 'Trending Searches' },
   loadMore: { ar: 'تحميل المزيد', en: 'Load More' },
-  loading: { ar: 'جارٍ التحميل...', en: 'Loading...' }
+  loading: { ar: 'جارٍ التحميل...', en: 'Loading...' },
+  askAI: { ar: 'اسأل الذكاء الاصطناعي', en: 'Ask AI' },
+  orUseFilters: { ar: 'أو استخدم الفلاتر أدناه', en: 'or continue using the filters below' },
+  enterLocation: { ar: 'أدخل الموقع...', en: 'Enter location' },
+  searchAiPlaceholder: { ar: 'اسأل مثال: شقة 3 غرف مع إطلالة على البحر...', en: "Try asking for '3 bed room apartment with seaside view'" },
+  readyToMove: { ar: 'جاهز للسكن', en: 'Ready' },
+  offPlan: { ar: 'قيد الإنشاء', en: 'Off-Plan' },
+  residential: { ar: 'سكني', en: 'Residential' },
+  bedsAndBaths: { ar: 'الغرف والحمامات', en: 'Beds & Baths' },
+  priceAed: { ar: 'السعر (درهم)', en: 'Price (AED)' }
 }
 
 /**
