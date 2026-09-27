@@ -233,7 +233,33 @@ export const translations = {
   stayDates: { ar: 'تواريخ الإقامة', en: 'Stay Dates' },
   guestsCount: { ar: 'عدد الضيوف', en: 'Number of Guests' },
   checkIn: { ar: 'تسجيل الوصول', en: 'Check-in' },
-  checkOut: { ar: 'تسجيل المغادرة', en: 'Check-out' }
+  checkOut: { ar: 'تسجيل المغادرة', en: 'Check-out' },
+
+  // ==================== SearchPage ====================
+  searchPageBadge: { ar: 'بحث ذكي بالذكاء الاصطناعي', en: 'AI-POWERED SMART SEARCH' },
+  searchHeroTitle1: { ar: 'ابحث عن عقارك', en: 'Find Your Perfect' },
+  searchHeroTitle2: { ar: 'المثالي في دبي', en: 'Property in Dubai' },
+  searchHeroSubtitle: { ar: 'ابحث بالكلمات الطبيعية واستخدام الفلاتر الذكية للعثور على عقارك المثالي.', en: 'Search with natural language and smart filters to find your ideal property.' },
+  searchHeroInputPlaceholder: { ar: 'مثال: فيلا بـ 5 غرف في نخلة جميرا مع مسبح...', en: 'e.g., 5 bed villa in Palm Jumeirah with pool...' },
+  purpose: { ar: 'الغرض', en: 'Purpose' },
+  allPurpose: { ar: 'الكل', en: 'All' },
+  forSale: { ar: 'للبيع', en: 'For Sale' },
+  forRent: { ar: 'للإيجار', en: 'For Rent' },
+  search: { ar: 'بحث', en: 'Search' },
+  popularSearches: { ar: 'عمليات البحث الشائعة', en: 'Popular Searches' },
+  activeFilters: { ar: 'الفلاتر النشطة', en: 'Active Filters' },
+  sortBy: { ar: 'ترتيب حسب', en: 'Sort by' },
+  gridView: { ar: 'عرض شبكي', en: 'Grid View' },
+  listView: { ar: 'عرض قائمة', en: 'List View' },
+  resultsFound: { ar: 'عقار موجود', en: 'results found' },
+  aiPoweredResults: { ar: 'نتائج مدعومة بالذكاء الاصطناعي', en: 'AI-Powered Results' },
+  noResultsFound: { ar: 'لم يتم العثور على نتائج', en: 'No Results Found' },
+  noResultsDesc: { ar: 'حاول تغيير كلمات البحث أو إزالة بعض الفلاتر.', en: 'Try adjusting your search or removing some filters.' },
+  searchInitialTitle: { ar: 'ابدأ بحثك عن العقارات', en: 'Start Your Property Search' },
+  searchInitialDesc: { ar: 'أدخل كلمات البحث أو اختر إحدى الفئات الشائعة للبدء.', en: 'Enter search keywords or select a trending category to get started.' },
+  trendingSearches: { ar: 'عمليات البحث الرائجة', en: 'Trending Searches' },
+  loadMore: { ar: 'تحميل المزيد', en: 'Load More' },
+  loading: { ar: 'جارٍ التحميل...', en: 'Loading...' }
 }
 
 /**
