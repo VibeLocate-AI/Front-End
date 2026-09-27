@@ -13,13 +13,13 @@ import AddPropertyPage from '../components/AddPropertyPage.vue'
 import RentPage from '../components/RentPage.vue'
 import BuyPage from '../components/BuyPage.vue'
 import PropertyDetailsPage from '../components/PropertyDetailsPage.vue'
-import OwnerPropertiesPage from '../components/OwnerPropertiesPage.vue'
 import NewProjectsPage from '../components/NewProjectsPage.vue'
 import AboutPage from '../components/AboutPage.vue'
 import FavoritesPage from '../components/FavoritesPage.vue'
 import PaymentPage from '../components/PaymentPage.vue'
 import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 import NotificationsPage from '../components/NotificationsPage.vue'
+import AgentContactPage from '../components/AgentContactPage.vue'
 
 const routes = [
   {
@@ -69,6 +69,11 @@ const routes = [
     component: NotificationsPage
   },
   {
+    path: '/contact-agent',
+    name: 'AgentContact',
+    component: AgentContactPage
+  },
+  {
     path: '/favorites',
     name: 'Favorites',
     component: FavoritesPage
@@ -77,11 +82,6 @@ const routes = [
     path: '/property/:id',
     name: 'PropertyDetails',
     component: PropertyDetailsPage
-  },
-  {
-    path: '/my-properties',
-    name: 'MyProperties',
-    component: OwnerPropertiesPage
   },
   {
     path: '/map',
