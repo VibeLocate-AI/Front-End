@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-page-root">
+  <div class="profile-page-root" :class="{ 'is-dark': isDark, 'is-rtl': isRtl }">
     <!-- Toast Notification -->
     <Transition name="toast-fade">
       <div v-if="toastVisible" class="profile-toast" :class="`profile-toast--${toastType}`">

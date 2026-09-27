@@ -1705,3 +1705,238 @@ body,
 [data-theme="dark"] .about-page .commit-collage div { background: #102338; color: #e2e8f0; }
 [data-theme="dark"] .about-page .commit-collage div span { color: #94a3b8; }
 
+
+
+/* ==========================================================================
+   PROFILE PAGE DARK THEME OVERRIDES (Full Cohesive Luxury Dark Mode)
+   ========================================================================== */
+[data-theme="dark"] .profile-page-root,
+.profile-page-root.is-dark {
+  background-color: #071626 !important;
+  color: #f8fafc !important;
+  --profile-surface: #0c2035;
+  --profile-border: #1c3b56;
+  --profile-muted: #94a9bd;
+  --profile-heading: #f8fafc;
+}
+
+[data-theme="dark"] .profile-sidebar-card,
+.is-dark .profile-sidebar-card,
+[data-theme="dark"] .stat-card,
+.is-dark .stat-card,
+[data-theme="dark"] .profile-section-card,
+.is-dark .profile-section-card,
+[data-theme="dark"] .upgrade-modal-content,
+.is-dark .upgrade-modal-content,
+[data-theme="dark"] .delete-modal-content,
+.is-dark .delete-modal-content {
+  background: #0c2035 !important;
+  border-color: #1c3b56 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .profile-sidebar-card:hover,
+.is-dark .profile-sidebar-card:hover,
+[data-theme="dark"] .stat-card:hover,
+.is-dark .stat-card:hover,
+[data-theme="dark"] .profile-section-card:hover,
+.is-dark .profile-section-card:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .profile-page-root .user-name,
+.is-dark .user-name,
+[data-theme="dark"] .profile-page-root .stat-value,
+.is-dark .stat-value,
+[data-theme="dark"] .profile-page-root .section-title,
+.is-dark .section-title,
+[data-theme="dark"] .profile-page-root .info-value,
+.is-dark .info-value,
+[data-theme="dark"] .profile-page-root .pref-value,
+.is-dark .pref-value,
+[data-theme="dark"] .profile-page-root .page-title,
+.is-dark .page-title,
+[data-theme="dark"] .profile-page-root .bc-current,
+.is-dark .bc-current,
+[data-theme="dark"] .profile-page-root .modal-title,
+.is-dark .modal-title,
+[data-theme="dark"] .profile-page-root .custom-chk-label,
+.is-dark .custom-chk-label {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .profile-page-root .user-email,
+.is-dark .user-email,
+[data-theme="dark"] .profile-page-root .stat-label,
+.is-dark .stat-label,
+[data-theme="dark"] .profile-page-root .section-desc,
+.is-dark .section-desc,
+[data-theme="dark"] .profile-page-root .info-label,
+.is-dark .info-label,
+[data-theme="dark"] .profile-page-root .pref-label,
+.is-dark .pref-label,
+[data-theme="dark"] .profile-page-root .page-subtitle,
+.is-dark .page-subtitle,
+[data-theme="dark"] .profile-page-root .bc-link,
+.is-dark .bc-link,
+[data-theme="dark"] .profile-page-root .field-label,
+.is-dark .field-label,
+[data-theme="dark"] .profile-page-root .field-hint,
+.is-dark .field-hint,
+[data-theme="dark"] .profile-page-root .modal-subtitle,
+.is-dark .modal-subtitle,
+[data-theme="dark"] .profile-page-root .price-period,
+.is-dark .price-period,
+[data-theme="dark"] .profile-page-root .price-hint,
+.is-dark .price-hint,
+[data-theme="dark"] .profile-page-root .tagline-text,
+.is-dark .tagline-text {
+  color: #94a9bd !important;
+}
+
+[data-theme="dark"] .profile-page-root .user-role,
+.is-dark .user-role {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .user-member-badge,
+.is-dark .user-member-badge {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+[data-theme="dark"] .profile-page-root .sidebar-divider,
+.is-dark .sidebar-divider,
+[data-theme="dark"] .profile-page-root .info-row,
+.is-dark .info-row,
+[data-theme="dark"] .profile-page-root .pref-row,
+.is-dark .pref-row,
+[data-theme="dark"] .profile-page-root .activity-item,
+.is-dark .activity-item,
+[data-theme="dark"] .profile-page-root .profile-page-header,
+.is-dark .profile-page-header {
+  border-color: #1c3b56 !important;
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .profile-page-root .sidebar-divider,
+.is-dark .sidebar-divider {
+  background-color: #1c3b56 !important;
+}
+
+[data-theme="dark"] .profile-page-root .nav-tab-btn,
+.is-dark .nav-tab-btn {
+  color: #94a9bd !important;
+}
+
+[data-theme="dark"] .profile-page-root .nav-tab-btn:hover,
+.is-dark .nav-tab-btn:hover {
+  background: rgba(56, 189, 248, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .profile-page-root .nav-tab-btn.active,
+.is-dark .nav-tab-btn.active {
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: #38bdf8 !important;
+  border-left: 3px solid #38bdf8 !important;
+}
+
+[dir="rtl"] [data-theme="dark"] .profile-page-root .nav-tab-btn.active,
+.is-rtl.is-dark .nav-tab-btn.active {
+  border-left: none !important;
+  border-right: 3px solid #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .logout-tab-btn,
+.is-dark .logout-tab-btn {
+  color: #f87171 !important;
+}
+
+[data-theme="dark"] .profile-page-root .logout-tab-btn:hover,
+.is-dark .logout-tab-btn:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+}
+
+[data-theme="dark"] .profile-page-root .stat-icon-box,
+.is-dark .stat-icon-box {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .stat-action-link,
+.is-dark .stat-action-link {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .btn-edit-section,
+.is-dark .btn-edit-section {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .btn-edit-section:hover,
+.is-dark .btn-edit-section:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .profile-page-root .account-badge,
+.is-dark .account-badge {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .profile-page-root .link-upgrade,
+.is-dark .link-upgrade {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .profile-page-root .form-control,
+.is-dark .form-control,
+[data-theme="dark"] .profile-page-root .form-select,
+.is-dark .form-select,
+[data-theme="dark"] .profile-page-root .form-textarea,
+.is-dark .form-textarea {
+  background: #081a2d !important;
+  border-color: #1c3b56 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .profile-page-root .form-control:focus,
+.is-dark .form-control:focus,
+[data-theme="dark"] .profile-page-root .form-select:focus,
+.is-dark .form-select:focus,
+[data-theme="dark"] .profile-page-root .form-textarea:focus,
+.is-dark .form-textarea:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+}
+
+[data-theme="dark"] .profile-page-root .pricing-card,
+.is-dark .pricing-card {
+  background: #081a2d !important;
+  border-color: #1c3b56 !important;
+}
+
+[data-theme="dark"] .profile-page-root .pro-features-list li,
+.is-dark .pro-features-list li {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .profile-page-root .btn-cancel-modal,
+.is-dark .btn-cancel-modal {
+  color: #94a9bd !important;
+}
+
+[data-theme="dark"] .profile-page-root .upgrade-banner-card,
+.is-dark .upgrade-banner-card {
+  background: linear-gradient(135deg, #092644 0%, #061d33 100%) !important;
+  border-color: #1c3b56 !important;
+}
