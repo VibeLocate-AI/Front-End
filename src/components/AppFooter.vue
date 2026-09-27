@@ -15,10 +15,10 @@
             {{ isRtl ? 'تمكين العقارات الحديثة بالذكاء الاصطناعي، وقوائم فاخرة موثوقة، وتجارب تأجير مخصصة في جميع أنحاء العالم.' : 'Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.' }}
           </p>
           <div class="social-links">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61594702439169&locale=ar_AR" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="https://x.com/VibeLocateAI" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://www.instagram.com/vibelocate.ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="www.linkedin.com/in/vibelocateai-undefined-a6926043a" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
           </div>
         </div>
 

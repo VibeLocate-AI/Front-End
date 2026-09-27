@@ -400,7 +400,8 @@ const perPage = ref(8)
 const isLoading = ref(false)
 
 // 8 Exact Luxury Property Mock Data Items matching screenshot
-const catalogProperties = ref([
+const catalogProperties = ref([])
+/* const showcaseRentalProperties = [
   {
     id: 101,
     title: 'St. Regis Residences',
@@ -513,9 +514,9 @@ const catalogProperties = ref([
     image: '/images/photo-1600585154340-be6161a56a0c.avif',
     description: 'Palatial estate mansion surrounded by golf course greens in Dubai’s most exclusive enclave.'
   }
-])
+] */
 
-// Rental-only fallback shown when the API is unavailable.
+// Prices are supplied by the API. The array remains empty until data arrives.
 const fallbackYearlyPrices = [480000, 1200000, 390000, 1800000, 260000, 420000, 210000, 1500000]
 catalogProperties.value = catalogProperties.value.map((property, index) => ({
   ...property,
@@ -555,7 +556,7 @@ const loadRentalProperties = async () => {
     const rentals = (response.data || []).filter(isRental).map(toCatalogProperty)
     if (rentals.length) catalogProperties.value = rentals
   } catch (error) {
-    console.warn('Unable to load rental properties; showing rental fallback listings.', error)
+    console.warn('Unable to load rental properties from the API.', error)
   } finally {
     isLoading.value = false
   }

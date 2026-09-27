@@ -49,7 +49,7 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* Base button style matching luxury navbar */
 .nav-ctrl-btn {
-  height: 42px;
+  height: 34px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -90,7 +90,7 @@ const { lang, theme, isRtl, isDark, toggleLanguage, toggleTheme } = useThemeAndL
 
 /* ==================== THEME TOGGLE ==================== */
 .theme-toggle-btn {
-  width: 42px;
+  width: 34px;
   padding: 0;
   position: relative;
   overflow: hidden;

@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-page-root">
+  <div class="profile-page-root" :class="{ 'is-dark': isDark, 'is-rtl': isRtl }">
     <!-- Toast Notification -->
     <Transition name="toast-fade">
       <div v-if="toastVisible" class="profile-toast" :class="`profile-toast--${toastType}`">
@@ -115,9 +115,9 @@
         <div class="profile-page-header">
           <div class="header-titles">
             <div class="breadcrumb-trail">
-              <RouterLink to="/home" class="bc-link">Home</RouterLink>
+              <RouterLink to="/home" class="bc-link">{{ isRtl ? 'الرئيسية' : 'Home' }}</RouterLink>
               <i class="fa-solid fa-chevron-right bc-sep"></i>
-              <span class="bc-link" @click="switchTab('overview')">Profile</span>
+              <span class="bc-link" @click="switchTab('overview')">{{ isRtl ? 'الملف الشخصي' : 'Profile' }}</span>
               <template v-if="activeTab !== 'overview'">
                 <i class="fa-solid fa-chevron-right bc-sep"></i>
                 <span class="bc-current">{{ tabTitle }}</span>
@@ -131,7 +131,10 @@
               </div>
 
               <button v-if="activeTab === 'saved'" class="btn-header-action" @click="$router.push('/home')">
-                <i class="fa-solid fa-compass"></i> Explore Properties
+                <i class="fa-solid fa-compass"></i> {{ isRtl ? 'استكشف العقارات' : 'Explore Properties' }}
+              </button>
+              <button v-else-if="activeTab === 'properties'" class="btn-header-action" @click="$router.push('/add-property')">
+                <i class="fa-solid fa-plus"></i> {{ isRtl ? 'إضافة عقار جديد' : 'Add New Property' }}
               </button>
             </div>
           </div>
@@ -175,7 +178,7 @@
                 <p class="user-role">{{ user.role }}</p>
 
                 <div class="user-member-badge">
-                  Member since {{ user.memberSince }}
+                  {{ isRtl ? `عضو منذ ${user.memberSince || 'أغسطس 2026'}` : `Member since ${user.memberSince || 'Aug 2026'}` }}
                 </div>
               </template>
             </div>
@@ -190,7 +193,7 @@
                 @click="switchTab('overview')"
               >
                 <i class="fa-solid fa-border-all nav-icon"></i>
-                <span>Overview</span>
+                <span>{{ isRtl ? 'نظرة عامة' : 'Overview' }}</span>
               </button>
 
               <button
@@ -199,7 +202,7 @@
                 @click="switchTab('edit')"
               >
                 <i class="fa-solid fa-pen-to-square nav-icon"></i>
-                <span>Edit Profile</span>
+                <span>{{ isRtl ? 'تعديل الملف الشخصي' : 'Edit Profile' }}</span>
               </button>
 
               <button
@@ -208,7 +211,7 @@
                 @click="switchTab('properties')"
               >
                 <i class="fa-regular fa-building nav-icon"></i>
-                <span>My Properties</span>
+                <span>{{ isRtl ? 'عقاراتي' : 'My Properties' }}</span>
               </button>
 
               <button
@@ -217,7 +220,7 @@
                 @click="switchTab('saved')"
               >
                 <i class="fa-regular fa-heart nav-icon"></i>
-                <span>Saved Properties</span>
+                <span>{{ isRtl ? 'العقارات المحفوظة' : 'Saved Properties' }}</span>
               </button>
 
               <button
@@ -226,7 +229,7 @@
                 @click="switchTab('alerts')"
               >
                 <i class="fa-regular fa-bell nav-icon"></i>
-                <span>Search Alerts</span>
+                <span>{{ isRtl ? 'تنبيهات البحث' : 'Search Alerts' }}</span>
               </button>
 
               <button
@@ -235,7 +238,7 @@
                 @click="switchTab('preferences')"
               >
                 <i class="fa-solid fa-sliders nav-icon"></i>
-                <span>My Preferences</span>
+                <span>{{ isRtl ? 'تفضيلاتي' : 'My Preferences' }}</span>
               </button>
 
               <button
@@ -244,7 +247,7 @@
                 @click="switchTab('settings')"
               >
                 <i class="fa-solid fa-gear nav-icon"></i>
-                <span>Account Settings</span>
+                <span>{{ isRtl ? 'إعدادات الحساب' : 'Account Settings' }}</span>
               </button>
 
               <button
@@ -252,7 +255,7 @@
                 @click="handleLogout"
               >
                 <i class="fa-solid fa-arrow-right-from-bracket nav-icon"></i>
-                <span>Log Out</span>
+                <span>{{ isRtl ? 'تسجيل الخروج' : 'Log Out' }}</span>
               </button>
             </nav>
           </aside>
@@ -1018,7 +1021,7 @@ const removeAlert = (alert) => {
 }
 
 // Tab titles and descriptions
-const tabTitles = {
+const tabTitlesEn = {
   overview: 'My Profile',
   properties: 'My Properties',
   edit: 'Edit Profile',
@@ -1028,7 +1031,17 @@ const tabTitles = {
   settings: 'Account Settings'
 }
 
-const tabSubtitles = {
+const tabTitlesAr = {
+  overview: 'ملفي الشخصي',
+  properties: 'عقاراتي',
+  edit: 'تعديل الملف الشخصي',
+  saved: 'العقارات المحفوظة',
+  alerts: 'تنبيهات البحث',
+  preferences: 'تفضيلاتي',
+  settings: 'إعدادات الحساب'
+}
+
+const tabSubtitlesEn = {
   overview: 'Manage your account, preferences, and saved properties',
   properties: 'Manage the properties you have listed on VibeLocate AI',
   edit: 'Keep your information up to date',
@@ -1038,8 +1051,18 @@ const tabSubtitles = {
   settings: 'Manage security and account preferences'
 }
 
-const tabTitle = computed(() => tabTitles[activeTab.value] || 'My Profile')
-const tabSubtitle = computed(() => tabSubtitles[activeTab.value] || '')
+const tabSubtitlesAr = {
+  overview: 'أدر حسابك وتفضيلاتك وعقاراتك المحفوظة في مكان واحد',
+  properties: 'أدر العقارات المدرجة الخاصة بك على منصة VibeLocate AI',
+  edit: 'حافظ على تحديث بياناتك ومعلوماتك الشخصية',
+  saved: 'عقاراتك المفضلة والمختارة في مكان واحد',
+  alerts: 'إدارة تنبيهات البحث الفورية والإشعارات',
+  preferences: 'تخصيص معايير البحث والذكاء الاصطناعي',
+  settings: 'إدارة أمان الحساب وإعدادات تسجيل الدخول'
+}
+
+const tabTitle = computed(() => (isRtl.value ? tabTitlesAr[activeTab.value] : tabTitlesEn[activeTab.value]) || (isRtl.value ? 'ملفي الشخصي' : 'My Profile'))
+const tabSubtitle = computed(() => (isRtl.value ? tabSubtitlesAr[activeTab.value] : tabSubtitlesEn[activeTab.value]) || '')
 
 // Switch tab method with route sync
 // Snapshot of user data taken when entering the Edit tab – used by cancelEdit()
@@ -1630,6 +1653,16 @@ const handleDeleteAccount = async () => {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   padding-bottom: 60px;
+  --profile-surface: #ffffff;
+  --profile-border: #dce6f1;
+  --profile-muted: #64748b;
+  --profile-heading: #0f2744;
+  --profile-panel: #082946;
+  --profile-panel-strong: #06233e;
+  --profile-panel-text: #eff8ff;
+  --profile-panel-muted: #a8c8de;
+  --profile-accent: #0d6efd;
+  --profile-cyan: #00bde3;
 }
 
 /* ==================== SITE HEADER / NAVBAR ==================== */
@@ -3220,4 +3253,33 @@ const handleDeleteAccount = async () => {
   align-items: center;
   gap: 10px;
 }
+
+/* Keep the profile area in sync with the selected site theme. */
+:global([data-theme="dark"]) .profile-page-root {
+  background: #071626;
+  color: #e5eef8;
+  --profile-surface: #0c2035;
+  --profile-border: #1c3b56;
+  --profile-muted: #94a9bd;
+  --profile-heading: #eef7ff;
+  --profile-panel: #09243e;
+  --profile-panel-strong: #061d33;
+  --profile-panel-text: #eff8ff;
+  --profile-panel-muted: #a8c8de;
+}
+:global([data-theme="dark"]) .profile-page-header { border-bottom-color: #1c3b56; }
+:global([data-theme="dark"]) .page-title,
+:global([data-theme="dark"]) .bc-current,
+:global([data-theme="dark"]) .user-name,
+:global([data-theme="dark"]) .nav-tab-btn,
+:global([data-theme="dark"]) .custom-chk-label { color: #e5eef8; }
+:global([data-theme="dark"]) .page-subtitle,
+:global([data-theme="dark"]) .bc-link,
+:global([data-theme="dark"]) .user-email,
+:global([data-theme="dark"]) .user-role { color: #94a9bd; }
+:global([data-theme="dark"]) .profile-sidebar-card,
+:global([data-theme="dark"]) .tab-view-container,
+:global([data-theme="dark"]) .stat-card,
+:global([data-theme="dark"]) .profile-section-card { background: #0c2035; border-color: #1c3b56; }
+:global([data-theme="dark"]) .sidebar-divider { background: #1c3b56; }
 </style>

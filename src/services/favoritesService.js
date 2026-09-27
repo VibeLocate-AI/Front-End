@@ -64,10 +64,10 @@ function loadFromStorage() {
     console.error('Failed to load saved properties from localStorage:', e)
   }
 
-  // Fallback initial items
-  savedItems.value = INITIAL_MOCK_SAVED
-  savedKeys.value = new Set(INITIAL_MOCK_SAVED.map(p => p.title))
-  saveToStorage()
+  // Do not populate favorites with demo listings. Real favorites are loaded
+  // from the API for authenticated users or are added by the current user.
+  savedItems.value = []
+  savedKeys.value = new Set()
 }
 
 function saveToStorage() {
@@ -102,7 +102,7 @@ export const favoritesService = {
     try {
       const res = await apiClient.get('/favorites')
       const list = Array.isArray(res) ? res : (res?.data || res?.favorites || [])
-      if (Array.isArray(list)) {
+      if (Array.isArray(list) && list.length > 0) {
         const normalized = list.map(item => {
           const prop = item.property || item
           return {
@@ -188,18 +188,14 @@ export const favoritesService = {
   },
 
   async remove(titleOrId) {
-    const removedItem = savedItems.value.find(item => item.id === titleOrId || item.title === titleOrId)
-    savedItems.value = savedItems.value.filter(item => item.id !== titleOrId && item.title !== titleOrId)
+    savedItems.value = savedItems.value.filter(item => (item.title || item.id) !== titleOrId)
     const nextKeys = new Set(savedKeys.value)
     nextKeys.delete(titleOrId)
-    if (removedItem?.id) nextKeys.delete(removedItem.id)
-    if (removedItem?.title) nextKeys.delete(removedItem.title)
     savedKeys.value = nextKeys
     saveToStorage()
 
-    const propertyId = removedItem?.id || (typeof titleOrId === 'number' ? titleOrId : null)
-    if (authService.isAuthenticated() && propertyId) {
-      apiClient.delete(`/favorites/${propertyId}`).catch(() => {})
+    if (authService.isAuthenticated() && typeof titleOrId === 'number') {
+      apiClient.delete(`/favorites/${titleOrId}`).catch(() => {})
     }
   },
 

@@ -33,19 +33,10 @@ export function normalizeProperty(raw) {
     allImages = [raw.image]
   }
 
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80'
-  ]
-
   if (!primaryImage) {
-    primaryImage = fallbackImages[(Number(raw.id) || 0) % fallbackImages.length]
+    // A neutral local placeholder is preferable to showing an unrelated
+    // property photo as if it were returned by the API.
+    primaryImage = '/images/logo_transparent.png'
     allImages = [primaryImage]
   } else if (!primaryImage.startsWith('http') && !primaryImage.startsWith('/')) {
     primaryImage = `https://vibelocate-laravel.onrender.com/${primaryImage}`
@@ -364,15 +355,18 @@ export const propertyService = {
 
       return {
         success: true,
-        data: normalized.length > 0 ? normalized : DEFAULT_PROPERTIES,
+        // An empty backend response is a valid empty catalog; never substitute
+        // showcase listings for data returned by the API.
+        data: normalized,
         pagination: response?.pagination || response?.data?.pagination || null
       }
     } catch (err) {
-      console.warn('API /properties fetch failed, using fallback catalog:', err)
+      console.warn('API /properties fetch failed:', err)
       return {
-        success: true,
-        data: DEFAULT_PROPERTIES,
-        pagination: { total: DEFAULT_PROPERTIES.length }
+        success: false,
+        data: [],
+        pagination: null,
+        error: err.message
       }
     }
   },
@@ -449,15 +443,17 @@ export const propertyService = {
       console.warn('Fallback /properties also failed:', err2)
     }
 
-    // 3. Ultimate resilient fallback to curated luxury collection
+    // 3. Keep the UI honest when the backend is unavailable. Pages can render
+    // their own empty/error state instead of displaying made-up listings.
     return {
-      success: true,
-      total: DEFAULT_PROPERTIES.length,
-      properties: DEFAULT_PROPERTIES,
+      success: false,
+      total: 0,
+      properties: [],
       propertyTypes: [],
       categories: [],
       testimonials: [],
-      stats: {}
+      stats: {},
+      error: 'Unable to load properties from the API'
     }
   },
 
