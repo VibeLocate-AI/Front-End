@@ -75,46 +75,7 @@
           </a>
         </div>
 
-        <!-- Floating Glass Search Widget -->
-        <div class="search-widget-card glassmorphism fade-in" ref="searchWidget">
-          <form class="search-form" @submit.prevent="handleAISearch">
-            <div class="form-group" style="width: 100%;">
-              <label class="search-label">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI CONTEXTUAL SEARCH
-              </label>
-              <div class="search-input-wrapper">
-                <input
-                  type="text"
-                  id="aiSearchInput"
-                  v-model="aiSearchQuery"
-                  class="hero-search-input"
-                  placeholder="e.g., Two-bedroom house in Dubai"
-                >
-                <button type="submit" class="btn btn-primary search-submit-btn">
-                  <i class="fa-solid fa-robot"></i>
-                  <span>AI Search</span>
-                </button>
-              </div>
 
-              <!-- Quick Demo Prompt Chips for Direct Navigation to AI Screens -->
-              <div class="ai-prompt-chips" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Try Prompts:</span>
-                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Two-bedroom house in Dubai')">
-                  ✦ Two-bedroom house in Dubai
-                </button>
-                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Luxury Marina Studio $2,500')">
-                  ✦ Marina Studio ($2,500)
-                </button>
-                <button type="button" class="ai-chip-pill chip-err" @click="runQuickSearch('error')">
-                  ⚠️ Service Busy (Image 1)
-                </button>
-                <button type="button" class="ai-chip-pill chip-none" @click="runQuickSearch('no match')">
-                  🔍 No Match (Image 2)
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
       </div>
 
       <!-- Quick Highlights Ticker / Bar -->
@@ -477,8 +438,11 @@
               </div>
             </div>
 
-            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-              <a href="#booking" class="btn btn-primary" style="flex: 1;" @click.prevent="scrollTo('booking'); closeModal()">
+            <div style="margin-top: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-primary" style="flex: 1.2;" @click="goToPropertyDetails(selectedProperty)">
+                <i class="fa-solid fa-arrow-up-right-from-square" style="margin-right: 6px;"></i> Full Details
+              </button>
+              <a href="#booking" class="btn btn-navy" style="flex: 1;" @click.prevent="scrollTo('booking'); closeModal()">
                 Schedule Viewing
               </a>
               <button class="btn btn-outline-dark" @click="closeModal">Close</button>
@@ -631,11 +595,32 @@ const loadProperties = async () => {
   isLoadingProperties.value = true
   try {
     const res = await propertyService.getHomeData('en')
+    let list = []
     if (res?.properties && res.properties.length > 0) {
-      properties.value = res.properties
+      list = [...res.properties]
+    }
+    // Also fetch catalog properties to ensure all categories (apartments, villas, estates) have rich data
+    try {
+      const catalog = await propertyService.getProperties({ per_page: 30 })
+      if (catalog?.data && catalog.data.length > 0) {
+        list = [...list, ...catalog.data]
+      }
+    } catch {}
+
+    // Deduplicate by ID
+    const unique = []
+    const seen = new Set()
+    for (const p of list) {
+      if (p && !seen.has(p.id)) {
+        seen.add(p.id)
+        unique.push(p)
+      }
+    }
+    if (unique.length > 0) {
+      properties.value = unique
     }
   } catch (err) {
-    console.error('Failed loading properties from /api/home in LandingPage:', err)
+    console.error('Failed loading properties in LandingPage:', err)
   } finally {
     isLoadingProperties.value = false
   }
@@ -715,6 +700,15 @@ const openModal = (property) => {
 const closeModal = () => {
   modalOpen.value = false
   document.body.style.overflow = ''
+}
+
+const goToPropertyDetails = (property) => {
+  if (!property) return
+  try {
+    sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property))
+  } catch {}
+  closeModal()
+  router.push(`/property/${property.id}`)
 }
 
 const handleKeydown = (e) => {

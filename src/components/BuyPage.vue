@@ -73,11 +73,7 @@
               <div class="search-input-inner">
                 <select v-model="filterState.location" class="search-select">
                   <option value="All">{{ t('searchAreasPlaceholder') }}</option>
-                  <option value="Downtown Dubai">Downtown Dubai</option>
-                  <option value="Palm Jumeirah">Palm Jumeirah</option>
-                  <option value="Dubai Marina">Dubai Marina</option>
-                  <option value="Arabian Ranches 3">Arabian Ranches 3</option>
-                  <option value="Dubai Harbour">Dubai Harbour</option>
+                  <option v-for="loc in availableLocations" :key="loc" :value="loc">{{ loc }}</option>
                 </select>
                 <i class="fa-solid fa-chevron-down select-chevron"></i>
               </div>
@@ -149,9 +145,10 @@
 
             <!-- Search Button -->
             <div class="search-btn-col">
-              <button type="submit" class="btn-search-properties">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <span>{{ t('searchProperties') }}</span>
+              <button type="submit" class="btn-search-properties" :disabled="isLoadingProperties">
+                <i v-if="isLoadingProperties" class="fa-solid fa-spinner fa-spin"></i>
+                <i v-else class="fa-solid fa-magnifying-glass"></i>
+                <span>{{ isLoadingProperties ? (isRtl ? 'جاري البحث...' : 'Searching...') : t('searchProperties') }}</span>
               </button>
             </div>
           </form>
@@ -179,7 +176,7 @@
       <!-- Content Header Bar (Count, View Mode, Sort) -->
       <div class="catalog-header-bar">
         <div class="properties-count-text">
-          <strong>1,248</strong> {{ t('propertiesForSaleInDubai') }}
+          <strong>{{ displayProperties.length.toLocaleString() }}</strong> {{ t('propertiesForSaleInDubai') }}
         </div>
 
         <div class="header-tools-group">
@@ -221,78 +218,115 @@
         <!-- LEFT: THE 4 MOCKUP PROPERTY CARDS -->
         <section class="properties-grid-container">
           <div class="buy-cards-grid">
-            <article
-              v-for="prop in displayProperties"
-              :key="prop.id"
-              class="buy-prop-card"
-              @click="openDetails(prop)"
+            <!-- Loading Skeleton -->
+            <template v-if="isLoadingProperties">
+              <div v-for="n in 8" :key="'skel-' + n" class="buy-prop-card card-skeleton-item">
+                <div class="skeleton-thumb-box"></div>
+                <div class="card-body">
+                  <div class="skeleton-line title"></div>
+                  <div class="skeleton-line loc"></div>
+                  <div class="skeleton-line price"></div>
+                  <div class="skeleton-line specs"></div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Render All Properties -->
+            <template v-else-if="displayProperties.length > 0">
+              <article
+                v-for="prop in displayProperties"
+                :key="prop.id"
+                class="buy-prop-card"
+                @click="openDetails(prop)"
+              >
+                <!-- Thumbnail & Badges -->
+                <div class="card-thumb-wrap">
+                  <img :src="prop.image" :alt="prop.title" loading="lazy" @error="onImgError">
+                  
+                  <!-- AI Match (Top-Left) -->
+                  <div class="badge-ai-match">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>{{ t('aiMatch') }} {{ prop.matchScore }}%</span>
+                  </div>
+
+                  <!-- Favorite Heart (Top-Right) -->
+                  <button
+                    type="button"
+                    class="btn-card-fav"
+                    :class="{ saved: favoritesService.isSaved(prop.title || prop.id) }"
+                    @click.stop="toggleFavorite(prop)"
+                  >
+                    <i :class="favoritesService.isSaved(prop.title || prop.id) ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+                  </button>
+
+                  <!-- Status Badge (Bottom-Left) -->
+                  <div class="badge-status-chip">
+                    <i :class="prop.isOffPlan ? 'fa-solid fa-chart-column' : 'fa-solid fa-key'"></i>
+                    <span>{{ prop.isOffPlan ? t('offPlan') : t('readyToMove') }}</span>
+                  </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+                  <h3 class="card-title">{{ prop.title }}</h3>
+                  
+                  <p class="card-location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ prop.location }}</span>
+                  </p>
+
+                  <div class="card-price">
+                    {{ formatPrice(prop.price) }}
+                  </div>
+
+                  <div class="card-specs-row">
+                    <span class="spec-item">
+                      <i class="fa-solid fa-bed"></i> {{ prop.beds }} {{ t('beds') }}
+                    </span>
+                    <span class="spec-item">
+                      <i class="fa-solid fa-bath"></i> {{ prop.baths }} {{ t('baths') }}
+                    </span>
+                    <span class="spec-item">
+                      <i class="fa-solid fa-vector-square"></i> {{ prop.sqft }} {{ t('sqft') }}
+                    </span>
+                  </div>
+
+                  <button type="button" class="btn-view-details" @click.stop="openDetails(prop)">
+                    <span>{{ t('viewDetails') }}</span>
+                    <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+                  </button>
+                </div>
+              </article>
+            </template>
+
+            <!-- No Properties Empty State -->
+            <div v-else class="no-properties-box">
+              <i class="fa-solid fa-building-circle-xmark"></i>
+              <h3>{{ isRtl ? 'لا توجد عقارات مطابقة حالياً' : 'No properties found' }}</h3>
+              <p>{{ isRtl ? 'لم نتمكن من العثور على عقارات مطابقة في قاعدة البيانات' : 'No matching properties found in the live database' }}</p>
+            </div>
+          </div>
+
+          <!-- Load More Button -->
+          <div v-if="!isLoadingProperties && hasMorePages" class="load-more-section">
+            <button
+              type="button"
+              class="btn-load-more-properties"
+              :disabled="isLoadingMore"
+              @click="loadMoreProperties"
             >
-              <!-- Thumbnail & Badges -->
-              <div class="card-thumb-wrap">
-                <img :src="prop.image" :alt="prop.title" loading="lazy" @error="onImgError">
-                
-                <!-- AI Match (Top-Left) -->
-                <div class="badge-ai-match">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i>
-                  <span>{{ t('aiMatch') }} {{ prop.matchScore }}%</span>
-                </div>
-
-                <!-- Favorite Heart (Top-Right) -->
-                <button
-                  type="button"
-                  class="btn-card-fav"
-                  :class="{ saved: favoritesService.isSaved(prop.title || prop.id) }"
-                  @click.stop="toggleFavorite(prop)"
-                >
-                  <i :class="favoritesService.isSaved(prop.title || prop.id) ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
-                </button>
-
-                <!-- Status Badge (Bottom-Left) -->
-                <div class="badge-status-chip">
-                  <i :class="prop.isOffPlan ? 'fa-solid fa-chart-column' : 'fa-solid fa-key'"></i>
-                  <span>{{ prop.isOffPlan ? t('offPlan') : t('readyToMove') }}</span>
-                </div>
-              </div>
-
-              <!-- Card Body -->
-              <div class="card-body">
-                <h3 class="card-title">{{ prop.title }}</h3>
-                
-                <p class="card-location">
-                  <i class="fa-solid fa-location-dot"></i>
-                  <span>{{ prop.location }}</span>
-                </p>
-
-                <div class="card-price">
-                  {{ formatPrice(prop.price) }}
-                </div>
-
-                <div class="card-specs-row">
-                  <span class="spec-item">
-                    <i class="fa-solid fa-bed"></i> {{ prop.beds }} {{ t('beds') }}
-                  </span>
-                  <span class="spec-item">
-                    <i class="fa-solid fa-bath"></i> {{ prop.baths }} {{ t('baths') }}
-                  </span>
-                  <span class="spec-item">
-                    <i class="fa-solid fa-vector-square"></i> {{ prop.sqft }} {{ t('sqft') }}
-                  </span>
-                </div>
-
-                <button type="button" class="btn-view-details" @click.stop="openDetails(prop)">
-                  <span>{{ t('viewDetails') }}</span>
-                  <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
-                </button>
-              </div>
-            </article>
+              <i v-if="isLoadingMore" class="fa-solid fa-spinner fa-spin"></i>
+              <i v-else class="fa-solid fa-arrow-down-long"></i>
+              <span>{{ isLoadingMore ? (isRtl ? 'جاري التحميل...' : 'Loading more...') : (isRtl ? 'عرض المزيد من العقارات' : 'Load More Properties') }}</span>
+            </button>
           </div>
         </section>
 
         <!-- RIGHT: SIDEBAR WIDGETS -->
         <aside class="buy-sidebar-widgets">
           
-          <!-- Widget 1: AI Recommendations -->
-          <div class="sidebar-widget-card">
+          <!-- Widget 1: AI Recommendations (From live API) -->
+          <div class="sidebar-widget-card" v-if="recommendedList.length > 0">
             <div class="widget-header">
               <div class="widget-title">
                 <i class="fa-solid fa-wand-magic-sparkles text-cyan"></i>
@@ -304,37 +338,24 @@
             </div>
 
             <div class="widget-items-list">
-              <div class="widget-item-card" @click="filterByLocation('Dubai Marina')">
-                <img src="/images/photo-1545324418-cc1a3fa10c00.avif" alt="Dubai Marina" class="item-thumb">
+              <div
+                v-for="rec in recommendedList"
+                :key="rec.id"
+                class="widget-item-card"
+                @click="openDetails(rec)"
+              >
+                <img :src="rec.image" :alt="rec.title" class="item-thumb" @error="onImgError">
                 <div class="item-content">
-                  <h4 class="item-title">{{ t('rec1Title') }}</h4>
-                  <p class="item-desc">{{ t('rec1Desc') }}</p>
-                </div>
-                <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
-              </div>
-
-              <div class="widget-item-card" @click="filterByLocation('Arabian Ranches 3')">
-                <img src="/images/photo-1600585154340-be6161a56a0c.avif" alt="Arabian Ranches" class="item-thumb">
-                <div class="item-content">
-                  <h4 class="item-title">{{ t('rec2Title') }}</h4>
-                  <p class="item-desc">{{ t('rec2Desc') }}</p>
-                </div>
-                <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
-              </div>
-
-              <div class="widget-item-card" @click="filterByLocation('Palm Jumeirah')">
-                <img src="/images/photo-1512917774080-9991f1c4c750.jfif" alt="Palm Jumeirah" class="item-thumb">
-                <div class="item-content">
-                  <h4 class="item-title">{{ t('rec3Title') }}</h4>
-                  <p class="item-desc">{{ t('rec3Desc') }}</p>
+                  <h4 class="item-title">{{ rec.title }}</h4>
+                  <p class="item-desc">{{ rec.location }} • {{ formatPrice(rec.price) }}</p>
                 </div>
                 <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
               </div>
             </div>
           </div>
 
-          <!-- Widget 2: Best Areas to Buy -->
-          <div class="sidebar-widget-card">
+          <!-- Widget 2: Best Areas to Buy (From live API) -->
+          <div class="sidebar-widget-card" v-if="popularAreas.length > 0">
             <div class="widget-header">
               <div class="widget-title">
                 <i class="fa-solid fa-location-dot text-cyan"></i>
@@ -346,29 +367,23 @@
             </div>
 
             <div class="widget-items-list">
-              <div class="widget-item-card" @click="filterByLocation('Downtown Dubai')">
-                <img src="/images/photo-1512917774080-9991f1c4c750 (1).jfif" alt="Downtown Dubai" class="item-thumb">
+              <div
+                v-for="area in popularAreas"
+                :key="area.name"
+                class="widget-item-card"
+                @click="filterByLocation(area.name)"
+              >
+                <img
+                  :src="area.image_url || '/images/photo-1512917774080-9991f1c4c750 (1).jfif'"
+                  :alt="area.name"
+                  class="item-thumb"
+                  @error="(e) => e.target.src = '/images/photo-1512917774080-9991f1c4c750 (1).jfif'"
+                >
                 <div class="item-content">
-                  <h4 class="item-title">{{ t('area1Title') }}</h4>
-                  <p class="item-desc">{{ t('area1Desc') }}</p>
-                </div>
-                <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
-              </div>
-
-              <div class="widget-item-card" @click="filterByLocation('Dubai Marina')">
-                <img src="/images/photo-1582719478250-c89cae4dc85b.avif" alt="Dubai Marina" class="item-thumb">
-                <div class="item-content">
-                  <h4 class="item-title">{{ t('area2Title') }}</h4>
-                  <p class="item-desc">{{ t('area2Desc') }}</p>
-                </div>
-                <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
-              </div>
-
-              <div class="widget-item-card" @click="filterByLocation('Palm Jumeirah')">
-                <img src="/images/photo-1600210492486-724fe5c67fb0.jfif" alt="Palm Jumeirah" class="item-thumb">
-                <div class="item-content">
-                  <h4 class="item-title">{{ t('area3Title') }}</h4>
-                  <p class="item-desc">{{ t('area3Desc') }}</p>
+                  <h4 class="item-title">{{ area.name }}</h4>
+                  <p class="item-desc">
+                    {{ area.properties_count ? area.properties_count + (isRtl ? ' عقار متاح' : ' Properties Available') : (isRtl ? 'منطقة استثمارية مميزة' : 'Prime investment hub') }}
+                  </p>
                 </div>
                 <i class="fa-solid item-arrow" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
               </div>
@@ -531,6 +546,7 @@ const handleLogout = async () => {
 // Category Tabs
 const categoryTabs = computed(() => [
   { key: 'All Properties', name: t('allProperties'), icon: 'fa-solid fa-border-all' },
+  { key: 'Commercial', name: isRtl.value ? 'عقارات تجارية' : 'Commercial', icon: 'fa-solid fa-briefcase' },
   { key: 'Apartments', name: t('apartments'), icon: 'fa-solid fa-building' },
   { key: 'Villas', name: t('villas'), icon: 'fa-solid fa-house-chimney-window' },
   { key: 'Penthouses', name: t('penthouses'), icon: 'fa-solid fa-crown' },
@@ -551,67 +567,39 @@ const filterState = ref({
 })
 
 const sortBy = ref('recommended')
+const isLoadingProperties = ref(true)
+const isLoadingMore = ref(false)
+const currentPage = ref(1)
+const hasMorePages = ref(true)
 
-// The 4 Exact Properties from the Mockup Image
 const buyProperties = ref([])
-/* const showcaseProperties = [
-  {
-    id: 1,
-    title: 'Luxury 2BR Apartment',
-    location: 'Downtown Dubai',
-    price: 3200000,
-    type: 'Apartment',
-    beds: 2,
-    baths: 2,
-    sqft: '1,245',
-    matchScore: 98,
-    isOffPlan: false,
-    image: '/images/photo-1600210492486-724fe5c67fb0.jfif',
-    description: 'Ultra-luxury high-floor apartment with panoramic views of Burj Khalifa and the Dubai Fountain.'
-  },
-  {
-    id: 2,
-    title: 'Modern Villa with Private Pool',
-    location: 'Arabian Ranches 3',
-    price: 5800000,
-    type: 'Villa',
-    beds: 4,
-    baths: 5,
-    sqft: '3,412',
-    matchScore: 96,
-    isOffPlan: false,
-    image: '/images/photo-1600585154340-be6161a56a0c.avif',
-    description: 'Immaculate family villa with private illuminated pool, landscaped gardens, and smart home automation.'
-  },
-  {
-    id: 3,
-    title: 'Waterfront Apartment',
-    location: 'Dubai Harbour',
-    price: 4150000,
-    type: 'Apartment',
-    beds: 2,
-    baths: 3,
-    sqft: '1,892',
-    matchScore: 94,
-    isOffPlan: true,
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    description: 'Exclusive waterfront residence offering direct marina views, private beach access, and yacht berths.'
-  },
-  {
-    id: 4,
-    title: 'Exclusive Penthouse',
-    location: 'Palm Jumeirah',
-    price: 12500000,
-    type: 'Penthouse',
-    beds: 5,
-    baths: 6,
-    sqft: '5,200',
-    matchScore: 92,
-    isOffPlan: false,
-    image: '/images/photo-1512917774080-9991f1c4c750.jfif',
-    description: 'Signature rooftop penthouse commanding 360-degree ocean views and private sky deck on Palm Jumeirah.'
+const recommendedProperties = ref([])
+const popularAreas = ref([])
+
+const recommendedList = computed(() => {
+  if (recommendedProperties.value.length > 0) {
+    return recommendedProperties.value.slice(0, 3)
   }
-] */
+  // Real live properties sorted by aiMatch
+  return [...buyProperties.value].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0)).slice(0, 3)
+})
+
+const availableLocations = computed(() => {
+  const locSet = new Set()
+  buyProperties.value.forEach(p => {
+    if (p.location && p.location !== 'Dubai, UAE') {
+      const parts = p.location.split(',').map(s => s.trim())
+      parts.forEach(part => {
+        if (part && part.length > 2 && part !== 'Dubai' && part !== 'UAE') locSet.add(part)
+      })
+    }
+    if (p.area && p.area !== 'Dubai, UAE') locSet.add(p.area)
+  })
+  popularAreas.value.forEach(a => {
+    if (a.name) locSet.add(a.name)
+  })
+  return Array.from(locSet)
+})
 
 const formatPrice = (price) => {
   const num = Number(price) || 0
@@ -641,16 +629,37 @@ const displayProperties = computed(() => {
 
   if (selectedCategory.value !== 'All Properties') {
     const cat = selectedCategory.value.toLowerCase()
-    if (cat.includes('apartment')) list = list.filter(p => p.type === 'Apartment')
-    else if (cat.includes('villa')) list = list.filter(p => p.type === 'Villa')
-    else if (cat.includes('penthouse')) list = list.filter(p => p.type === 'Penthouse')
+    if (cat.includes('apartment')) list = list.filter(p => (p.type || '').toLowerCase().includes('apartment'))
+    else if (cat.includes('villa')) list = list.filter(p => (p.type || '').toLowerCase().includes('villa'))
+    else if (cat.includes('penthouse')) list = list.filter(p => (p.type || '').toLowerCase().includes('penthouse'))
+    else if (cat.includes('commercial') || cat.includes('تجاري')) list = list.filter(p => ['office', 'warehouse', 'showroom', 'cafe', 'restaurant', 'hotel', 'building', 'commercial'].some(t => (p.type || '').toLowerCase().includes(t)))
+    else if (cat.includes('waterfront')) list = list.filter(p => (p.location && (p.location.includes('Marina') || p.location.includes('Palm') || p.location.includes('Harbour') || p.location.includes('Beach') || p.location.includes('Waterfront'))))
     else if (cat.includes('off-plan')) list = list.filter(p => p.isOffPlan === true)
     else if (cat.includes('ready')) list = list.filter(p => p.isOffPlan === false)
   }
 
   if (filterState.value.location && filterState.value.location !== 'All') {
     const loc = filterState.value.location.toLowerCase()
-    list = list.filter(p => p.location.toLowerCase().includes(loc))
+    list = list.filter(p => (p.location || '').toLowerCase().includes(loc) || (p.area || '').toLowerCase().includes(loc))
+  }
+
+  if (filterState.value.propertyType && filterState.value.propertyType !== 'All') {
+    const pType = filterState.value.propertyType.toLowerCase()
+    list = list.filter(p => (p.type || '').toLowerCase().includes(pType))
+  }
+
+  if (filterState.value.bedrooms && filterState.value.bedrooms !== 'Any') {
+    if (filterState.value.bedrooms === '5+') {
+      list = list.filter(p => Number(p.beds) >= 5)
+    } else {
+      list = list.filter(p => Number(p.beds) === Number(filterState.value.bedrooms))
+    }
+  }
+
+  if (filterState.value.priceRange && filterState.value.priceRange !== 'Any') {
+    if (filterState.value.priceRange === 'under-5m') list = list.filter(p => p.price < 5000000)
+    else if (filterState.value.priceRange === '5m-10m') list = list.filter(p => p.price >= 5000000 && p.price <= 10000000)
+    else if (filterState.value.priceRange === '10m-plus') list = list.filter(p => p.price > 10000000)
   }
 
   if (sortBy.value === 'price-asc') {
@@ -706,37 +715,87 @@ const loadUserProfile = async () => {
   }
 }
 
-const loadApiProperties = async () => {
+const loadApiProperties = async (page = 1) => {
+  if (page === 1) {
+    isLoadingProperties.value = true
+  } else {
+    isLoadingMore.value = true
+  }
+
   try {
-    const res = await propertyService.getProperties({ listing_type: 'sale' })
-    const list = res?.data || []
-    if (Array.isArray(list) && list.length > 0) {
-      const apiProps = list.filter(p => !p.isForRent).map((p, idx) => ({
-        id: p.id || idx + 1,
-        title: p.title || 'Dubai Luxury Property',
-        location: p.location || p.area || 'Dubai, UAE',
-        price: p.price || 3500000,
-        type: p.type || 'Apartment',
-        beds: p.beds || 2,
-        baths: p.baths || 2,
-        sqft: p.size || '1,450',
-        matchScore: p.aiMatch || (98 - idx * 2),
-        isOffPlan: Boolean(p.isOffPlan || (p.description && p.description.toLowerCase().includes('off-plan'))),
-        image: p.image || (p.images && p.images[0]) || '/images/photo-1600210492486-724fe5c67fb0.jfif',
-        description: p.description || p.summary || ''
-      }))
-      buyProperties.value = apiProps
+    const langKey = isRtl.value ? 'ar' : 'en'
+    const [res, areasRes, recRes] = await Promise.allSettled([
+      propertyService.getProperties({ page }),
+      propertyService.getPopularAreas(langKey),
+      propertyService.getRecommendedProperties(langKey)
+    ])
+
+    if (res.status === 'fulfilled' && res.value?.data?.length > 0) {
+      const sales = res.value.data.filter(p => {
+        const action = String(p.action_type || p.purpose || p.listing_purpose || '').toLowerCase()
+        return action === 'buy' || action === 'sale' || (!p.isForRent && action !== 'rent')
+      })
+
+      if (sales.length > 0) {
+        const formatted = sales.map((p, idx) => ({
+          id: p.id || (page - 1) * 20 + idx + 1,
+          title: p.title || 'Dubai Luxury Property',
+          location: p.location || p.area || 'Dubai, UAE',
+          price: Number(p.price) || 3500000,
+          type: p.type || 'Commercial',
+          beds: p.beds ?? 0,
+          baths: p.baths ?? 0,
+          sqft: p.sqft || p.size || '1,450',
+          matchScore: p.aiMatch || Math.min(99, 98 - (idx % 12)),
+          isOffPlan: Boolean(p.isOffPlan || p.property_condition === 'off_plan'),
+          image: p.image || (p.images && p.images[0]) || '/images/photo-1600210492486-724fe5c67fb0.jfif',
+          images: p.images || [p.image],
+          description: p.description || p.summary || '',
+          specs: p.specs
+        }))
+
+        if (page === 1) {
+          buyProperties.value = formatted
+        } else {
+          const existingIds = new Set(buyProperties.value.map(item => String(item.id)))
+          const newItems = formatted.filter(item => !existingIds.has(String(item.id)))
+          buyProperties.value = [...buyProperties.value, ...newItems]
+        }
+
+        const totalPages = res.value.pagination?.total_pages || res.value.pagination?.last_page || 36
+        hasMorePages.value = page < totalPages
+      }
+    }
+
+    if (areasRes.status === 'fulfilled' && areasRes.value.data?.length) {
+      popularAreas.value = areasRes.value.data
+    }
+
+    if (recRes.status === 'fulfilled' && recRes.value.data?.length) {
+      recommendedProperties.value = recRes.value.data
     }
   } catch (err) {
-    console.log('[BuyPage] Backend live properties are unavailable:', err?.message)
+    console.warn('[BuyPage] Backend live properties fetch error:', err?.message)
+  } finally {
+    isLoadingProperties.value = false
+    isLoadingMore.value = false
   }
+}
+
+const loadMoreProperties = () => {
+  currentPage.value += 1
+  loadApiProperties(currentPage.value)
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   document.addEventListener('click', handleClickOutside)
   loadUserProfile()
-  favoritesService.syncWithBackend()
+  try {
+    if (typeof favoritesService.syncWithBackend === 'function') {
+      favoritesService.syncWithBackend()
+    }
+  } catch {}
   loadApiProperties()
 })
 
@@ -1404,6 +1463,92 @@ onUnmounted(() => {
 
 .btn-view-details i {
   font-size: 0.65rem;
+}
+
+/* Skeleton Loading Animation */
+.card-skeleton-item {
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.skeleton-thumb-box {
+  width: 100%;
+  height: 155px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-line.title {
+  height: 16px;
+  width: 80%;
+  margin-bottom: 6px;
+}
+
+.skeleton-line.loc {
+  height: 12px;
+  width: 55%;
+  margin-bottom: 8px;
+}
+
+.skeleton-line.price {
+  height: 18px;
+  width: 40%;
+  margin-bottom: 10px;
+}
+
+.skeleton-line.specs {
+  height: 12px;
+  width: 90%;
+  margin-top: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Load More Section */
+.load-more-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0 10px;
+}
+
+.btn-load-more-properties {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 28px;
+  background: rgba(13, 22, 44, 0.9);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-radius: 30px;
+  color: #00d2ff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(0, 210, 255, 0.08);
+}
+
+.btn-load-more-properties:hover:not(:disabled) {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: #00d2ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 210, 255, 0.2);
+}
+
+.btn-load-more-properties:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ==================== SIDEBAR WIDGETS ==================== */

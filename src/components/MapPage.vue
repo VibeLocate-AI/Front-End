@@ -353,9 +353,9 @@ const STATIC_FALLBACK_PROPERTIES = [
   { id: 12, title: 'Il Primo Opera District Grand Penthouse', area: 'Downtown Dubai', type: 'Penthouse', priceAed: 14200000, priceFormatted: 'AED 14,200,000', priceShort: '14.2M', period: 'Sale', distanceKm: 5.4, distanceFormatted: '5.4 km away', aiScore: 98, rating: 5.0, beds: 4, baths: 5, sqft: 4900, vibe: 'Sky High Luxury', lat: 25.1945, lng: 55.2710, image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=900&q=80', aiSummary: 'Full-floor residence adjacent to Dubai Opera with private elevator, cigar lounge, and private wellness spa.', verified: true }
 ]
 
-let currentProperties = []
+let currentProperties = [...STATIC_FALLBACK_PROPERTIES]
 let mapInstance = null, activeTileLayer = null, markersMap = new Map(), activePropertyId = null
-let filteredProperties = [], toastTimeout = null
+let filteredProperties = [...STATIC_FALLBACK_PROPERTIES], toastTimeout = null
 
 function formatMapProperty(raw) {
   const priceNum = Number(raw.price) || 0
@@ -419,9 +419,19 @@ function formatMapProperty(raw) {
 
 async function fetchLiveMapProperties() {
   try {
+    let rawList = []
     const res = await propertyService.getMapProperties()
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-      currentProperties = res.data.map(formatMapProperty)
+      rawList = res.data
+    } else {
+      const catalogRes = await propertyService.getProperties({ per_page: 100 })
+      if (catalogRes?.success && Array.isArray(catalogRes.data) && catalogRes.data.length > 0) {
+        rawList = catalogRes.data
+      }
+    }
+
+    if (rawList.length > 0) {
+      currentProperties = rawList.map(formatMapProperty)
       filteredProperties = [...currentProperties]
       if (mapInstance) {
         renderMarkers(filteredProperties)
@@ -434,7 +444,7 @@ async function fetchLiveMapProperties() {
       showToast(`Loaded ${currentProperties.length} live properties from VibeLocate API`)
     }
   } catch (err) {
-    console.warn('Map API load failed:', err)
+    console.warn('Map API load failed, keeping active properties:', err)
   }
 }
 

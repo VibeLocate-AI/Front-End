@@ -15,7 +15,7 @@ const API_BASE_URL =
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
@@ -29,7 +29,7 @@ export const apiClient = axios.create({
  */
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
@@ -165,6 +165,15 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response) => {
+    if (typeof response.data === 'string') {
+      try {
+        const cleaned = response.data.trim().replace(/^\uFEFF/, '')
+        response.data = JSON.parse(cleaned)
+      } catch (e) {
+        // Not a JSON string or already handled
+      }
+    }
+
     if (
       response.data &&
       response.data.success === false

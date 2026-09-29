@@ -101,6 +101,12 @@ const routes = [
     alias: '/property/add'
   },
   {
+    path: '/my-properties',
+    name: 'MyProperties',
+    component: () => import('../components/OwnerPropertiesPage.vue'),
+    alias: ['/owner-properties', '/properties/my']
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: ProfilePage

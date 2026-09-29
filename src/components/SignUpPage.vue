@@ -289,6 +289,7 @@
 
             <!-- Submit Button (Navy Pill) -->
             <button type="submit" class="submit-btn signup-btn" id="signUpBtn" :disabled="isLoading">
+              <i v-if="isLoading" class="fa-solid fa-spinner fa-spin me-2" style="margin-right: 8px;"></i>
               <span>{{ isLoading ? 'CREATING ACCOUNT...' : 'SIGN UP' }}</span>
             </button>
 
@@ -303,8 +304,9 @@
 
           <!-- Social Login -->
           <div class="social-login">
-            <button type="button" @click="handleGoogleSignUp" class="social-btn google-btn" aria-label="Sign up with Google" title="Sign up with Google">
-              <svg class="google-icon" viewBox="0 0 24 24">
+            <button type="button" @click="handleGoogleSignUp" class="social-btn google-btn" :disabled="isLoading" aria-label="Sign up with Google" title="Sign up with Google">
+              <i v-if="isLoading" class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #4285F4;"></i>
+              <svg v-else class="google-icon" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.23v3.15C3.25 21.37 7.37 24 12 24z"/>
                 <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.23C.44 8.16 0 9.99 0 12s.44 3.84 1.23 5.42l4.05-3.15z"/>

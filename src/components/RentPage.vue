@@ -65,14 +65,7 @@
               <label class="filter-group-label"><i class="fa-solid fa-location-dot"></i> {{ t('location') }}</label>
               <select v-model="filterState.location" class="filter-select-dropdown">
                 <option value="All">{{ isRtl ? 'كل المناطق' : 'All Areas' }}</option>
-                <option value="Downtown Dubai">{{ isRtl ? 'وسط مدينة دبي' : 'Downtown Dubai' }}</option>
-                <option value="Palm Jumeirah">{{ isRtl ? 'نخلة جميرا' : 'Palm Jumeirah' }}</option>
-                <option value="Dubai Marina">{{ isRtl ? 'مرسى دبي (مارينا)' : 'Dubai Marina' }}</option>
-                <option value="Bluewaters Island">{{ isRtl ? 'جزيرة بلوواترز' : 'Bluewaters Island' }}</option>
-                <option value="Za'abeel">{{ isRtl ? "زعبيل، دبي" : "Za'abeel, Dubai" }}</option>
-                <option value="JBR">{{ isRtl ? 'جميرا بيتش ريزيدنس' : 'JBR' }}</option>
-                <option value="Dubai Creek Harbour">{{ isRtl ? 'خور دبي' : 'Dubai Creek Harbour' }}</option>
-                <option value="Emirates Hills">{{ isRtl ? 'تلال الإمارات' : 'Emirates Hills' }}</option>
+                <option v-for="loc in availableLocations" :key="loc" :value="loc">{{ loc }}</option>
               </select>
             </div>
 
@@ -93,10 +86,10 @@
               <label class="filter-group-label"><i class="fa-solid fa-dollar-sign"></i> {{ t('budgetAED') }}</label>
               <select v-model="filterState.priceRange" class="filter-select-dropdown">
                 <option value="Any">{{ t('anyBudget') }}</option>
-                <option value="under-5m">{{ isRtl ? 'أقل من 5,000,000 درهم' : 'Under AED 5,000,000' }}</option>
-                <option value="5m-10m">{{ isRtl ? '5,000,000 - 10,000,000 درهم' : 'AED 5,000,000 - 10,000,000' }}</option>
-                <option value="10m-25m">{{ isRtl ? '10,000,000 - 25,000,000 درهم' : 'AED 10,000,000 - 25,000,000' }}</option>
-                <option value="25m-plus">{{ isRtl ? 'أكثر من 25,000,000 درهم' : 'AED 25,000,000+' }}</option>
+                <option value="under-100k">{{ isRtl ? 'أقل من 100,000 درهم/سنوي' : 'Under AED 100,000/yr' }}</option>
+                <option value="100k-250k">{{ isRtl ? '100,000 - 250,000 درهم' : 'AED 100,000 - 250,000' }}</option>
+                <option value="250k-500k">{{ isRtl ? '250,000 - 500,000 درهم' : 'AED 250,000 - 500,000' }}</option>
+                <option value="500k-plus">{{ isRtl ? 'أكثر من 500,000 درهم' : 'AED 500,000+' }}</option>
               </select>
             </div>
 
@@ -211,8 +204,30 @@
             </div>
           </div>
 
-          <!-- Properties List - MapPage Style Dark Cards -->
-          <div class="rent-props-list">
+          <!-- Properties List -->
+          <div v-if="isLoading" class="rent-props-list">
+            <div v-for="n in 6" :key="'skel-' + n" class="rent-prop-card rent-skeleton-card">
+              <div class="rent-skeleton-thumb"></div>
+              <div class="rent-card-details">
+                <div class="rent-sk-line rent-sk-badge"></div>
+                <div class="rent-sk-line rent-sk-title"></div>
+                <div class="rent-sk-line rent-sk-loc"></div>
+                <div class="rent-sk-line rent-sk-price"></div>
+                <div class="rent-sk-line rent-sk-specs"></div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="filteredList.length === 0" class="no-properties-box">
+            <i class="fa-solid fa-building-circle-xmark"></i>
+            <h3>{{ isRtl ? 'لا توجد عقارات للإيجار مطابقة حالياً' : 'No rental properties found' }}</h3>
+            <p>{{ isRtl ? 'لم نتمكن من العثور على عقارات إيجار مطابقة في قاعدة البيانات' : 'No matching rental properties found in the live database' }}</p>
+            <button type="button" class="btn-clear-empty-filter" @click="resetFilters">
+              <i class="fa-solid fa-rotate-left"></i> {{ isRtl ? 'إعادة تعيين الفلاتر' : 'Reset All Filters' }}
+            </button>
+          </div>
+
+          <div v-else class="rent-props-list">
             <article
               v-for="prop in paginatedList"
               :key="prop.id || prop.title"
@@ -279,7 +294,7 @@
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               <button
-                v-for="p in [1, 2, 3, 4, 5]"
+                v-for="p in pageNumbers"
                 :key="p"
                 type="button"
                 class="btn-page-num"
@@ -288,9 +303,9 @@
               >
                 {{ p }}
               </button>
-              <span class="page-dots">...</span>
-              <button type="button" class="btn-page-num" @click="currentPage = 356">356</button>
-              <button type="button" class="btn-page-num" @click="currentPage++">
+              <span v-if="totalPages > 5 && !pageNumbers.includes(totalPages)" class="page-dots">...</span>
+              <button v-if="totalPages > 5 && !pageNumbers.includes(totalPages)" type="button" class="btn-page-num" @click="currentPage = totalPages">{{ totalPages }}</button>
+              <button type="button" class="btn-page-num" :disabled="currentPage >= totalPages" @click="currentPage++">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
@@ -360,27 +375,43 @@ const onAvatarError = (e) => {
   e.target.src = 'https://ui-avatars.com/api/?name=Anas+User&background=0284c7&color=fff'
 }
 
-const categoryPills = [
-  { name: 'All Properties', count: '2,847' },
-  { name: 'Apartments', count: '1,562' },
-  { name: 'Villas', count: '486' },
-  { name: 'Penthouses', count: '312' },
-  { name: 'Townhouses', count: '298' },
-  { name: 'Waterfront', count: '620' },
-  { name: 'Off-Plan', count: '421' }
-]
+const categoryPills = computed(() => {
+  const allCount = catalogProperties.value.length
+  const pills = [
+    { name: 'All Properties', count: allCount.toLocaleString() }
+  ]
+  const typesMap = {}
+  catalogProperties.value.forEach(p => {
+    const t = p.type || 'Other'
+    typesMap[t] = (typesMap[t] || 0) + 1
+  })
+  Object.entries(typesMap).forEach(([t, count]) => {
+    pills.push({ name: t, count: count.toLocaleString() })
+  })
+  return pills
+})
 
 const selectedCategory = ref('All Properties')
 
-const featureCheckboxes = [
-  { name: 'Waterfront', count: '1,248' },
-  { name: 'With Private Pool', count: '892' },
-  { name: 'Sea View', count: '1,430' },
-  { name: 'Near Metro', count: '756' },
-  { name: 'Off-Plan', count: '512' },
-  { name: 'Ready to Move', count: '2,341' },
-  { name: 'Furnished', count: '1,102' }
-]
+const featureCheckboxes = computed(() => {
+  const features = [
+    { name: 'Furnished', key: 'furnished' },
+    { name: 'Waterfront', key: 'waterfront' },
+    { name: 'Sea View', key: 'sea' },
+    { name: 'Near Metro', key: 'metro' },
+    { name: 'Ready to Move', key: 'ready' }
+  ]
+  return features.map(f => {
+    const count = catalogProperties.value.filter(p => {
+      const text = `${p.title} ${p.description || ''} ${p.summary || ''} ${p.is_furnished || ''}`.toLowerCase()
+      return text.includes(f.key)
+    }).length
+    return {
+      name: f.name,
+      count: count.toLocaleString()
+    }
+  })
+})
 
 const filterState = ref({
   keyword: '',
@@ -397,147 +428,42 @@ const viewMode = ref('grid')
 const sortBy = ref('ai-match')
 const currentPage = ref(1)
 const perPage = ref(8)
-const isLoading = ref(false)
+const isLoading = ref(true)
+const popularAreasList = ref([])
 
-// 8 Exact Luxury Property Mock Data Items matching screenshot
-const catalogProperties = ref([])
-/* const showcaseRentalProperties = [
-  {
-    id: 101,
-    title: 'St. Regis Residences',
-    location: 'Downtown Dubai',
-    area: 'Downtown Dubai',
-    price: 'AED 8,500,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,850',
-    type: 'Apartment',
-    matchScore: 95,
-    image: '/images/photo-1512917774080-9991f1c4c750.jfif',
-    description: 'Ultra-luxury high-rise residences with panoramic views of Burj Khalifa and Dubai Opera.'
-  },
-  {
-    id: 102,
-    title: 'Palm Jumeirah Villa',
-    location: 'Palm Jumeirah',
-    area: 'Palm Jumeirah',
-    price: 'AED 25,000,000',
-    beds: 5,
-    baths: 6,
-    sqft: '7,200',
-    type: 'Villa',
-    matchScore: 92,
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    description: 'Signature beachfront villa with private pool, private beach access, and lush landscaping.'
-  },
-  {
-    id: 103,
-    title: 'Bluewaters Residences',
-    location: 'Bluewaters Island',
-    area: 'Bluewaters Island',
-    price: 'AED 6,200,000',
-    beds: 3,
-    baths: 4,
-    sqft: '2,100',
-    type: 'Apartment',
-    matchScore: 88,
-    image: '/images/photo-1582719478250-c89cae4dc85b.avif',
-    description: 'Modern island waterfront living directly adjacent to Ain Dubai wheel with resort amenities.'
-  },
-  {
-    id: 104,
-    title: "One Za'abeel Penthouse",
-    location: "Za'abeel, Dubai",
-    area: "Za'abeel",
-    price: 'AED 45,000,000',
-    beds: 4,
-    baths: 5,
-    sqft: '5,800',
-    type: 'Penthouse',
-    matchScore: 93,
-    image: '/images/photo-1618221195710-dd6b41faaea6.jfif',
-    description: 'Iconic cantilever penthouse featuring 360-degree skyline views and cantilever pool access.'
-  },
-  {
-    id: 105,
-    title: 'Marina Shores',
-    location: 'Dubai Marina',
-    area: 'Dubai Marina',
-    price: 'AED 4,800,000',
-    beds: 2,
-    baths: 3,
-    sqft: '1,650',
-    type: 'Apartment',
-    matchScore: 87,
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    description: 'Prime waterfront residential tower situated in the heart of Dubai Marina promenade.'
-  },
-  {
-    id: 106,
-    title: 'Address Beach Resort',
-    location: 'JBR (Jumeirah Beach Residence)',
-    area: 'JBR',
-    price: 'AED 7,950,000',
-    beds: 3,
-    baths: 4,
-    sqft: '2,300',
-    type: 'Apartment',
-    matchScore: 93,
-    image: '/images/photo-1600210492486-724fe5c67fb0.jfif',
-    description: 'Five-star hotel apartment with direct beach access and record-breaking rooftop infinity pool.'
-  },
-  {
-    id: 107,
-    title: 'Vida Residences',
-    location: 'Dubai Creek Harbour',
-    area: 'Dubai Creek Harbour',
-    price: 'AED 3,200,000',
-    beds: 2,
-    baths: 2,
-    sqft: '1,200',
-    type: 'Apartment',
-    matchScore: 85,
-    image: '/images/photo-1613977257363-707ba9348227.jfif',
-    description: 'Contemporary sanctuary overlooking the Dubai Creek Tower and Ras Al Khor Wildlife Sanctuary.'
-  },
-  {
-    id: 108,
-    title: 'Emirates Hills Villa',
-    location: 'Emirates Hills',
-    area: 'Emirates Hills',
-    price: 'AED 28,000,000',
-    beds: 6,
-    baths: 7,
-    sqft: '8,500',
-    type: 'Villa',
-    matchScore: 91,
-    image: '/images/photo-1600585154340-be6161a56a0c.avif',
-    description: 'Palatial estate mansion surrounded by golf course greens in Dubai’s most exclusive enclave.'
+const toCatalogProperty = (property) => {
+  const norm = property.specs ? property : propertyService.normalizeProperty(property)
+  return {
+    ...norm,
+    location: norm.location || norm.area || 'Dubai, UAE',
+    price: Number(norm.price) || 0,
+    sqft: norm.area_sqft ? Number(norm.area_sqft).toLocaleString() : (norm.size || 'N/A'),
+    matchScore: norm.matchScore || norm.aiMatch || 88,
+    image: norm.image || '/images/photo-1512917774080-9991f1c4c750.jfif'
   }
-] */
-
-// Prices are supplied by the API. The array remains empty until data arrives.
-const fallbackYearlyPrices = [480000, 1200000, 390000, 1800000, 260000, 420000, 210000, 1500000]
-catalogProperties.value = catalogProperties.value.map((property, index) => ({
-  ...property,
-  price: fallbackYearlyPrices[index],
-  rent_frequency: 'yearly',
-  listingPurpose: 'rent',
-  isForRent: true
-}))
-
-const isRental = (property) => {
-  const purpose = String(property.listingPurpose || property.purpose || property.listing_type || '').toLowerCase()
-  return property.isForRent === true || purpose.includes('rent') || Boolean(property.rent_frequency)
 }
 
-const toCatalogProperty = (property) => ({
-  ...property,
-  location: property.location || property.area || 'Dubai, UAE',
-  price: Number(property.price) || 0,
-  sqft: property.area_sqft ? Number(property.area_sqft).toLocaleString() : (property.size || 'N/A'),
-  matchScore: property.matchScore || property.aiMatch || 88
+const catalogProperties = ref([])
+
+const availableLocations = computed(() => {
+  const set = new Set()
+  catalogProperties.value.forEach(p => {
+    const loc = p.location || p.area
+    if (loc && typeof loc === 'string') {
+      const clean = loc.split(',')[0].trim()
+      if (clean) set.add(clean)
+    }
+  })
+  popularAreasList.value.forEach(a => {
+    if (a.name) set.add(a.name)
+  })
+  return Array.from(set)
 })
+
+const isRental = (property) => {
+  const purpose = String(property.action_type || property.listingPurpose || property.purpose || property.listing_type || '').toLowerCase()
+  return purpose === 'rent' || property.isForRent === true || Boolean(property.rent_frequency)
+}
 
 const formatRentPrice = (property) => {
   if (typeof property.price === 'string' && property.price.toUpperCase().includes('AED')) return property.price
@@ -552,11 +478,25 @@ const formatRentPeriod = (property) => {
 const loadRentalProperties = async () => {
   isLoading.value = true
   try {
-    const response = await propertyService.getProperties({ purpose: 'rent', listing_type: 'rent', per_page: 100 })
-    const rentals = (response.data || []).filter(isRental).map(toCatalogProperty)
-    if (rentals.length) catalogProperties.value = rentals
+    const langKey = isRtl.value ? 'ar' : 'en'
+    const [propRes, areasRes] = await Promise.allSettled([
+      propertyService.getProperties(),
+      propertyService.getPopularAreas(langKey)
+    ])
+
+    if (propRes.status === 'fulfilled' && propRes.value?.data) {
+      const rentals = propRes.value.data.filter(isRental).map(toCatalogProperty)
+      catalogProperties.value = rentals
+    } else {
+      catalogProperties.value = []
+    }
+
+    if (areasRes.status === 'fulfilled' && areasRes.value?.data) {
+      popularAreasList.value = areasRes.value.data
+    }
   } catch (error) {
-    console.warn('Unable to load rental properties from the API.', error)
+    console.warn('Unable to load rental properties from API:', error?.message)
+    catalogProperties.value = []
   } finally {
     isLoading.value = false
   }
@@ -564,6 +504,7 @@ const loadRentalProperties = async () => {
 
 const selectCategory = (catName) => {
   selectedCategory.value = catName
+  currentPage.value = 1
 }
 
 const resetFilters = () => {
@@ -578,10 +519,12 @@ const resetFilters = () => {
   }
   selectedCategory.value = 'All Properties'
   sortBy.value = 'ai-match'
+  currentPage.value = 1
 }
 
 const applyFilters = () => {
-  showToast('Filters applied to catalog!')
+  currentPage.value = 1
+  showToast(isRtl.value ? 'تم تطبيق الفلاتر!' : 'Filters applied to catalog!')
 }
 
 const filteredList = computed(() => {
@@ -593,18 +536,77 @@ const filteredList = computed(() => {
     else if (cat.includes('villa')) list = list.filter(p => p.type === 'Villa')
     else if (cat.includes('penthouse')) list = list.filter(p => p.type === 'Penthouse')
     else if (cat.includes('townhouse')) list = list.filter(p => p.type === 'Townhouse')
+    else if (cat.includes('waterfront')) list = list.filter(p => (p.location && (p.location.includes('Marina') || p.location.includes('Palm') || p.location.includes('Island') || p.location.includes('Beach') || p.location.includes('Creek'))) || (p.tags && p.tags.some(t => t.toLowerCase().includes('water'))))
+    else if (cat.includes('off-plan')) list = list.filter(p => p.isOffPlan || p.property_condition === 'off_plan')
   }
 
   if (filterState.value.location !== 'All') {
-    list = list.filter(p => p.location.includes(filterState.value.location))
+    const loc = filterState.value.location.toLowerCase()
+    list = list.filter(p => (p.location || '').toLowerCase().includes(loc) || (p.area || '').toLowerCase().includes(loc))
+  }
+
+  if (filterState.value.propertyType !== 'All') {
+    list = list.filter(p => (p.type || '').toLowerCase() === filterState.value.propertyType.toLowerCase())
+  }
+
+  if (filterState.value.bedrooms !== 'Any') {
+    if (filterState.value.bedrooms === '5+') {
+      list = list.filter(p => Number(p.beds) >= 5)
+    } else {
+      list = list.filter(p => Number(p.beds) === Number(filterState.value.bedrooms))
+    }
+  }
+
+  if (filterState.value.priceRange !== 'Any') {
+    if (filterState.value.priceRange === 'under-100k') list = list.filter(p => (Number(p.price) || 0) < 100000)
+    else if (filterState.value.priceRange === '100k-250k') list = list.filter(p => (Number(p.price) || 0) >= 100000 && (Number(p.price) || 0) <= 250000)
+    else if (filterState.value.priceRange === '250k-500k') list = list.filter(p => (Number(p.price) || 0) >= 250000 && (Number(p.price) || 0) <= 500000)
+    else if (filterState.value.priceRange === '500k-plus') list = list.filter(p => (Number(p.price) || 0) > 500000)
+  }
+
+  if (filterState.value.lifestyle !== 'Any') {
+    const life = filterState.value.lifestyle.toLowerCase()
+    list = list.filter(p => (p.tags && p.tags.some(t => t.toLowerCase().includes(life))) || (p.description && p.description.toLowerCase().includes(life)) || (p.summary && p.summary.toLowerCase().includes(life)))
+  }
+
+  if (filterState.value.selectedFeatures.length > 0) {
+    const selected = filterState.value.selectedFeatures.map(f => f.toLowerCase())
+    list = list.filter(p => {
+      const allText = `${p.title} ${p.description} ${p.summary} ${(p.tags || []).join(' ')}`.toLowerCase()
+      return selected.some(f => allText.includes(f))
+    })
   }
 
   if (filterState.value.keyword.trim()) {
     const kw = filterState.value.keyword.toLowerCase().trim()
-    list = list.filter(p => `${p.title} ${p.location} ${p.type}`.toLowerCase().includes(kw))
+    list = list.filter(p => `${p.title} ${p.location} ${p.type} ${p.description || ''}`.toLowerCase().includes(kw))
+  }
+
+  if (sortBy.value === 'price-asc') {
+    list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))
+  } else if (sortBy.value === 'price-desc') {
+    list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0))
+  } else if (sortBy.value === 'newest') {
+    list.sort((a, b) => (b.id || 0) - (a.id || 0))
+  } else {
+    list.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
   }
 
   return list
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredList.value.length / perPage.value)))
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const maxButtons = 5
+  let start = Math.max(1, currentPage.value - 2)
+  let end = Math.min(totalPages.value, start + maxButtons - 1)
+  if (end - start < maxButtons - 1) {
+    start = Math.max(1, end - maxButtons + 1)
+  }
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
 })
 
 const paginatedList = computed(() => {
@@ -887,5 +889,83 @@ onUnmounted(() => {
 
 .rent-btn-view:hover i {
   transform: translateX(3px);
+}
+
+/* Skeleton and Empty State Styles */
+.rent-skeleton-card {
+  animation: pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.rent-skeleton-thumb {
+  height: 190px;
+  background: linear-gradient(90deg, #132238 25%, #1d3354 50%, #132238 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.rent-sk-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #132238 25%, #1d3354 50%, #132238 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+.rent-sk-badge { width: 35%; height: 16px; margin-bottom: 12px; }
+.rent-sk-title { width: 85%; height: 16px; }
+.rent-sk-loc { width: 55%; }
+.rent-sk-price { width: 45%; height: 18px; margin: 12px 0 8px; }
+.rent-sk-specs { width: 75%; height: 14px; }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.no-properties-box {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  background: rgba(13, 27, 46, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  min-height: 280px;
+}
+.no-properties-box i {
+  font-size: 3rem;
+  color: #00d2ff;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+.no-properties-box h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.no-properties-box p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  max-width: 440px;
+  margin-bottom: 20px;
+}
+.btn-clear-empty-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #00d2ff, #0066ff);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-clear-empty-filter:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 210, 255, 0.35);
 }
 </style>

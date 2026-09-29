@@ -499,7 +499,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
-import { propertyService, DEFAULT_PROPERTIES } from '../services/propertyService'
+import { propertyService } from '../services/propertyService'
 import { favoritesService } from '../services/favoritesService'
 import { authService } from '../services/authService'
 import PropertyDetailsModal from './PropertyDetailsModal.vue'
@@ -676,18 +676,18 @@ const runSearch = async () => {
       } else {
         // Fall back to all properties
         const res = await propertyService.getProperties({ per_page: 50 })
-        allResults.value = res.data || DEFAULT_PROPERTIES
+        allResults.value = res.data || []
       }
     } else {
       // No text query — load all properties
       const res = await propertyService.getProperties({ per_page: 50 })
-      allResults.value = res.data || DEFAULT_PROPERTIES
+      allResults.value = res.data || []
     }
 
     canLoadMore.value = allResults.value.length >= 50
   } catch (err) {
     console.warn('Search error:', err)
-    allResults.value = DEFAULT_PROPERTIES
+    allResults.value = []
     canLoadMore.value = false
   } finally {
     isLoading.value = false
@@ -792,11 +792,11 @@ onMounted(async () => {
     try {
       isLoading.value = true
       const res = await propertyService.getProperties({ per_page: perPage })
-      allResults.value = res.data || DEFAULT_PROPERTIES
+      allResults.value = res.data || []
       hasSearched.value = false
       canLoadMore.value = (res.data || []).length >= perPage
     } catch {
-      allResults.value = DEFAULT_PROPERTIES
+      allResults.value = []
     } finally {
       isLoading.value = false
     }
@@ -816,6 +816,11 @@ onUnmounted(() => {
   background: var(--bg-base, #070d19);
   color: var(--text-primary, #f0f6ff);
   font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+}
+
+[data-theme="light"] .search-page-root {
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 /* ========== HERO ========== */
@@ -1544,7 +1549,7 @@ onUnmounted(() => {
   padding: 12px 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -1599,29 +1604,28 @@ onUnmounted(() => {
 
 .clear-all-btn:hover { background: rgba(239, 68, 68, 0.1); }
 
+
 .filters-right-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-inline-start: auto;
 }
 
 .strip-filter-field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
 .strip-filter-field label {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: #64748b;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .strip-select-wrap {
@@ -1633,16 +1637,20 @@ onUnmounted(() => {
 .strip-select {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #f0f6ff;
-  font-size: 12px;
-  padding: 5px 24px 5px 10px;
+  font-size: 14px;
+  padding: 10px 36px 10px 16px;
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
   outline: none;
   font-family: inherit;
   transition: border-color 0.2s;
+}
+
+[dir="rtl"] .strip-select {
+  padding: 10px 16px 10px 36px;
 }
 
 .strip-select:focus { border-color: rgba(0, 210, 255, 0.4); }
@@ -1658,8 +1666,8 @@ onUnmounted(() => {
 
 .strip-select-wrap i {
   position: absolute;
-  inset-inline-end: 8px;
-  font-size: 9px;
+  inset-inline-end: 14px;
+  font-size: 12px;
   color: #64748b;
   pointer-events: none;
 }
@@ -1668,8 +1676,9 @@ onUnmounted(() => {
   display: flex;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  align-self: flex-end;
 }
 
 [data-theme="light"] .view-mode-toggle { background: #f8fafc; border-color: #e2e8f0; }
@@ -1678,9 +1687,9 @@ onUnmounted(() => {
   background: none;
   border: none;
   color: #64748b;
-  padding: 7px 12px;
+  padding: 10px 18px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 16px;
   transition: all 0.2s;
 }
 

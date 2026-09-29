@@ -1660,38 +1660,57 @@ const handleSubmit = async () => {
   try {
     const payload = new FormData()
     payload.append('title', form.title)
-    payload.append('property_type', form.propertyType)
+    
+    // Map property_type to type_id for backend (e.g. 1 for apartment)
+    let typeId = 1
+    if (form.propertyType === 'villa') typeId = 2
+    else if (form.propertyType === 'townhouse') typeId = 3
+    else if (form.propertyType === 'penthouse') typeId = 4
+    else if (form.propertyType === 'office') typeId = 5
+    payload.append('type_id', typeId)
+    
     payload.append('listing_type', form.listingType)
     payload.append('price', form.price)
-    payload.append('currency', 'AED')
-    payload.append('rent_frequency', form.rentFrequency)
-    payload.append('status', form.status)
-    payload.append('completion_date', form.completionDate)
-    payload.append('size', form.size)
+    
+    if (form.listingType === 'rent') {
+      payload.append('rent_frequency', form.rentFrequency)
+    }
+
+    payload.append('property_condition', form.status) // 'ready' or 'off_plan'
+    
+    if (form.status === 'off_plan' && form.completionDate) {
+      payload.append('completion_date', form.completionDate)
+    }
+    
     payload.append('area_sqft', form.size)
     payload.append('bedrooms', form.bedrooms)
     payload.append('bathrooms', form.bathrooms)
-    payload.append('furnishing', form.furnishing)
     payload.append('description', form.description)
-    payload.append('district', form.district)
-    payload.append('area', form.district)
+    
+    // Map district to neighborhood_id (mocking a mapping)
+    payload.append('neighborhood_id', 1) 
+    
     payload.append('address', form.address)
     payload.append('latitude', form.lat)
     payload.append('longitude', form.lng)
-    payload.append('amenities', JSON.stringify(form.amenities))
-    payload.append('video_url', form.videoUrl)
-    payload.append('agent_name', form.agentName)
-    payload.append('agent_phone', form.agentPhone)
-    payload.append('agent_email', form.agentEmail)
-
-    if (coverFile.value) {
-      payload.append('primary_image', coverFile.value)
-      payload.append('photo', coverFile.value)
-      payload.append('image', coverFile.value)
+    
+    // Append features[]
+    if (form.amenities && form.amenities.length) {
+      form.amenities.forEach(am => {
+        payload.append('features[]', am)
+      })
     }
 
-    galleryFiles.value.forEach((file, idx) => {
-      payload.append(`images[${idx}]`, file)
+    if (form.videoUrl) {
+      payload.append('video_url', form.videoUrl)
+    }
+
+    if (coverFile.value) {
+      payload.append('cover_image', coverFile.value)
+    }
+
+    galleryFiles.value.forEach((file) => {
+      payload.append('gallery_images[]', file)
     })
 
     // Send to backend

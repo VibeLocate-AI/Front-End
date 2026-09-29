@@ -5,6 +5,13 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 3000,
-    open: false
+    open: false,
+    proxy: {
+      '/api': {
+        target: 'https://vibelocate-laravel.onrender.com',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   }
 })
