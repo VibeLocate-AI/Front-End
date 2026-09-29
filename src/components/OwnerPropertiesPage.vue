@@ -434,130 +434,6 @@ const typeFilter = ref('all')
 const toastMessage = ref('')
 const inquiriesSection = ref(null)
 
-// Fallback luxury Dubai properties
-const fallbackProperties = [
-  {
-    id: 1,
-    title: 'The Royal Atlantis Sky Villa',
-    location: 'Palm Jumeirah, Dubai',
-    price: 25000000,
-    beds: 5,
-    baths: 6,
-    size: '7,200',
-    status: 'active',
-    featured: true,
-    image: '/images/photo-1600596542815-ffad4c1539a9.jfif',
-    views: 2450,
-    saves: 320,
-    leads: 28,
-    match: 98,
-    saved: true
-  },
-  {
-    id: 2,
-    title: 'Marina Shores Residence',
-    location: 'Dubai Marina, Dubai',
-    price: 4800000,
-    beds: 3,
-    baths: 4,
-    size: '1,650',
-    status: 'active',
-    featured: false,
-    image: '/images/photo-1512917774080-9991f1c4c750.jfif',
-    views: 1892,
-    saves: 214,
-    leads: 18,
-    match: 92,
-    saved: false
-  },
-  {
-    id: 3,
-    title: 'Jumeirah Bay Island Mansion',
-    location: 'Jumeirah Bay, Dubai',
-    price: 12500000,
-    beds: 4,
-    baths: 5,
-    size: '5,200',
-    status: 'pending',
-    featured: true,
-    image: '/images/photo-1600585154340-be6161a56a0c.avif',
-    views: 856,
-    saves: 96,
-    leads: 12,
-    match: 88,
-    saved: false
-  },
-  {
-    id: 4,
-    title: 'Emaar Beachfront Waterfront Haven',
-    location: 'Emaar Beachfront, Dubai',
-    price: 3200000,
-    beds: 2,
-    baths: 3,
-    size: '1,400',
-    status: 'rented',
-    featured: false,
-    image: '/images/photo-1545324418-cc1a3fa10c00.avif',
-    views: 1320,
-    saves: 165,
-    leads: 14,
-    match: 91,
-    saved: true,
-    isForRent: true
-  },
-  {
-    id: 5,
-    title: 'Arabian Ranches Family Villa',
-    location: 'Arabian Ranches, Dubai',
-    price: 6800000,
-    beds: 4,
-    baths: 5,
-    size: '4,100',
-    status: 'draft',
-    featured: false,
-    image: '/images/photo-1613977257363-707ba9348227.jfif',
-    views: 420,
-    saves: 48,
-    leads: 6,
-    match: 76,
-    saved: false
-  },
-  {
-    id: 6,
-    title: 'Downtown Views Luxury Apartment',
-    location: 'Downtown Dubai',
-    price: 5900000,
-    beds: 3,
-    baths: 4,
-    size: '1,980',
-    status: 'active',
-    featured: false,
-    image: '/images/photo-1600210492486-724fe5c67fb0.jfif',
-    views: 3240,
-    saves: 412,
-    leads: 33,
-    match: 94,
-    saved: true
-  },
-  {
-    id: 7,
-    title: 'Dubai Hills Estate Signature Villa',
-    location: 'Dubai Hills Estate, Dubai',
-    price: 9750000,
-    beds: 5,
-    baths: 6,
-    size: '4,800',
-    status: 'sold',
-    featured: true,
-    image: '/images/photo-1512917774080-9991f1c4c750 (1).jfif',
-    views: 1980,
-    saves: 230,
-    leads: 21,
-    match: 89,
-    saved: false
-  }
-]
-
 const properties = ref([])
 
 // Status Tabs definition with localized labels & badge colors
@@ -764,13 +640,22 @@ const toggleSaved = (item) => {
   )
 }
 
-const deleteProperty = (item) => {
+const deleteProperty = async (item) => {
   const confirmMsg = isRtl.value
     ? `هل أنت متأكد من حذف العقار "${item.title}"؟`
     : `Are you sure you want to delete "${item.title}"?`
 
   if (window.confirm(confirmMsg)) {
     properties.value = properties.value.filter(p => p.id !== item.id)
+
+    // Call DELETE /api/my-properties/{id} on backend if authenticated
+    if (authService.isAuthenticated() && item.id) {
+      try {
+        await propertyService.deleteMyProperty(item.id)
+      } catch (err) {
+        console.warn('Backend delete my property note:', err?.message)
+      }
+    }
 
     // Also remove from user listings in localStorage if present
     try {
@@ -809,10 +694,9 @@ const logout = async () => {
 onMounted(async () => {
   currentUser.value = readCurrentUser()
 
-  // 1. Start with fallback list
-  let loadedList = [...fallbackProperties]
+  let loadedList = []
 
-  // 2. Read any user-created listings from localStorage
+  // 1. Read any user-created listings from localStorage
   try {
     const rawUserListings = localStorage.getItem('vibe_user_listings')
     if (rawUserListings) {
@@ -822,21 +706,20 @@ onMounted(async () => {
           ...u,
           id: u.id || Date.now(),
           status: u.status || 'active',
-          views: u.views || 142,
-          saves: u.saves || 12,
-          leads: u.leads || 3,
+          views: u.views || 0,
+          saves: u.saves || 0,
+          leads: u.leads || 0,
           match: u.match || 95,
-          price: typeof u.priceAed !== 'undefined' ? u.priceAed : (Number(String(u.price).replace(/[^0-9]/g, '')) || 2500000)
+          price: typeof u.priceAed !== 'undefined' ? u.priceAed : (Number(String(u.price).replace(/[^0-9]/g, '')) || 0)
         }))
-        // Prepend user listings so they appear first!
-        loadedList = [...normalizedUserListings, ...loadedList]
+        loadedList = [...normalizedUserListings]
       }
     }
   } catch (err) {
     console.warn('Could not read user listings from localStorage', err)
   }
 
-  // 3. Sync saved state from favoritesService
+  // 2. Sync saved state from favoritesService
   try {
     const savedIds = new Set(favoritesService.savedItems.value.map(s => String(s.id)))
     loadedList.forEach(item => {
@@ -848,28 +731,16 @@ onMounted(async () => {
 
   properties.value = loadedList
 
-  // 4. Try fetching latest from Backend API
+  // 3. Try fetching latest from Backend API via getMyProperties()
   try {
-    const response = await propertyService.getProperties({ per_page: 30 })
-    if (response?.data?.length) {
-      const apiProps = response.data.map(p => ({
-        ...p,
-        status: p.moderation_status || p.status || 'active',
-        featured: Boolean(p.is_featured),
-        views: Number(p.views || 120),
-        saves: Number(p.saves || 15),
-        leads: Number(p.leads || 2),
-        match: p.aiMatch || 92,
-        size: p.size || p.area_sqft || '1,800',
-        saved: favoritesService.isSaved(p.id)
-      }))
-
-      // Combine user listings + API properties
-      const userCustom = properties.value.filter(p => String(p.id).length > 10)
-      properties.value = [...userCustom, ...apiProps]
+    if (authService.isAuthenticated()) {
+      const myRes = await propertyService.getMyProperties()
+      if (myRes?.success && Array.isArray(myRes.data) && myRes.data.length > 0) {
+        properties.value = [...loadedList, ...myRes.data]
+      }
     }
   } catch (error) {
-    console.warn('Backend API note: using cached/fallback properties list.', error)
+    console.warn('Backend API getMyProperties note:', error)
   }
 })
 </script>

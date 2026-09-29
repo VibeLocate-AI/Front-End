@@ -1,21 +1,34 @@
 import { apiClient } from './api'
 
-const extractSummary = (payload = {}) => {
+const extractReviewData = (payload = {}) => {
   const data = payload?.data || payload
   return {
     average: Number(data.average_rating ?? data.rating_average ?? data.average ?? 0),
     count: Number(data.ratings_count ?? data.reviews_count ?? data.count ?? 0),
-    userRating: Number(data.user_rating?.rating ?? data.user_rating ?? 0),
-    userComment: data.user_rating?.comment || data.user_comment || ''
+    userRating: Number(data.rating ?? data.user_rating?.rating ?? 0),
+    userComment: data.review ?? data.user_rating?.review ?? data.comment ?? ''
   }
 }
 
 export const propertyRatingService = {
-  async getSummary(propertyId) {
-    return extractSummary(await apiClient.get(`/properties/${propertyId}/ratings`))
+  // Get current user's review for a property
+  async getReview(propertyId) {
+    return extractReviewData(await apiClient.get(`/properties/${propertyId}/review`))
   },
-  async submit(propertyId, { rating, comment }) {
-    return extractSummary(await apiClient.post(`/properties/${propertyId}/ratings`, { rating, comment }))
+  
+  // Submit a new review
+  async submitReview(propertyId, { rating, review }) {
+    return extractReviewData(await apiClient.post(`/properties/${propertyId}/review`, { rating, review }))
+  },
+
+  // Update an existing review
+  async updateReview(propertyId, { rating, review }) {
+    return extractReviewData(await apiClient.put(`/properties/${propertyId}/review`, { rating, review }))
+  },
+
+  // Delete a review
+  async deleteReview(propertyId) {
+    return await apiClient.delete(`/properties/${propertyId}/review`)
   }
 }
 

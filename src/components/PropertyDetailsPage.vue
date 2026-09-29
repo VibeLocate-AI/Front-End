@@ -95,6 +95,7 @@
           <article class="panel insights">
             <div class="panel-head"><h2><i class="fa-solid fa-wand-magic-sparkles"></i> AI Property Insights</h2><span>VibeLocate <b>AI</b></span></div>
             <div class="scores"><div v-for="score in scores" :key="score.label"><div class="ring" :style="{ '--score': score.value, '--color': score.color }">{{ score.value }}%</div><span>{{ score.label }}</span></div></div>
+            <button class="primary vibe-btn" @click="generateVibe" :disabled="generatingVibe" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 8px;"><i :class="generatingVibe ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-file-pdf'"></i> {{ generatingVibe ? tx('Generating...', 'جارٍ التحضير...') : tx('Generate Vibe Report', 'استخراج تقرير فايب') }}</button>
           </article>
           <article class="panel love"><div class="panel-head"><h2><i class="fa-solid fa-heart"></i> Why You'll Love This Property</h2></div><p v-for="reason in loveReasons" :key="reason"><i class="fa-solid fa-heart"></i>{{ reason }}</p></article>
         </aside>
@@ -136,6 +137,8 @@ const ratingComment = ref('')
 const ratingAverage = ref(4.7)
 const ratingCount = ref(18)
 const ratingSubmitting = ref(false)
+const hasUserReviewed = ref(false)
+const generatingVibe = ref(false)
 const toast = ref('')
 const propertyMap = ref(null)
 let mapInstance = null
@@ -183,9 +186,10 @@ const nextImage = () => { activeIndex.value = (activeIndex.value + 1) % gallery.
 const notify = message => { toast.value = message; setTimeout(() => { toast.value = '' }, 2600) }
 const toggleFavorite = () => { favoritesService.toggleSave(property.value); notify(isSaved.value ? 'Property saved' : 'Property removed from saved list') }
 const ratingStorageKey = computed(() => `vibelocate:property-rating:${property.value?.id || route.params.id}`)
-const applyRating = summary => { if (summary.average) ratingAverage.value = summary.average; if (Number.isFinite(summary.count) && summary.count >= 0) ratingCount.value = summary.count; if (summary.userRating) selectedRating.value = summary.userRating; if (summary.userComment) ratingComment.value = summary.userComment }
-const loadRating = async () => { try { const saved = JSON.parse(localStorage.getItem(ratingStorageKey.value) || 'null'); if (saved) applyRating(saved) } catch {} if (!property.value?.id) return; try { applyRating(await propertyRatingService.getSummary(property.value.id)) } catch (error) { console.warn('Could not load property ratings from API.', error?.message) } }
-const submitRating = async () => { if (!selectedRating.value || ratingSubmitting.value) return; ratingSubmitting.value = true; try { let summary; if (property.value?.id) summary = await propertyRatingService.submit(property.value.id, { rating: selectedRating.value, comment: ratingComment.value.trim() }); if (summary) applyRating(summary); else throw new Error('Missing property id'); localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value })); notify(tx('Thank you for rating this property!', 'شكراً لتقييمك هذا العقار!')) } catch (error) { const average = Number(((ratingAverage.value * ratingCount.value + selectedRating.value) / (ratingCount.value + 1)).toFixed(1)); ratingAverage.value = average; ratingCount.value += 1; localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average, count: ratingCount.value })); notify(tx('Your rating was saved locally until the server is available.', 'تم حفظ تقييمك محلياً حتى تتوفر الخدمة.')) } finally { ratingSubmitting.value = false } }
+const applyRating = summary => { if (summary.average) ratingAverage.value = summary.average; if (Number.isFinite(summary.count) && summary.count >= 0) ratingCount.value = summary.count; if (summary.userRating) { selectedRating.value = summary.userRating; hasUserReviewed.value = true; } if (summary.userComment) ratingComment.value = summary.userComment }
+const loadRating = async () => { try { const saved = JSON.parse(localStorage.getItem(ratingStorageKey.value) || 'null'); if (saved) applyRating(saved) } catch {} if (!property.value?.id) return; try { applyRating(await propertyRatingService.getReview(property.value.id)) } catch (error) { console.warn('Could not load property ratings from API.', error?.message) } }
+const submitRating = async () => { if (!selectedRating.value || ratingSubmitting.value) return; ratingSubmitting.value = true; try { let summary; if (property.value?.id) { if (hasUserReviewed.value) { summary = await propertyRatingService.updateReview(property.value.id, { rating: selectedRating.value, review: ratingComment.value.trim() }); } else { summary = await propertyRatingService.submitReview(property.value.id, { rating: selectedRating.value, review: ratingComment.value.trim() }); hasUserReviewed.value = true; } } if (summary) applyRating(summary); else throw new Error('Missing property id'); localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value, userRating: selectedRating.value, userComment: ratingComment.value })); notify(tx('Thank you for rating this property!', 'شكراً لتقييمك هذا العقار!')) } catch (error) { if (!hasUserReviewed.value) { ratingAverage.value = Number(((ratingAverage.value * ratingCount.value + selectedRating.value) / (ratingCount.value + 1)).toFixed(1)); ratingCount.value += 1; hasUserReviewed.value = true; } localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value, userRating: selectedRating.value, userComment: ratingComment.value })); notify(tx('Your rating was saved locally until the server is available.', 'تم حفظ تقييمك محلياً حتى تتوفر الخدمة.')) } finally { ratingSubmitting.value = false } }
+const generateVibe = async () => { if (!property.value || generatingVibe.value) return; generatingVibe.value = true; try { const coords = coordinates.value; await propertyService.generateVibeReport(coords[0], coords[1]); notify(tx('Vibe Report generated and sent to your email!', 'تم استخراج التقرير وإرساله إلى بريدك الإلكتروني!')) } catch (error) { notify(tx('Failed to generate report, please try again.', 'حدث خطأ أثناء إعداد التقرير، يرجى المحاولة مرة أخرى.')) } finally { generatingVibe.value = false } }
 const bookViewing = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push(`/property/${property.value?.id || route.params.id}/booking`) }
 const contactAgent = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push('/contact-agent') }
 const callAgent = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push({ path: '/contact-agent', query: { mode: 'call' } }) }
@@ -226,7 +230,14 @@ onMounted(async () => {
   try {
     if (/^\d+$/.test(String(route.params.id))) { const response = await propertyService.getPropertyById(route.params.id); if (response?.data) property.value = response.data }
   } catch (error) { console.warn('Using cached property details.', error) }
-  try { const response = await propertyService.getProperties(); similarProperties.value = (response.data || []).filter(item => String(item.id) !== String(property.value?.id)).slice(0, 3) } catch {}
+  try {
+    const response = await propertyService.getNearbyProperties(property.value?.id || route.params.id, 5)
+    similarProperties.value = (response.data || []).slice(0, 3)
+    if (similarProperties.value.length === 0) {
+      const fallbackResponse = await propertyService.getProperties();
+      similarProperties.value = (fallbackResponse.data || []).filter(item => String(item.id) !== String(property.value?.id)).slice(0, 3)
+    }
+  } catch {}
   loading.value = false
   if (property.value) { loadRating(); initializeMap() }
 })

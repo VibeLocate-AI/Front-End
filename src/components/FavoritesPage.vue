@@ -47,3 +47,64 @@ function view(p){sessionStorage.setItem('vibelocate:selected-property',JSON.stri
 @media(max-width:760px){.fav-header{padding:0 14px}.mobile-menu{display:block}.fav-header nav{display:none;position:absolute;top:70px;left:0;right:0;background:#031426;z-index:20;padding:17px;flex-direction:column;align-items:flex-start}.fav-header nav.open{display:flex}.actions{margin-left:auto}.list{display:none}.hero{height:430px;padding:30px 18px}.hero-heart{width:65px;height:65px}.hero h1{font-size:30px}.hero-note{display:none}.stats{left:18px;right:18px;bottom:18px;grid-template-columns:1fr 1fr}.content{padding:17px}.toolbar{align-items:stretch;gap:12px;flex-direction:column}.tabs{overflow:auto}.tabs button{white-space:nowrap}.cards-grid{grid-template-columns:1fr}.image{height:180px}}
 @media(max-width:450px){.brand strong,.brand>b,.actions .badge{display:none}.hero-title{gap:14px}.hero h1{font-size:25px}.hero p{font-size:12px}.stats>div{padding:8px}.stats i{width:34px;height:34px}.specs{gap:15px}.card-foot{gap:10px}}
 </style>
+
+<style>
+/* Light Theme Overrides for Favorites Page */
+[data-theme="light"] .favorites-page {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%), url('/images/about-hero.png') center 50% / cover !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero h1 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero h1 strong {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero p {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-title > div:last-child > span {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-heart {
+  background: rgba(2, 132, 199, 0.1) !important;
+  border-color: rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] .favorites-page .hero-heart i {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-note {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .favorites-page .stats > div {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme="light"] .favorites-page .stats i {
+  background: #f0f9ff !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .stats b {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .stats span {
+  color: #64748b !important;
+}
+</style>

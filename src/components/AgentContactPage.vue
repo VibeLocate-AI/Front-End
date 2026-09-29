@@ -24,6 +24,7 @@
 import { computed, nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+import propertyService from '../services/propertyService'
 const router = useRouter(); const route = useRoute(); const { isRtl, theme } = useThemeAndLanguage(); const t = (en, ar) => isRtl.value ? ar : en
 const property = ref(null); try { property.value = JSON.parse(sessionStorage.getItem('vibelocate:selected-property') || 'null') } catch {}
 const title = computed(() => isRtl.value ? property.value?.title_ar || property.value?.title : property.value?.title)
@@ -31,7 +32,7 @@ const messagesEl = ref(null), draft = ref(''), callActive = ref(false)
 callActive.value = route.query.mode === 'call'
 const messages = ref([{ id: 1, from: 'agent', text: t('Hello! How can I help you with this property?', 'مرحباً! كيف يمكنني مساعدتك بخصوص هذا العقار؟'), time: '10:24' }])
 const scroll = async () => { await nextTick(); messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' }) }
-const sendMessage = () => { const text = draft.value.trim(); if (!text) return; messages.value.push({ id: Date.now(), from: 'user', text, time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) }); draft.value=''; scroll(); setTimeout(() => { messages.value.push({ id: Date.now()+1, from:'agent', text:t('Thank you. I will get back to you shortly.', 'شكراً لك، سأرد عليك قريباً.'), time:new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) }); scroll() }, 700) }
+const sendMessage = async () => { const text = draft.value.trim(); if (!text) return; messages.value.push({ id: Date.now(), from: 'user', text, time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) }); draft.value=''; scroll(); if (property.value?.id) { try { await propertyService.submitInquiry(property.value.id, { message: text }); } catch (e) { console.warn('Inquiry API failed:', e) } } setTimeout(() => { messages.value.push({ id: Date.now()+1, from:'agent', text:t('Thank you. I will get back to you shortly.', 'شكراً لك، سأرد عليك قريباً.'), time:new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) }); scroll() }, 700) }
 const startCall = () => { callActive.value = true }
 const attachFile = () => { messages.value.push({ id: Date.now(), from:'user', text:t('Attachment shared', 'تمت مشاركة مرفق'), time:new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) }); scroll() }
 </script>
