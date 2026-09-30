@@ -1,5 +1,17 @@
 <template>
   <div class="page-container">
+    <!-- Floating Language Switcher -->
+    <button 
+      type="button" 
+      class="auth-lang-switcher" 
+      @click="toggleLanguage" 
+      :title="isRtl ? 'Switch to English' : 'التحويل إلى العربية'"
+      :aria-label="isRtl ? 'Switch to English' : 'Switch to Arabic'"
+    >
+      <i class="fa-solid fa-globe"></i>
+      <span>{{ lang === 'ar' ? 'English' : 'العربية' }}</span>
+    </button>
+
     <main class="login-wrapper">
     <div class="login-card">
       
@@ -9,7 +21,7 @@
           
           <!-- Brand Logo Header -->
           <div class="brand-header">
-            <div class="transparent-logo-wrapper">
+            <div class="transparent-logo-wrapper" @click="router.push('/')" role="button" title="VibeLocate AI Home">
               <img src="/images/logo_transparent.png" alt="VibeLocate AI Logo" class="transparent-logo-img">
             </div>
           </div>
@@ -38,14 +50,14 @@
         <div class="right-content">
           
           <header class="form-header">
-            <h2 class="welcome-heading">Welcome back , Log in to account</h2>
+            <h2 class="welcome-heading">{{ lang === 'ar' ? 'مرحباً بك مجدداً، سجل الدخول إلى حسابك' : 'Welcome back, Log in to account' }}</h2>
           </header>
 
           <form @submit.prevent="handleLogin" class="login-form" novalidate>
             
             <!-- Email Input Group -->
             <div class="form-group" :class="{ error: errors.email }">
-              <label for="email" class="field-label">Email</label>
+              <label for="email" class="field-label">{{ lang === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</label>
               <div class="input-container">
                 <span class="input-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -59,17 +71,17 @@
                   v-model="email" 
                   @input="clearError('email')"
                   class="form-input" 
-                  placeholder="Type Your Email" 
+                  :placeholder="lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Type Your Email'" 
                   required 
                   autocomplete="email"
                 >
               </div>
-              <span v-if="errors.email" class="error-msg">Please enter a valid email address.</span>
+              <span v-if="errors.email" class="error-msg">{{ lang === 'ar' ? 'يرجى إدخال بريد إلكتروني صالح.' : 'Please enter a valid email address.' }}</span>
             </div>
 
             <!-- Password Input Group -->
             <div class="form-group" :class="{ error: errors.password }">
-              <label for="password" class="field-label">password</label>
+              <label for="password" class="field-label">{{ lang === 'ar' ? 'كلمة المرور' : 'Password' }}</label>
               <div class="input-container">
                 <span class="input-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -83,7 +95,7 @@
                   v-model="password" 
                   @input="clearError('password')"
                   class="form-input" 
-                  placeholder="••••••••••••" 
+                  :placeholder="lang === 'ar' ? 'كلمة المرور' : '••••••••••••'" 
                   required 
                   autocomplete="current-password"
                 >
@@ -94,7 +106,7 @@
                   :aria-label="isPasswordVisible ? 'Hide password' : 'Show password'"
                 >
                   <svg v-if="!isPasswordVisible" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                   <svg v-else class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -103,7 +115,7 @@
                   </svg>
                 </button>
               </div>
-              <span v-if="errors.password" class="error-msg">Password must be at least 6 characters.</span>
+              <span v-if="errors.password" class="error-msg">{{ lang === 'ar' ? 'كلمة المرور يجب أن لا تقل عن 6 أحرف.' : 'Password must be at least 6 characters.' }}</span>
             </div>
 
             <!-- Options Row (Remember Me & Forget Password) -->
@@ -115,14 +127,15 @@
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </span>
-                <span class="checkbox-label">Remember Me</span>
+                <span class="checkbox-label">{{ lang === 'ar' ? 'تذكرني' : 'Remember Me' }}</span>
               </label>
-              <a href="/forgot-password" @click.prevent="router.push('/forgot-password')" class="forgot-link">Forget Password?</a>
+              <a href="/forgot-password" @click.prevent="router.push('/forgot-password')" class="forgot-link">{{ lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forget Password?' }}</a>
             </div>
 
             <!-- Submit Button -->
             <button type="submit" class="submit-btn" id="submitBtn" :disabled="isLoading">
-              <span>{{ isLoading ? 'LOGGING IN...' : 'LOG IN' }}</span>
+              <i v-if="isLoading" class="fa-solid fa-spinner fa-spin me-2" style="margin-right: 8px;"></i>
+              <span>{{ isLoading ? (lang === 'ar' ? 'جاري الدخول...' : 'LOGGING IN...') : (lang === 'ar' ? 'تسجيل الدخول' : 'LOG IN') }}</span>
             </button>
 
           </form>
@@ -130,14 +143,15 @@
           <!-- Divider -->
           <div class="divider">
             <span class="divider-line"></span>
-            <span class="divider-text">OR</span>
+            <span class="divider-text">{{ lang === 'ar' ? 'أو' : 'OR' }}</span>
             <span class="divider-line"></span>
           </div>
 
           <!-- Social Login -->
           <div class="social-login">
-            <button type="button" @click="handleGoogleLogin" class="social-btn google-btn" aria-label="Log in with Google" title="Log in with Google">
-              <svg class="google-icon" viewBox="0 0 24 24">
+            <button type="button" @click="handleGoogleLogin" class="social-btn google-btn" :disabled="isLoading" aria-label="Log in with Google" title="Log in with Google">
+              <i v-if="isLoading" class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #4285F4;"></i>
+              <svg v-else class="google-icon" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.23v3.15C3.25 21.37 7.37 24 12 24z"/>
                 <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.23C.44 8.16 0 9.99 0 12s.44 3.84 1.23 5.42l4.05-3.15z"/>
@@ -148,7 +162,7 @@
 
           <!-- Footer Text -->
           <footer class="form-footer">
-            <p class="footer-text">If you didn't have an account! <a href="/register" @click.prevent="router.push('/register')" class="signup-link">Sign Up</a></p>
+            <p class="footer-text">{{ lang === 'ar' ? 'ليس لديك حساب؟' : "If you didn't have an account!" }} <a href="/register" @click.prevent="router.push('/register')" class="signup-link">{{ lang === 'ar' ? 'إنشاء حساب جديد' : 'Sign Up' }}</a></p>
           </footer>
 
         </div>
@@ -170,13 +184,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { triggerGoogleSignIn } from '../services/googleAuth'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
+const { lang, isRtl, toggleLanguage } = useThemeAndLanguage()
 
 // Reactive Form State
 const email = ref('')
@@ -186,11 +202,17 @@ const isPasswordVisible = ref(false)
 const isLoading = ref(false)
 
 // Features Bullet Points
-const features = ref([
-  'Real-Time Context-Aware Recommendations.',
-  'Cross-Platform Mobile Application (Flutter).',
-  'Secure User Authentication and Role Management.'
-])
+const features = computed(() => {
+  return lang.value === 'ar' ? [
+    'توصيات ذكية تعتمد على السياق اللحظي.',
+    'تطبيق هاتف متعدد المنصات (Flutter).',
+    'توثيق وإدارة متقدمة لحسابات المستخدمين.'
+  ] : [
+    'Real-Time Context-Aware Recommendations.',
+    'Cross-Platform Mobile Application (Flutter).',
+    'Secure User Authentication and Role Management.'
+  ]
+})
 
 // Error State
 const errors = reactive({
