@@ -2,265 +2,7 @@
   <div class="dubai-home" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme">
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="top">
-      <!-- 1. AI PROCESSING / LOADING SCREEN (IMAGE 1) -->
-      <section v-if="aiSearchState === 'loading'" class="ai-processing-screen">
-        <!-- Floating Top Search Bar -->
-        <div class="ai-top-bar-container">
-          <div class="ai-top-bar-header">
-            <span class="ai-sparkle">✦</span> AI Contextual Search
-          </div>
-          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
-            <div class="ai-top-bar-input-wrap">
-              <input
-                v-model.trim="query"
-                type="text"
-                class="ai-top-bar-input"
-                placeholder="Two-bedroom house in Dubai"
-              >
-            </div>
-            <button type="submit" class="btn-ai-top-search">
-              AI Search
-            </button>
-          </form>
-        </div>
-
-        <div class="ai-processing-body">
-          <h2 class="ai-processing-title">We arrange the results..........</h2>
-          <p class="ai-processing-subtitle">It takes approximately two seconds.</p>
-
-          <div class="ai-checklist-container">
-            <div class="ai-checklist-item" :class="{ active: activeStep >= 1 }">
-              <div class="ai-check-circle">
-                <i class="fa-solid fa-check"></i>
-              </div>
-              <span class="ai-checklist-text">Natural Language Request Analysis.</span>
-            </div>
-
-            <div class="ai-checklist-item" :class="{ active: activeStep >= 2 }">
-              <div class="ai-check-circle">
-                <i class="fa-solid fa-check"></i>
-              </div>
-              <span class="ai-checklist-text">Matching Suitable Properties.</span>
-            </div>
-
-            <div class="ai-checklist-item" :class="{ active: activeStep >= 3 }">
-              <div class="ai-check-circle">
-                <i class="fa-solid fa-check"></i>
-              </div>
-              <span class="ai-checklist-text">Sort results by relevance.</span>
-            </div>
-          </div>
-
-          <div class="ai-progress-track-wrapper">
-            <div class="ai-progress-track">
-              <div class="ai-progress-bar-fill" :style="{ width: aiProgress + '%' }"></div>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- 2. AI SEARCH RESULTS SCREEN (IMAGE 2) -->
-      <section v-else-if="aiSearchState === 'results'" class="ai-results-screen">
-        <div class="ai-results-wrapper">
-          <!-- Floating Top Search Bar -->
-          <div class="ai-top-bar-container">
-            <div class="ai-top-bar-header">
-              <span class="ai-sparkle">✦</span> AI Contextual Search
-            </div>
-            <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
-              <div class="ai-top-bar-input-wrap">
-                <input
-                  v-model.trim="query"
-                  type="text"
-                  class="ai-top-bar-input"
-                  placeholder="Two-bedroom house in Dubai"
-                >
-              </div>
-              <button type="submit" class="btn-ai-top-search">
-                AI Search
-              </button>
-            </form>
-          </div>
-
-          <!-- Sorted Header -->
-          <h3 class="ai-results-heading">Sorted by match percentage</h3>
-
-          <!-- AI Matched Cards List -->
-          <div class="ai-results-cards-list">
-            <article
-              v-for="prop in aiMatchedList"
-              :key="prop.id || prop.title"
-              class="ai-property-match-card"
-            >
-              <div class="ai-match-card-media">
-                <img :src="prop.image" :alt="prop.title" loading="lazy">
-                <button
-                  class="card-fav-btn"
-                  :class="{ active: favorites.has(prop.title) }"
-                  type="button"
-                  :aria-label="'Favorite ' + prop.title"
-                  @click.stop="toggleFavorite(prop.title)"
-                >
-                  <i :class="favorites.has(prop.title) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
-                </button>
-                <span class="card-property-type-tag">{{ prop.type }}</span>
-              </div>
-              <div class="ai-match-card-content">
-                <div class="ai-match-card-header-row">
-                  <div class="ai-match-title-group">
-                    <h4 class="ai-match-title">{{ prop.title }}</h4>
-                    <span class="ai-match-location">
-                      <i class="fa-solid fa-location-dot"></i> {{ prop.area }}
-                    </span>
-                  </div>
-                  <span class="ai-match-percentage-badge">match {{ prop.matchScore }}%</span>
-                </div>
-
-                <div class="ai-match-subtitle-row">
-                  <span class="ai-match-price">{{ prop.currencySymbol || 'AED ' }}{{ prop.price ? prop.price.toLocaleString() : '' }} <small>{{ prop.period || '/yr' }}</small></span>
-                  <span class="ai-match-rental-period">• {{ prop.rent_frequency || 'yearly' }}</span>
-                </div>
-
-                <!-- Clear Specs Bar (Beds, Baths, Sqft) -->
-                <div class="ai-match-specs-row">
-                  <span class="ai-spec-item"><i class="fa-solid fa-bed"></i> {{ prop.beds || 2 }} Beds</span>
-                  <span class="ai-spec-item"><i class="fa-solid fa-bath"></i> {{ prop.baths || 2 }} Baths</span>
-                  <span class="ai-spec-item"><i class="fa-solid fa-vector-square"></i> {{ prop.size || '1,450' }} Sqft</span>
-                </div>
-
-                <!-- Tag Pills -->
-                <div class="ai-match-tags-row">
-                  <span v-for="tag in prop.tags" :key="tag" class="ai-tag-pill">{{ tag }}</span>
-                </div>
-
-                <div class="ai-match-card-footer">
-                  <button class="btn-view-ai-prop" @click="showToast('Opening details for ' + prop.title)">
-                    <span>View Property Details</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                  </button>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <!-- Golden / Amber Details Required Notice Card (Image 2 Bottom) -->
-          <div class="ai-refinement-callout-card">
-            <h4 class="ai-refinement-title">
-              Your request requires more details.
-              <span class="ai-refinement-info-icon">i</span>
-            </h4>
-            <p class="ai-refinement-text">
-              Try specifying the budget, area, or type of venue to find better results.
-            </p>
-          </div>
-
-          <!-- Return to standard home page view -->
-          <div class="text-center" style="margin-top: 36px; text-align: center;">
-            <button class="ai-back-home-btn" @click="resetToHome">
-              <i class="fa-solid fa-arrow-left"></i>
-              <span>Back to Home Overview</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. AI SERVICE UNAVAILABLE / ERROR SCREEN (IMAGE 1) -->
-      <section v-else-if="aiSearchState === 'error'" class="ai-error-screen">
-        <!-- Floating Top Search Bar -->
-        <div class="ai-top-bar-container">
-          <div class="ai-top-bar-header">
-            <span class="ai-sparkle">✦</span> AI Contextual Search
-          </div>
-          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
-            <div class="ai-top-bar-input-wrap">
-              <input
-                ref="aiInputRef"
-                v-model.trim="query"
-                type="text"
-                class="ai-top-bar-input"
-                placeholder="Two-bedroom house in Dubai"
-              >
-            </div>
-            <button type="submit" class="btn-ai-top-search">
-              AI Search
-            </button>
-          </form>
-        </div>
-
-        <div class="ai-error-body">
-          <h2 class="ai-error-headline">Smart search could not be completed.</h2>
-          <p class="ai-error-subtitle">
-            The service is currently busy,<br>
-            please try again later or use the standard search and filters for now.
-          </p>
-
-          <div class="ai-error-buttons-group">
-            <button class="btn-ai-retry" @click="runAiSearch(query)">
-              Retry
-            </button>
-            <button class="btn-ai-switch-filters" @click="resetToHome">
-              Switch to search using filters
-            </button>
-          </div>
-
-          <div class="ai-error-divider"></div>
-
-          <div class="ai-error-code-row">
-            <span class="ai-error-warning-icon">!</span>
-            <span><strong>Error code</strong> AI_ Service_Unavailable</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. AI NO MATCHING PROPERTIES SCREEN (IMAGE 2) -->
-      <section v-else-if="aiSearchState === 'no_results'" class="ai-no-results-screen">
-        <!-- Floating Top Search Bar -->
-        <div class="ai-top-bar-container">
-          <div class="ai-top-bar-header">
-            <span class="ai-sparkle">✦</span> AI Contextual Search
-          </div>
-          <form class="ai-top-bar-form" @submit.prevent="runAiSearch(query)">
-            <div class="ai-top-bar-input-wrap">
-              <input
-                ref="aiInputRef"
-                v-model.trim="query"
-                type="text"
-                class="ai-top-bar-input"
-                placeholder="Two-bedroom house in Dubai"
-              >
-            </div>
-            <button type="submit" class="btn-ai-top-search">
-              AI Search
-            </button>
-          </form>
-        </div>
-
-        <div class="ai-no-results-body">
-          <h2 class="ai-no-results-headline">We did not find any matching properties.</h2>
-          <p class="ai-no-results-subtitle">
-            No results found for your request,<br>
-            try adjusting some details.
-          </p>
-
-          <h3 class="ai-closest-results-label">Closest available results</h3>
-
-          <div class="ai-closest-card">
-            <div class="ai-closest-info">
-              <span class="ai-closest-title">Marina Studio</span>
-              <span class="ai-closest-sub">Monthly - Dubai Marina $2,500</span>
-            </div>
-            <span class="ai-match-percentage-badge">match 75%</span>
-          </div>
-
-          <button class="btn-ai-modify-request" @click="focusAiSearchInput">
-            Modify the request
-          </button>
-        </div>
-      </section>
-
-      <!-- 5. STANDARD HOME PAGE OVERVIEW -->
-      <template v-else>
+      
         <!-- HERO SECTION -->
         <section class="hero-section" id="hero">
           <div class="hero-overlay"></div>
@@ -284,47 +26,123 @@
               {{ t('homeHeroSubtitle') }}
             </p>
 
-            <!-- Floating Glass Search Widget -->
-            <div class="search-widget-card glassmorphism fade-in" ref="searchWidget">
-              <form class="search-form" @submit.prevent="handleSearch">
-                <div class="form-group" style="width: 100%;">
-                  <label class="search-label">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> {{ t('homeAiSearch') }}
-                  </label>
-                  <div class="search-input-wrapper">
-                    <input
-                      id="keyword"
-                      v-model.trim="query"
-                      type="text"
-                      class="hero-search-input"
-                      :placeholder="t('homeAiSearchPlaceholder')"
-                    >
-                    <button type="submit" class="btn btn-primary search-submit-btn">
-                      <i class="fa-solid fa-robot"></i>
-                      <span>{{ t('homeAiSearchButton') }}</span>
-                    </button>
-                  </div>
+            <!-- شريط البحث العصري المتكامل -->
+<!-- شريط البحث العصري المتكامل -->
+<div class="green-hero-search">
+  <div class="ghs-ai-pill">
+    <i class="fa-solid fa-magnifying-glass ghs-search-icon"></i>
+    <input
+      type="text"
+      class="ghs-ai-input"
+      v-model="query"
+      :placeholder="isRtl ? 'ابحث عن عقار أحلامك بالذكاء الاصطناعي...' : 'Search for your dream home with AI'"
+      @keydown.enter.prevent="handleSearch"
+    />
+    <button type="button" class="ghs-ai-btn" @click="handleSearch">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> {{ isRtl ? 'بحث ذكي' : 'Search AI' }}
+    </button>
+  </div>
 
-                  <!-- Interactive Quick Prompt Chips for Testing All AI Screens -->
-                  <div class="ai-prompt-chips">
-                    <span class="chips-label">{{ t('homeDemoPrompts') }}</span>
-                    <button type="button" class="ai-chip-pill" @click="runAiSearch('Two-bedroom house in Dubai')">
-                      ✦ Two-bedroom house in Dubai
-                    </button>
-                    <button type="button" class="ai-chip-pill" @click="runAiSearch('Luxury Marina Studio $2,500')">
-                      ✦ Marina Studio ($2,500)
-                    </button>
-                    <button type="button" class="ai-chip-pill chip-err" @click="runAiSearch('error')">
-                      ⚠️ Service Busy (Image 1)
-                    </button>
-                    <button type="button" class="ai-chip-pill chip-none" @click="runAiSearch('no match')">
-                      🔍 No Match (Image 2)
-                    </button>
-                  </div>
-                </div>
-              </form>
-              <p v-if="searchMessage" class="bot-feedback" style="margin-top: 10px;">{{ searchMessage }}</p>
-            </div>
+  <div class="ghs-divider">{{ isRtl ? 'أو واصل البحث باستخدام الفلاتر أدناه' : 'or continue using the filters below' }}</div>
+
+  <div class="ghs-row">
+    <div class="ghs-toggle-group">
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homePurpose === 'sale' }"
+        @click="homePurpose = 'sale'"
+      >
+        {{ t('forSale') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homePurpose === 'rent' }"
+        @click="homePurpose = 'rent'"
+      >
+        {{ t('forRent') }}
+      </button>
+    </div>
+    
+    <div class="ghs-location-wrap">
+      <i class="fa-solid fa-location-dot ghs-loc-icon"></i>
+      <input
+        type="text"
+        class="ghs-loc-input"
+        v-model="homeLocation"
+        :placeholder="t('enterLocation') || (isRtl ? 'أدخل الموقع أو الحي' : 'Enter location')"
+        @keydown.enter.prevent="handleSearch"
+      />
+    </div>
+
+    <button type="button" class="ghs-search-btn" @click="handleSearch">{{ t('search') }}</button>
+  </div>
+
+  <div class="ghs-row ghs-row-bottom">
+    <div class="ghs-toggle-group">
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'all' }"
+        @click="homeStatus = 'all'"
+      >
+        {{ t('allPurpose') || (isRtl ? 'الكل' : 'All') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'ready' }"
+        @click="homeStatus = 'ready'"
+      >
+        {{ t('readyToMove') || (isRtl ? 'جاهز' : 'Ready') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'offplan' }"
+        @click="homeStatus = 'offplan'"
+      >
+        {{ t('offPlan') || (isRtl ? 'على المخطط' : 'Off-Plan') }}
+      </button>
+    </div>
+    
+    <div class="ghs-select-wrap">
+      <select class="ghs-select" v-model="homeType">
+        <option value="all">{{ isRtl ? 'جميع العقارات' : 'All Properties' }}</option>
+        <option value="Apartment">{{ t('apartment') }}</option>
+        <option value="Villa">{{ t('villa') }}</option>
+        <option value="Penthouse">{{ t('penthouse') }}</option>
+        <option value="Townhouse">{{ t('townhouse') }}</option>
+        <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
+      </select>
+      <i class="fa-solid fa-caret-down ghs-caret"></i>
+    </div>
+    
+    <div class="ghs-select-wrap">
+      <select class="ghs-select" v-model="homeBedrooms">
+        <option value="any">{{ t('bedsAndBaths') }}</option>
+        <option value="1">{{ isRtl ? '1 غرفة' : '1 Bed' }}</option>
+        <option value="2">{{ isRtl ? '2 غرفة' : '2 Beds' }}</option>
+        <option value="3">{{ isRtl ? '3 غرف' : '3 Beds' }}</option>
+        <option value="4">{{ isRtl ? '4 غرف' : '4 Beds' }}</option>
+        <option value="5+">{{ isRtl ? '5+ غرف' : '5+ Beds' }}</option>
+      </select>
+      <i class="fa-solid fa-caret-down ghs-caret"></i>
+    </div>
+    
+    <div class="ghs-select-wrap">
+      <select class="ghs-select" v-model="homePrice">
+        <option value="any">{{ t('priceAed') }}</option>
+        <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : '< AED 2M' }}</option>
+        <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M-5M' }}</option>
+        <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M-10M' }}</option>
+        <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
+      </select>
+      <i class="fa-solid fa-caret-down ghs-caret"></i>
+    </div>
+  </div>
+</div>
           </div>
         </section>
 
@@ -334,7 +152,7 @@
           <!-- LEFT / PRIMARY COLUMN -->
           <div class="primary-column">
             <!-- 1. POPULAR AREAS -->
-            <section id="areas" class="content-block">
+            <section id="areas" class="content-block" v-if="areas.length > 0">
               <div class="block-header">
                 <h2>Popular Areas</h2>
                 <a href="#" class="see-all-link" @click.prevent="showToast('Viewing all 18 Dubai areas.')">See all areas <span class="arrow">&gt;</span></a>
@@ -366,7 +184,25 @@
               </div>
 
               <!-- Modern Luxury Cards Grid -->
-              <div class="featured-cards-grid">
+              <div v-if="isLoadingProperties" class="featured-cards-grid">
+                <div v-for="n in 4" :key="'f-skel-' + n" class="featured-property-card luxury-card card-skeleton-item">
+                  <div class="skeleton-thumb-box"></div>
+                  <div class="card-details-box">
+                    <div class="skeleton-line title"></div>
+                    <div class="skeleton-line loc"></div>
+                    <div class="skeleton-line price"></div>
+                    <div class="skeleton-line specs"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="displayedFeaturedProperties.length === 0" class="no-properties-box">
+                <i class="fa-solid fa-building-circle-xmark"></i>
+                <h3>{{ isRtl ? 'لا توجد عقارات مميزة حالياً' : 'No featured properties found' }}</h3>
+                <p>{{ isRtl ? 'جاري تحديث قائمة العقارات من قاعدة البيانات' : 'Updating properties catalog from database' }}</p>
+              </div>
+
+              <div v-else class="featured-cards-grid">
                 <article
                   v-for="(prop, index) in displayedFeaturedProperties"
                   :key="prop.id || prop.title + index"
@@ -397,7 +233,7 @@
 
                     <!-- Top Badges -->
                     <div class="card-top-badges">
-                      <span class="card-property-tag" :style="prop.badgeStyle">
+                      <span class="card-property-tag" :class="{ 'is-luxury-type': prop.type === 'Villa' || prop.type === 'Penthouse' }">
                         {{ prop.type }}
                       </span>
                       <span class="card-verified-tag">
@@ -533,7 +369,24 @@
               </div>
 
               <!-- 2-Column Luxury Landscape Showcase Grid -->
-              <div class="nearby-cards-grid">
+              <div v-if="isLoadingProperties" class="nearby-cards-grid">
+                <div v-for="n in 4" :key="'n-skel-' + n" class="nearby-luxury-showcase-card card-skeleton-item">
+                  <div class="nearby-card-media skeleton-thumb-box"></div>
+                  <div class="nearby-card-details">
+                    <div class="skeleton-line title"></div>
+                    <div class="skeleton-line loc"></div>
+                    <div class="skeleton-line price"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="displayedNearbyProperties.length === 0" class="no-properties-box">
+                <i class="fa-solid fa-building-circle-xmark"></i>
+                <h3>{{ isRtl ? 'لا توجد توصيات حالياً' : 'No nearby recommendations found' }}</h3>
+                <p>{{ isRtl ? 'جاري استيراد التوصيات العقارية' : 'Fetching latest property recommendations' }}</p>
+              </div>
+
+              <div v-else class="nearby-cards-grid">
                 <article
                   v-for="(prop, nIdx) in displayedNearbyProperties"
                   :key="prop.id || prop.title + nIdx"
@@ -576,7 +429,7 @@
                     </button>
 
                     <!-- Type Tag -->
-                    <span class="nearby-prop-type" :style="prop.badgeStyle">
+                    <span class="nearby-prop-type" :class="{ 'is-luxury-type': prop.type === 'Villa' || prop.type === 'Penthouse' }">
                       {{ prop.type }}
                     </span>
                   </div>
@@ -671,33 +524,46 @@
           <!-- RIGHT / SIDEBAR COLUMN -->
           <aside class="sidebar-column">
             <!-- AGENT CARD -->
-            <article class="agent-profile-card">
-              <h3 class="sidebar-card-title">Top Real Estate Agent</h3>
+            <article v-if="currentAgent" class="agent-profile-card">
+              <div class="agent-card-header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 class="sidebar-card-title" style="margin: 0;">{{ isRtl ? 'أفضل الوكلاء العقاريين' : 'Top Real Estate Agent' }}</h3>
+                <div v-if="topAgents.length > 1" class="agent-nav-arrows" style="display: flex; gap: 6px; align-items: center;">
+                  <button type="button" class="agent-nav-btn" @click="prevAgent" :title="isRtl ? 'السابق' : 'Previous'" style="width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px;">
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">{{ activeAgentIndex + 1 }}/{{ topAgents.length }}</span>
+                  <button type="button" class="agent-nav-btn" @click="nextAgent" :title="isRtl ? 'التالي' : 'Next'" style="width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px;">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
               
               <div class="agent-meta-row">
-                <img class="agent-avatar-img" src="https://randomuser.me/api/portraits/men/75.jpg" alt="Mohamed Ahmed">
+                <img class="agent-avatar-img" :src="currentAgent.avatar" :alt="currentAgent.name" @error="(e) => e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentAgent.name) + '&background=0284c7&color=fff'">
                 <div class="agent-name-rating">
-                  <strong class="agent-fullname">Mohamed Ahmed</strong>
-                  <span class="agent-designation">Senior Real Estate Consultant</span>
+                  <strong class="agent-fullname">{{ currentAgent.name }}</strong>
+                  <span class="agent-designation">
+                    {{ currentAgent.is_manager ? (isRtl ? 'مدير وكالة معتمد' : 'Agency Manager') : (isRtl ? 'مستشار عقاري معتمد' : 'Senior Real Estate Consultant') }}
+                  </span>
                   <div class="agent-star-rating">
-                    <span class="stars">★</span> <b>4.9</b> <span class="review-count">(128 reviews)</span>
+                    <span class="stars">★</span> <b>4.9</b> <span class="review-count">({{ currentAgent.agencyName }})</span>
                   </div>
                 </div>
               </div>
 
               <div class="agent-contact-rows">
-                <a class="agent-contact-pill" href="tel:+971501234567">
+                <a class="agent-contact-pill" :href="'tel:' + currentAgent.phone">
                   <i class="fa-solid fa-phone"></i>
-                  <span>+971 50 123 4567</span>
+                  <span>{{ currentAgent.phone }}</span>
                 </a>
-                <a class="agent-contact-pill" href="mailto:mohamed@dubaiestates.ae">
+                <a class="agent-contact-pill" :href="'mailto:' + currentAgent.email">
                   <i class="fa-regular fa-envelope"></i>
-                  <span>mohamed@dubaiestates.ae</span>
+                  <span>{{ currentAgent.email }}</span>
                 </a>
               </div>
 
-              <button class="btn-contact-agent" type="button" @click="showToast('Connecting you with Mohamed Ahmed...')">
-                Contact Agent
+              <button class="btn-contact-agent" type="button" @click="showToast((isRtl ? 'جاري الاتصال بالوكيل: ' : 'Connecting you with ') + currentAgent.name + '...')">
+                {{ isRtl ? 'تواصل مع الوكيل' : 'Contact Agent' }}
               </button>
             </article>
 
@@ -761,8 +627,7 @@
             </div>
           </div>
         </section>
-      </div>
-      </template>
+        </div>
     </main>
 
     <!-- LUXURY PROPERTY DETAILS MODAL -->
@@ -976,7 +841,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService'
-import { propertyService, DEFAULT_PROPERTIES } from '../services/propertyService'
+import { propertyService } from '../services/propertyService'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { favoritesService } from '../services/favoritesService'
@@ -984,15 +849,39 @@ import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
 const { t, isRtl, theme, lang, locProp } = useThemeAndLanguage()
 
-const areas = [
-  { name: 'Dubai Marina', count: '1,240', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Palm Jumeirah', count: '856', image: 'https://images.unsplash.com/photo-1546412414-e1885259563a?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Downtown Dubai', count: '1,080', image: 'https://images.unsplash.com/photo-1528702748617-c64d49f918af?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Business Bay', count: '732', image: 'https://images.unsplash.com/photo-1526495124232-a04e1849168c?auto=format&fit=crop&w=400&q=80' }
-]
+const areas = ref([])
+const topAgents = ref([])
+const activeAgentIndex = ref(0)
 
-const properties = ref([...DEFAULT_PROPERTIES])
-const isLoadingProperties = ref(false)
+const currentAgent = computed(() => {
+  if (topAgents.value && topAgents.value.length > 0) {
+    const a = topAgents.value[activeAgentIndex.value] || topAgents.value[0]
+    return {
+      name: a.name || 'Agent',
+      phone: a.phone || '+971501000001',
+      avatar: a.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name || 'Agent')}&background=0284c7&color=fff`,
+      is_manager: Boolean(a.is_manager),
+      agencyName: a.agency?.name || 'VibeLocate Real Estate',
+      email: a.email || `${(a.name || 'agent').toLowerCase().replace(/\s+/g, '.')}@vibelocate.ai`
+    }
+  }
+  return null
+})
+
+const nextAgent = () => {
+  if (topAgents.value.length > 0) {
+    activeAgentIndex.value = (activeAgentIndex.value + 1) % topAgents.value.length
+  }
+}
+
+const prevAgent = () => {
+  if (topAgents.value.length > 0) {
+    activeAgentIndex.value = (activeAgentIndex.value - 1 + topAgents.value.length) % topAgents.value.length
+  }
+}
+
+const properties = ref([])
+const isLoadingProperties = ref(true)
 const isLiveApi = ref(false)
 
 // Progressive pagination states
@@ -1081,135 +970,38 @@ const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
 
-/* AI Contextual Search Interactive States */
-const aiSearchState = ref('idle') // 'idle' | 'loading' | 'results' | 'error' | 'no_results'
-const aiProgress = ref(0)
-const activeStep = ref(1)
-const aiInputRef = ref(null)
-let progressInterval = null
+const homePurpose = ref('sale')
+const homeLocation = ref('')
+const homeStatus = ref('all')
+const homeType = ref('all')
+const homeBedrooms = ref('any')
+const homePrice = ref('any')
 
-const aiMatchedList = ref([])
+const handleSearch = () => {
+  const q = (query.value || '').trim()
+  const loc = (homeLocation.value || '').trim()
+  const queryObj = {}
 
-const focusAiSearchInput = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-  setTimeout(() => {
-    if (aiInputRef.value) {
-      aiInputRef.value.focus()
-    }
-  }, 300)
-}
+  if (q) queryObj.q = q
+  if (loc) queryObj.location = loc
+  if (homePurpose.value && homePurpose.value !== 'all') queryObj.purpose = homePurpose.value
+  if (homeType.value && homeType.value !== 'all') queryObj.type = homeType.value
+  if (homeStatus.value && homeStatus.value !== 'all') queryObj.status = homeStatus.value
+  if (homeBedrooms.value && homeBedrooms.value !== 'any') queryObj.bedrooms = homeBedrooms.value
+  if (homePrice.value && homePrice.value !== 'any') queryObj.price = homePrice.value
 
-const realEstateDomainKeywords = [
-  'house', 'villa', 'studio', 'apartment', 'home', 'dubai', 'bedroom', 'bed', 'bath',
-  'rent', 'buy', 'marina', 'palm', 'jumeirah', 'downtown', 'jvc', 'business bay',
-  'beach', 'pool', 'luxury', 'calm', 'cafe', 'cafes', 'budget', '$', 'dollar',
-  'monthly', 'yearly', 'penthouse', 'townhouse', 'view', 'sea', 'city', 'flat', 'property',
-  'room', 'estate', 'hills'
-]
-
-const isMeaningfulQuery = (str) => {
-  const clean = (str || '').toLowerCase().trim()
-  if (!clean) return false // Empty search -> Error screen
-
-  // Check for random gibberish consonants or invalid patterns (e.g. asdfgh, qwerty, 123456)
-  if (/^[bcdfghjklmnpqrstvwxyz]{4,}$/i.test(clean) || /^\d+$/.test(clean) || clean.length < 2) {
-    return false
-  }
-
-  // Check if query contains domain keywords or valid multi-word input
-  const hasDomainKeyword = realEstateDomainKeywords.some(kw => clean.includes(kw))
-  if (hasDomainKeyword) return true
-
-  const words = clean.split(/\s+/).filter(Boolean)
-  if (words.length >= 2) return true
-
-  return false
-}
-
-const runAiSearch = (customQuery) => {
-  if (customQuery !== undefined) {
-    query.value = customQuery
-  }
-
-  const qTrim = query.value.trim()
-  const qLower = qTrim.toLowerCase()
-
-  // 1. IF SEARCH IS EMPTY OR CONTAINS INCOMPREHENSIBLE / GIBBERISH TEXT -> TRIGGER ERROR SCREEN (IMAGE 1)
-  if (!qTrim || !isMeaningfulQuery(qTrim) || qLower.includes('error') || qLower.includes('busy') || qLower.includes('fail') || route.query.state === 'error') {
-    if (progressInterval) clearInterval(progressInterval)
-    aiSearchState.value = 'error'
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    return
-  }
-
-  // 2. IF SEARCH IS EXPLICITLY UNMATCHED -> TRIGGER NO RESULTS SCREEN (IMAGE 2)
-  if (qLower.includes('no match') || qLower.includes('nomatch') || qLower.includes('unmatched') || route.query.state === 'no_results') {
-    if (progressInterval) clearInterval(progressInterval)
-    aiSearchState.value = 'no_results'
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    return
-  }
-
-  // 3. VALID QUERY -> RUN 2-SECOND LOADING ANALYSIS ANIMATION -> RESULTS SCREEN
-  aiSearchState.value = 'loading'
-  aiProgress.value = 0
-  activeStep.value = 1
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-
-  let searchCompleted = false
-  let searchReturnedResults = false
-
-  // Trigger dynamic AI search against real property database and AI endpoint
-  propertyService.searchWithAi(qTrim).then(res => {
-    searchCompleted = true
-    if (res?.data && res.data.length > 0) {
-      searchReturnedResults = true
-      aiMatchedList.value = res.data.slice(0, 8)
-    } else {
-      searchReturnedResults = false
-      aiMatchedList.value = []
-    }
-  }).catch(err => {
-    searchCompleted = true
-    searchReturnedResults = false
-    console.warn('AI search error:', err)
+  router.push({
+    path: '/search',
+    query: queryObj
   })
-
-  if (progressInterval) clearInterval(progressInterval)
-
-  const startTime = Date.now()
-  const duration = 2000 // 2 seconds animation matching mockup requirement
-
-  progressInterval = setInterval(() => {
-    const elapsed = Date.now() - startTime
-    const progress = Math.min(100, Math.floor((elapsed / duration) * 100))
-    aiProgress.value = progress
-
-    if (progress >= 33 && progress < 66) {
-      activeStep.value = 2
-    } else if (progress >= 66) {
-      activeStep.value = 3
-    }
-
-    if (progress >= 100) {
-      clearInterval(progressInterval)
-      setTimeout(() => {
-        if (searchCompleted && !searchReturnedResults && (!aiMatchedList.value || aiMatchedList.value.length === 0)) {
-          aiSearchState.value = 'no_results'
-        } else {
-          aiSearchState.value = 'results'
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }, 150)
-    }
-  }, 30)
 }
 
-const resetToHome = () => {
-  if (progressInterval) clearInterval(progressInterval)
-  aiSearchState.value = 'idle'
-  query.value = ''
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+const searchByArea = (areaName) => {
+  if (!areaName) return
+  router.push({
+    path: '/search',
+    query: { location: areaName }
+  })
 }
 
 const router = useRouter()
@@ -1290,14 +1082,9 @@ const toggleFavorite = (prop) => {
   }
 }
 
-const handleSearch = () => {
+/* removed duplicate handleSearch
   runAiSearch(query.value)
-}
-
-const searchByArea = (areaName) => {
-  query.value = areaName
-  handleSearch()
-}
+}*/
 
 const scrollTo = (id) => {
   mobileMenuOpen.value = false
@@ -1353,13 +1140,40 @@ const handleDocumentClick = (e) => {
 
 const loadProperties = async () => {
   isLoadingProperties.value = true
+  const langKey = isRtl.value ? 'ar' : 'en'
   try {
-    const res = await propertyService.getHomeData(isRtl.value ? 'ar' : 'en')
+    const res = await propertyService.getHomeData(langKey)
     if (res?.properties && res.properties.length > 0) {
       properties.value = res.properties
       isLiveApi.value = true
       if (!aiMatchedList.value.length) {
         aiMatchedList.value = res.properties.slice(0, 2)
+      }
+    }
+
+    if (Array.isArray(res?.popularAreas) && res.popularAreas.length > 0) {
+      areas.value = res.popularAreas.map(a => ({
+        name: a.name || a.name_en || 'Dubai',
+        count: a.properties_count ? a.properties_count.toLocaleString() : (a.count || '50+'),
+        image: a.image_url || a.image || 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80'
+      }))
+    } else {
+      const areaRes = await propertyService.getPopularAreas(langKey)
+      if (areaRes?.data && areaRes.data.length > 0) {
+        areas.value = areaRes.data.map(a => ({
+          name: a.name || a.name_en || 'Dubai',
+          count: a.properties_count ? a.properties_count.toLocaleString() : (a.count || '50+'),
+          image: a.image_url || a.image || 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=400&q=80'
+        }))
+      }
+    }
+
+    if (Array.isArray(res?.topAgents) && res.topAgents.length > 0) {
+      topAgents.value = res.topAgents
+    } else {
+      const agentRes = await propertyService.getTopAgents(langKey)
+      if (agentRes?.data && agentRes.data.length > 0) {
+        topAgents.value = agentRes.data
       }
     }
   } catch (err) {
@@ -1382,7 +1196,8 @@ onMounted(async () => {
   // 4. Trigger AI Search if query parameters exist from landing page search
   if (route.query.q || route.query.search === 'true') {
     const initialQuery = (route.query.q || '').toString()
-    runAiSearch(initialQuery || 'Two-bedroom house in Dubai')
+    query.value = initialQuery || 'Two-bedroom house in Dubai'
+    handleSearch()
   }
 
   // 5. Fetch latest profile from API if token exists
@@ -1416,3 +1231,388 @@ onUnmounted(() => {
 </script>
 
 <style src="../assets/dubai-home.css"></style>
+<style>
+.ghs-ai-pill {
+  padding: 8px 12px 8px 24px;
+}
+.ghs-search-icon {
+  color: #9ca3af;
+  margin-right: 12px;
+  font-size: 16px;
+}
+.ghs-ai-btn {
+  background: linear-gradient(135deg, #0072ff 0%, #00d2ff 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-left: 12px;
+}
+.ghs-ai-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4);
+}
+
+</style>
+<style>
+/* Green Hero Search Widget */
+.green-hero-search {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+  margin: 32px auto 0;
+  width: 100%;
+}
+
+.ghs-ai-pill {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  padding: 14px 24px;
+  background: #ffffff;
+  transition: border-color 0.2s;
+}
+
+.ghs-ai-pill:focus-within {
+  border-color: #00d2ff;
+}
+
+.ghs-ai-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #374151;
+  background: transparent;
+}
+
+.ghs-ai-input::placeholder {
+  color: #9ca3af;
+}
+
+.ghs-sparkle {
+  font-size: 20px;
+  background: linear-gradient(135deg, #3b82f6, #10b981, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ghs-divider {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 15px;
+  margin: 20px 0;
+  font-weight: 500;
+}
+
+.ghs-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ghs-row-bottom {
+  margin-bottom: 0;
+}
+
+.ghs-toggle-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px;
+  background: #ffffff;
+  gap: 4px;
+}
+
+.ghs-toggle {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4b5563;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ghs-toggle.active {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.ghs-location-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #ffffff;
+}
+
+.ghs-loc-icon {
+  color: #0f766e;
+  font-size: 18px;
+  margin-right: 12px;
+}
+
+.ghs-loc-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #374151;
+}
+
+.ghs-search-btn {
+  background: linear-gradient(135deg, #0072ff 0%, #00d2ff 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 36px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ghs-search-btn:hover {
+  background: linear-gradient(135deg, #005bb5 0%, #00a8cc 100%);
+}
+
+.ghs-select-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ghs-select {
+  width: 100%;
+  appearance: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 12px 32px 12px 16px;
+  font-size: 15px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.ghs-caret {
+  position: absolute;
+  right: 16px;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .ghs-row {
+    flex-direction: column;
+  }
+  .ghs-toggle-group {
+    justify-content: space-between;
+  }
+  .ghs-toggle {
+    flex: 1;
+  }
+  .ghs-search-btn {
+    padding: 14px;
+  }
+}
+</style>
+<style>
+/* Skeleton and Empty State Styles */
+.card-skeleton-item {
+  animation: pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.skeleton-thumb-box {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, #132238 25%, #1d3354 50%, #132238 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #132238 25%, #1d3354 50%, #132238 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+.skeleton-line.title { width: 85%; height: 16px; margin-top: 10px; }
+.skeleton-line.loc { width: 55%; }
+.skeleton-line.price { width: 45%; height: 18px; margin: 12px 0 8px; }
+.skeleton-line.specs { width: 75%; height: 14px; }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.no-properties-box {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 50px 24px;
+  background: rgba(13, 27, 46, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  min-height: 240px;
+}
+.no-properties-box i {
+  font-size: 2.8rem;
+  color: #00d2ff;
+  margin-bottom: 14px;
+  opacity: 0.8;
+}
+.no-properties-box h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.no-properties-box p {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  max-width: 400px;
+}
+
+.modern-search-wrapper {
+  max-width: 860px;
+  margin: 24px auto 0;
+  width: 100%;
+}
+
+.search-tabs-header {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.search-tabs-header .tab-btn {
+  background: rgba(0, 210, 255, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-bottom: none;
+  color: #00d2ff;
+  padding: 8px 18px;
+  border-radius: 12px 12px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unified-search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(11, 22, 42, 0.95);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  padding: 8px 10px 8px 20px;
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+  gap: 12px;
+}
+
+[data-theme="light"] .unified-search-box {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.search-input-col {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-ico {
+  color: #00d2ff;
+  font-size: 18px;
+}
+
+.modern-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 15px;
+  outline: none;
+}
+
+[data-theme="light"] .modern-input {
+  color: #0f172a;
+}
+
+.btn-execute-search {
+  background: linear-gradient(135deg, #0072ff 0%, #00d2ff 100%);
+  border: none;
+  color: #ffffff;
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.btn-execute-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
+}
+
+.smart-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.tags-label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.tag-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-pill:hover {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: #00d2ff;
+  color: #00d2ff;
+}
+</style>
+

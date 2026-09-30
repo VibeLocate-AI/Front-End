@@ -75,46 +75,7 @@
           </a>
         </div>
 
-        <!-- Floating Glass Search Widget -->
-        <div class="search-widget-card glassmorphism fade-in" ref="searchWidget">
-          <form class="search-form" @submit.prevent="handleAISearch">
-            <div class="form-group" style="width: 100%;">
-              <label class="search-label">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI CONTEXTUAL SEARCH
-              </label>
-              <div class="search-input-wrapper">
-                <input
-                  type="text"
-                  id="aiSearchInput"
-                  v-model="aiSearchQuery"
-                  class="hero-search-input"
-                  placeholder="e.g., Two-bedroom house in Dubai"
-                >
-                <button type="submit" class="btn btn-primary search-submit-btn">
-                  <i class="fa-solid fa-robot"></i>
-                  <span>AI Search</span>
-                </button>
-              </div>
 
-              <!-- Quick Demo Prompt Chips for Direct Navigation to AI Screens -->
-              <div class="ai-prompt-chips" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Try Prompts:</span>
-                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Two-bedroom house in Dubai')">
-                  ✦ Two-bedroom house in Dubai
-                </button>
-                <button type="button" class="ai-chip-pill" @click="runQuickSearch('Luxury Marina Studio $2,500')">
-                  ✦ Marina Studio ($2,500)
-                </button>
-                <button type="button" class="ai-chip-pill chip-err" @click="runQuickSearch('error')">
-                  ⚠️ Service Busy (Image 1)
-                </button>
-                <button type="button" class="ai-chip-pill chip-none" @click="runQuickSearch('no match')">
-                  🔍 No Match (Image 2)
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
       </div>
 
       <!-- Quick Highlights Ticker / Bar -->
@@ -249,13 +210,18 @@
         <div class="properties-grid" id="propertiesGrid">
           <article
             v-for="property in displayedProperties"
-            :key="property.id"
+            :key="property.id || property.title"
             class="property-card"
           >
             <div class="property-media">
-              <img :src="property.image" :alt="property.title" loading="lazy">
+              <img
+                :src="property.image"
+                :alt="property.title"
+                loading="lazy"
+                @error="(e) => e.target.src = '/images/photo-1512917774080-9991f1c4c750.jfif'"
+              >
               <span class="property-badge" :style="property.badgeStyle">
-                <i class="fa-solid fa-robot"></i> {{ property.aiMatch }}% AI Match
+                <i class="fa-solid fa-wand-magic-sparkles"></i> {{ property.aiMatch || 94 }}% Match
               </span>
               <button
                 class="favorite-btn"
@@ -266,25 +232,28 @@
                 <i :class="property.liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
               </button>
               <div class="property-price-tag">
-                <span class="price">{{ property.currencySymbol || 'AED ' }}{{ property.price.toLocaleString() }}</span><span class="period">{{ property.period || '/yr' }}</span>
+                <span class="price">{{ property.currencySymbol || 'AED ' }}{{ (Number(property.price) || 0).toLocaleString() }}</span>
+                <span class="period">{{ property.period || '/yr' }}</span>
               </div>
             </div>
             <div class="property-body">
               <div class="property-location">
-                <i class="fa-solid fa-location-dot"></i> {{ property.location || property.area }}
+                <i class="fa-solid fa-location-dot"></i>
+                <span>{{ property.location || property.area || 'Dubai, UAE' }}</span>
               </div>
-              <h3 class="property-title">{{ property.title }}</h3>
-              <p class="property-summary">{{ property.summary }}</p>
+              <h3 class="property-title" :title="property.title">{{ property.title }}</h3>
+              <p class="property-summary">{{ property.summary || property.description }}</p>
 
               <div class="property-specs">
-                <span><i class="fa-solid fa-bed"></i> {{ property.beds }} Beds</span>
-                <span><i class="fa-solid fa-bath"></i> {{ property.baths }} Baths</span>
-                <span><i class="fa-solid fa-vector-square"></i> {{ property.size }} sqft</span>
+                <span><i class="fa-solid fa-bed"></i> {{ property.beds ?? 0 }} Beds</span>
+                <span><i class="fa-solid fa-bath"></i> {{ property.baths ?? 0 }} Baths</span>
+                <span><i class="fa-solid fa-vector-square"></i> {{ property.size || property.sqft || '1,450' }} sqft</span>
               </div>
 
               <div class="property-footer">
-                <button class="btn btn-view-more btn-sm" @click="openModal(property)">
-                  <span>View More</span>
+                <button class="btn-view-more" @click="openModal(property)">
+                  <span>View Details</span>
+                  <i class="fa-solid fa-arrow-right"></i>
                 </button>
               </div>
             </div>
@@ -477,8 +446,11 @@
               </div>
             </div>
 
-            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-              <a href="#booking" class="btn btn-primary" style="flex: 1;" @click.prevent="scrollTo('booking'); closeModal()">
+            <div style="margin-top: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-primary" style="flex: 1.2;" @click="goToPropertyDetails(selectedProperty)">
+                <i class="fa-solid fa-arrow-up-right-from-square" style="margin-right: 6px;"></i> Full Details
+              </button>
+              <a href="#booking" class="btn btn-navy" style="flex: 1;" @click.prevent="scrollTo('booking'); closeModal()">
                 Schedule Viewing
               </a>
               <button class="btn btn-outline-dark" @click="closeModal">Close</button>
@@ -506,7 +478,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
-import { propertyService } from '../services/propertyService'
+import { propertyService, DEFAULT_PROPERTIES } from '../services/propertyService'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
@@ -624,18 +596,20 @@ const filterTabsList = [
 const activeFilter = ref('all')
 
 // ========== PROPERTIES DATA ==========
-const properties = ref([])
+// Initialize immediately with default properties for 0ms instant display!
+const properties = ref(Array.isArray(DEFAULT_PROPERTIES) && DEFAULT_PROPERTIES.length > 0 ? [...DEFAULT_PROPERTIES] : [])
 const isLoadingProperties = ref(false)
 
 const loadProperties = async () => {
   isLoadingProperties.value = true
   try {
-    const res = await propertyService.getHomeData('en')
-    if (res?.properties && res.properties.length > 0) {
-      properties.value = res.properties
+    // Fast direct query to /api/properties for real database listings
+    const res = await propertyService.getProperties({ per_page: 30 })
+    if (res?.data && res.data.length > 0) {
+      properties.value = res.data
     }
   } catch (err) {
-    console.error('Failed loading properties from /api/home in LandingPage:', err)
+    console.warn('Failed loading live properties in LandingPage:', err)
   } finally {
     isLoadingProperties.value = false
   }
@@ -715,6 +689,15 @@ const openModal = (property) => {
 const closeModal = () => {
   modalOpen.value = false
   document.body.style.overflow = ''
+}
+
+const goToPropertyDetails = (property) => {
+  if (!property) return
+  try {
+    sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property))
+  } catch {}
+  closeModal()
+  router.push(`/property/${property.id}`)
 }
 
 const handleKeydown = (e) => {
