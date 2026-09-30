@@ -784,20 +784,20 @@ onMounted(async () => {
 
 /* Standalone Dark Mode */
 .owner-page:not(.embedded).is-dark {
-  background-color: #071626;
+  background-color: #0f172a;
 }
 
 /* Global Dark Theme Variable Overrides */
 .owner-page.is-dark,
 :global([data-theme="dark"]) .owner-page {
-  --card-bg: #0c2035;
-  --card-border: #1c3b56;
+  --card-bg: #1e293b;
+  --card-border: #334155;
   --text-main: #f8fafc;
-  --text-muted: #94a9bd;
+  --text-muted: #94a3b8;
   --primary: #38bdf8;
   --primary-hover: #0ea5e9;
-  --surface-subtle: #081a2d;
-  --input-bg: #081a2d;
+  --surface-subtle: #162235;
+  --input-bg: #162235;
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
   --shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.45);
 }

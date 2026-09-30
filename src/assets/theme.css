@@ -145,17 +145,17 @@ body,
 
 /* Dark Mode Header: Deep Navy Glass */
 [data-theme="dark"] .site-header {
-  background: rgba(11, 15, 23, 0.92) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 [data-theme="dark"] .site-header.scrolled {
-  background: rgba(11, 15, 23, 0.98) !important;
+  background: rgba(15, 23, 42, 0.94) !important;
   border-bottom-color: rgba(0, 210, 255, 0.25) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
 [data-theme="dark"] .site-header .brand-title {
@@ -225,7 +225,7 @@ body,
 }
 
 [data-theme="dark"] .footer {
-  background: #0B0F17 !important;
+  background: #0f172a !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -696,8 +696,8 @@ body,
    - Accent: Cyan/Neon Blue (#00d2ff) + Glow Effect on buttons
    ========================================================================== */
 [data-theme="dark"] {
-  --page-bg: #0B0F17;
-  --surface-card: #1E293B;
+  --page-bg: #0f172a;
+  --surface-card: #1e293b;
   --surface-border: #334155;
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
@@ -707,15 +707,15 @@ body,
   color-scheme: dark;
 }
 
-/* Backgrounds: Deep Dark Navy bg-slate-950 (#0B0F17) */
+/* Backgrounds: Deep Dark Navy bg-slate-900 (#0f172a) */
 [data-theme="dark"] body,
 [data-theme="dark"] .dubai-home,
 [data-theme="dark"] .main-container,
 [data-theme="dark"] .add-property-page-root,
 [data-theme="dark"] .map-page-root,
 [data-theme="dark"] .profile-page-root {
-  background-color: #0B0F17 !important;
-  background: #0B0F17 !important;
+  background-color: #0f172a !important;
+  background: #0f172a !important;
 }
 
 [data-theme="dark"] .add-property-page-root::before {
@@ -727,8 +727,8 @@ body,
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  background-color: #0B0F17 !important;
-  opacity: 0.95 !important;
+  background-color: #0f172a !important;
+  opacity: 0.35 !important;
   pointer-events: none !important;
 }
 
@@ -748,8 +748,8 @@ body,
 
 [data-theme="dark"] .hero-overlay {
   background:
-    linear-gradient(90deg, rgba(9, 18, 37, 0.88) 0%, rgba(9, 18, 37, 0.68) 40%, rgba(9, 18, 37, 0.3) 70%, rgba(9, 18, 37, 0.05) 100%),
-    linear-gradient(180deg, rgba(9, 18, 37, 0.4) 0%, transparent 40%, rgba(9, 18, 37, 0.7) 100%) !important;
+    linear-gradient(90deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.38) 40%, rgba(15, 23, 42, 0.12) 70%, transparent 100%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.25) 0%, transparent 40%, rgba(15, 23, 42, 0.5) 100%) !important;
 }
 
 [data-theme="dark"] .hero-shapes .shape-1 {
@@ -776,9 +776,9 @@ body,
 }
 
 [data-theme="dark"] .search-widget-card {
-  background: rgba(13, 22, 44, 0.78) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45) !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35) !important;
 }
 
 [data-theme="dark"] .hero-search-input {
@@ -875,7 +875,7 @@ body,
 [data-theme="dark"] .form-control,
 [data-theme="dark"] .form-textarea,
 [data-theme="dark"] .dark-select {
-  background: #0B0F17 !important;
+  background: #1e293b !important;
   border-color: #334155 !important;
   color: #ffffff !important;
 }
@@ -892,7 +892,7 @@ body,
 [data-theme="dark"] .amenity-checkbox-card,
 [data-theme="dark"] .quick-text-chip,
 [data-theme="dark"] .btn-preset-chip {
-  background: #0B0F17 !important;
+  background: #1e293b !important;
   border-color: #334155 !important;
   color: #cbd5e1 !important;
 }
@@ -905,20 +905,20 @@ body,
 
 [data-theme="dark"] .segmented-chip-btn.active,
 [data-theme="dark"] .amenity-checkbox-card.checked {
-  background: rgba(0, 210, 255, 0.12) !important;
+  background: rgba(0, 210, 255, 0.15) !important;
   border-color: #00d2ff !important;
   color: #00d2ff !important;
 }
 
 [data-theme="dark"] .step-circle {
-  background: #0B0F17 !important;
+  background: #1e293b !important;
   border-color: #334155 !important;
   color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .preview-specs-grid,
 [data-theme="dark"] .pricing-card-box {
-  background: #0B0F17 !important;
+  background: #1e293b !important;
   border-color: #334155 !important;
 }
 
@@ -957,16 +957,174 @@ body,
   box-shadow: 0 0 24px rgba(0, 210, 255, 0.6), 0 4px 18px rgba(37, 99, 235, 0.6) !important;
 }
 
-[data-theme="dark"] .btn-card-details,
-[data-theme="dark"] .btn-nearby-explore,
+/* ==========================================================================
+   ENHANCED HOME CARDS STYLING (DARK MODE)
+   ========================================================================== */
+/* 1. Property Type Badges (Fix cyan-on-cyan missing text bug) */
+[data-theme="dark"] .card-property-tag,
+[data-theme="dark"] .nearby-prop-type {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .card-property-tag.is-luxury-type,
+[data-theme="dark"] .nearby-prop-type.is-luxury-type {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+}
+
+/* 2. Rent Tag (Yearly Lease) - Translucent dark badge instead of glaring white box */
+[data-theme="dark"] .rent-tag,
+[data-theme="dark"] .nearby-rent-pill,
+[data-theme="dark"] .nearby-rent-period-badge {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  font-weight: 700 !important;
+}
+
+/* 3. Favorite Button on Cards - Dark translucent glass instead of stark white */
+[data-theme="dark"] .card-fav-btn,
+[data-theme="dark"] .nearby-fav-circle {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .card-fav-btn:hover,
+[data-theme="dark"] .nearby-fav-circle:hover {
+  background: #1e293b !important;
+  color: #ef4444 !important;
+  transform: scale(1.15) !important;
+}
+
+[data-theme="dark"] .card-fav-btn.active,
+[data-theme="dark"] .nearby-fav-circle.active {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* 4. Action Buttons (View Details & Explore Property) */
+[data-theme="dark"] .btn-card-details {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #3b82f6 !important;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .btn-card-details:hover {
+  background: #1d4ed8 !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .btn-nearby-explore {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .nearby-luxury-showcase-card:hover .btn-nearby-explore,
+[data-theme="dark"] .btn-nearby-explore:hover {
+  background: #2563eb !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.35) !important;
+}
+
 [data-theme="dark"] .btn-contact-agent {
   transition: all 0.3s ease;
 }
 
-[data-theme="dark"] .btn-card-details:hover,
-[data-theme="dark"] .btn-nearby-explore:hover,
 [data-theme="dark"] .btn-contact-agent:hover {
   box-shadow: 0 0 16px rgba(0, 210, 255, 0.35) !important;
+}
+
+/* 5. Pricing, Title & Location */
+[data-theme="dark"] .property-card-pricing .price-val,
+[data-theme="dark"] .nearby-price-val,
+[data-theme="dark"] .nearby-price-amount {
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="dark"] .property-card-pricing .price-period,
+[data-theme="dark"] .nearby-price-period {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .property-card-title,
+[data-theme="dark"] .nearby-card-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .featured-property-card.luxury-card:hover .property-card-title,
+[data-theme="dark"] .nearby-luxury-showcase-card:hover .nearby-card-title {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .property-card-location,
+[data-theme="dark"] .nearby-card-location {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .property-card-location i,
+[data-theme="dark"] .nearby-card-location i {
+  color: #38bdf8 !important;
+}
+
+/* 6. Specs Row */
+[data-theme="dark"] .property-card-specs,
+[data-theme="dark"] .nearby-card-specs,
+[data-theme="dark"] .nearby-specs-row {
+  border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .property-card-specs .spec-item,
+[data-theme="dark"] .nearby-spec-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .property-card-specs .spec-item i,
+[data-theme="dark"] .nearby-spec-item i {
+  color: #38bdf8 !important;
+}
+
+/* 7. Bottom Counter Fix (Make numbers and strong tags bright & visible) */
+[data-theme="dark"] .load-more-counter-wrap .counter-text {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .load-more-counter-wrap .counter-text strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .counter-progress-bar {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .counter-progress-fill {
+  background: linear-gradient(90deg, #2563eb, #00d2ff) !important;
+}
+
+/* 8. Quick Details on hover */
+[data-theme="dark"] .btn-quick-view {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="dark"] .btn-quick-view:hover {
+  background: #2563eb !important;
+  border-color: #38bdf8 !important;
 }
 
 [data-theme="dark"] .see-all-link {
@@ -1390,6 +1548,67 @@ body,
   color: #ef4444 !important;
 }
 
+/* Property Cards in Dark Mode (Rent Page) */
+[data-theme="dark"] .rent-prop-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .rent-prop-card:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  background: #24344d !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .rent-card-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .rent-card-location {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .rent-card-location i {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .rent-card-price {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .rent-card-price small {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .rent-card-specs {
+  color: #cbd5e1 !important;
+  border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .rent-type-badge {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+[data-theme="dark"] .rent-fav-btn {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] .rent-fav-btn:hover {
+  background: #1e293b !important;
+  color: #ef4444 !important;
+}
+
+[data-theme="dark"] .rent-fav-btn.saved {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
 [data-theme="light"] .rent-btn-view {
   background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(37, 99, 235, 0.1)) !important;
   border: 1px solid rgba(2, 132, 199, 0.3) !important;
@@ -1713,11 +1932,11 @@ body,
    ========================================================================== */
 [data-theme="dark"] .profile-page-root,
 .profile-page-root.is-dark {
-  background-color: #071626 !important;
+  background-color: #0f172a !important;
   color: #f8fafc !important;
-  --profile-surface: #0c2035;
-  --profile-border: #1c3b56;
-  --profile-muted: #94a9bd;
+  --profile-surface: #1e293b;
+  --profile-border: #334155;
+  --profile-muted: #94a3b8;
   --profile-heading: #f8fafc;
 }
 
@@ -1731,10 +1950,10 @@ body,
 .is-dark .upgrade-modal-content,
 [data-theme="dark"] .delete-modal-content,
 .is-dark .delete-modal-content {
-  background: #0c2035 !important;
-  border-color: #1c3b56 !important;
+  background: #1e293b !important;
+  border-color: #334155 !important;
   color: #f8fafc !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 [data-theme="dark"] .profile-sidebar-card:hover,
@@ -1744,7 +1963,7 @@ body,
 [data-theme="dark"] .profile-section-card:hover,
 .is-dark .profile-section-card:hover {
   border-color: rgba(56, 189, 248, 0.4) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
 [data-theme="dark"] .profile-page-root .user-name,
@@ -1794,7 +2013,7 @@ body,
 .is-dark .price-hint,
 [data-theme="dark"] .profile-page-root .tagline-text,
 .is-dark .tagline-text {
-  color: #94a9bd !important;
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .profile-page-root .user-role,
@@ -1819,18 +2038,18 @@ body,
 .is-dark .activity-item,
 [data-theme="dark"] .profile-page-root .profile-page-header,
 .is-dark .profile-page-header {
-  border-color: #1c3b56 !important;
+  border-color: #334155 !important;
   background-color: transparent !important;
 }
 
 [data-theme="dark"] .profile-page-root .sidebar-divider,
 .is-dark .sidebar-divider {
-  background-color: #1c3b56 !important;
+  background-color: #334155 !important;
 }
 
 [data-theme="dark"] .profile-page-root .nav-tab-btn,
 .is-dark .nav-tab-btn {
-  color: #94a9bd !important;
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .profile-page-root .nav-tab-btn:hover,
@@ -1905,8 +2124,8 @@ body,
 .is-dark .form-select,
 [data-theme="dark"] .profile-page-root .form-textarea,
 .is-dark .form-textarea {
-  background: #081a2d !important;
-  border-color: #1c3b56 !important;
+  background: #0f172a !important;
+  border-color: #334155 !important;
   color: #f8fafc !important;
 }
 
@@ -1922,8 +2141,8 @@ body,
 
 [data-theme="dark"] .profile-page-root .pricing-card,
 .is-dark .pricing-card {
-  background: #081a2d !important;
-  border-color: #1c3b56 !important;
+  background: #1e293b !important;
+  border-color: #334155 !important;
 }
 
 [data-theme="dark"] .profile-page-root .pro-features-list li,
@@ -1933,11 +2152,11 @@ body,
 
 [data-theme="dark"] .profile-page-root .btn-cancel-modal,
 .is-dark .btn-cancel-modal {
-  color: #94a9bd !important;
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .profile-page-root .upgrade-banner-card,
 .is-dark .upgrade-banner-card {
-  background: linear-gradient(135deg, #092644 0%, #061d33 100%) !important;
-  border-color: #1c3b56 !important;
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%) !important;
+  border-color: #334155 !important;
 }

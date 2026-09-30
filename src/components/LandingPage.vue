@@ -210,13 +210,18 @@
         <div class="properties-grid" id="propertiesGrid">
           <article
             v-for="property in displayedProperties"
-            :key="property.id"
+            :key="property.id || property.title"
             class="property-card"
           >
             <div class="property-media">
-              <img :src="property.image" :alt="property.title" loading="lazy">
+              <img
+                :src="property.image"
+                :alt="property.title"
+                loading="lazy"
+                @error="(e) => e.target.src = '/images/photo-1512917774080-9991f1c4c750.jfif'"
+              >
               <span class="property-badge" :style="property.badgeStyle">
-                <i class="fa-solid fa-robot"></i> {{ property.aiMatch }}% AI Match
+                <i class="fa-solid fa-wand-magic-sparkles"></i> {{ property.aiMatch || 94 }}% Match
               </span>
               <button
                 class="favorite-btn"
@@ -227,25 +232,28 @@
                 <i :class="property.liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
               </button>
               <div class="property-price-tag">
-                <span class="price">{{ property.currencySymbol || 'AED ' }}{{ property.price.toLocaleString() }}</span><span class="period">{{ property.period || '/yr' }}</span>
+                <span class="price">{{ property.currencySymbol || 'AED ' }}{{ (Number(property.price) || 0).toLocaleString() }}</span>
+                <span class="period">{{ property.period || '/yr' }}</span>
               </div>
             </div>
             <div class="property-body">
               <div class="property-location">
-                <i class="fa-solid fa-location-dot"></i> {{ property.location || property.area }}
+                <i class="fa-solid fa-location-dot"></i>
+                <span>{{ property.location || property.area || 'Dubai, UAE' }}</span>
               </div>
-              <h3 class="property-title">{{ property.title }}</h3>
-              <p class="property-summary">{{ property.summary }}</p>
+              <h3 class="property-title" :title="property.title">{{ property.title }}</h3>
+              <p class="property-summary">{{ property.summary || property.description }}</p>
 
               <div class="property-specs">
-                <span><i class="fa-solid fa-bed"></i> {{ property.beds }} Beds</span>
-                <span><i class="fa-solid fa-bath"></i> {{ property.baths }} Baths</span>
-                <span><i class="fa-solid fa-vector-square"></i> {{ property.size }} sqft</span>
+                <span><i class="fa-solid fa-bed"></i> {{ property.beds ?? 0 }} Beds</span>
+                <span><i class="fa-solid fa-bath"></i> {{ property.baths ?? 0 }} Baths</span>
+                <span><i class="fa-solid fa-vector-square"></i> {{ property.size || property.sqft || '1,450' }} sqft</span>
               </div>
 
               <div class="property-footer">
-                <button class="btn btn-view-more btn-sm" @click="openModal(property)">
-                  <span>View More</span>
+                <button class="btn-view-more" @click="openModal(property)">
+                  <span>View Details</span>
+                  <i class="fa-solid fa-arrow-right"></i>
                 </button>
               </div>
             </div>
@@ -470,7 +478,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
-import { propertyService } from '../services/propertyService'
+import { propertyService, DEFAULT_PROPERTIES } from '../services/propertyService'
 
 const emit = defineEmits(['switch-view'])
 const router = useRouter()
@@ -588,39 +596,20 @@ const filterTabsList = [
 const activeFilter = ref('all')
 
 // ========== PROPERTIES DATA ==========
-const properties = ref([])
+// Initialize immediately with default properties for 0ms instant display!
+const properties = ref(Array.isArray(DEFAULT_PROPERTIES) && DEFAULT_PROPERTIES.length > 0 ? [...DEFAULT_PROPERTIES] : [])
 const isLoadingProperties = ref(false)
 
 const loadProperties = async () => {
   isLoadingProperties.value = true
   try {
-    const res = await propertyService.getHomeData('en')
-    let list = []
-    if (res?.properties && res.properties.length > 0) {
-      list = [...res.properties]
-    }
-    // Also fetch catalog properties to ensure all categories (apartments, villas, estates) have rich data
-    try {
-      const catalog = await propertyService.getProperties({ per_page: 30 })
-      if (catalog?.data && catalog.data.length > 0) {
-        list = [...list, ...catalog.data]
-      }
-    } catch {}
-
-    // Deduplicate by ID
-    const unique = []
-    const seen = new Set()
-    for (const p of list) {
-      if (p && !seen.has(p.id)) {
-        seen.add(p.id)
-        unique.push(p)
-      }
-    }
-    if (unique.length > 0) {
-      properties.value = unique
+    // Fast direct query to /api/properties for real database listings
+    const res = await propertyService.getProperties({ per_page: 30 })
+    if (res?.data && res.data.length > 0) {
+      properties.value = res.data
     }
   } catch (err) {
-    console.error('Failed loading properties in LandingPage:', err)
+    console.warn('Failed loading live properties in LandingPage:', err)
   } finally {
     isLoadingProperties.value = false
   }

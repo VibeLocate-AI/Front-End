@@ -27,56 +27,117 @@
             </p>
 
             <!-- شريط البحث العصري المتكامل -->
-<!-- شريط البحث الأخضر الجديد -->
+<!-- شريط البحث العصري المتكامل -->
 <div class="green-hero-search">
   <div class="ghs-ai-pill">
     <i class="fa-solid fa-magnifying-glass ghs-search-icon"></i>
-    <input type="text" class="ghs-ai-input" v-model="query" placeholder="Search for your dream home with AI" @keydown.enter.prevent="handleSearch" />
+    <input
+      type="text"
+      class="ghs-ai-input"
+      v-model="query"
+      :placeholder="isRtl ? 'ابحث عن عقار أحلامك بالذكاء الاصطناعي...' : 'Search for your dream home with AI'"
+      @keydown.enter.prevent="handleSearch"
+    />
     <button type="button" class="ghs-ai-btn" @click="handleSearch">
-      <i class="fa-solid fa-wand-magic-sparkles"></i> Search AI
+      <i class="fa-solid fa-wand-magic-sparkles"></i> {{ isRtl ? 'بحث ذكي' : 'Search AI' }}
     </button>
   </div>
 
-  <div class="ghs-divider">or continue using the filters below</div>
+  <div class="ghs-divider">{{ isRtl ? 'أو واصل البحث باستخدام الفلاتر أدناه' : 'or continue using the filters below' }}</div>
 
   <div class="ghs-row">
     <div class="ghs-toggle-group">
-      <button type="button" class="ghs-toggle active">Buy</button>
-      <button type="button" class="ghs-toggle">Rent</button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homePurpose === 'sale' }"
+        @click="homePurpose = 'sale'"
+      >
+        {{ t('forSale') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homePurpose === 'rent' }"
+        @click="homePurpose = 'rent'"
+      >
+        {{ t('forRent') }}
+      </button>
     </div>
     
     <div class="ghs-location-wrap">
       <i class="fa-solid fa-location-dot ghs-loc-icon"></i>
-      <input type="text" class="ghs-loc-input" placeholder="Enter location" />
+      <input
+        type="text"
+        class="ghs-loc-input"
+        v-model="homeLocation"
+        :placeholder="t('enterLocation') || (isRtl ? 'أدخل الموقع أو الحي' : 'Enter location')"
+        @keydown.enter.prevent="handleSearch"
+      />
     </div>
 
-    <button type="button" class="ghs-search-btn" @click="handleSearch">Search</button>
+    <button type="button" class="ghs-search-btn" @click="handleSearch">{{ t('search') }}</button>
   </div>
 
   <div class="ghs-row ghs-row-bottom">
     <div class="ghs-toggle-group">
-      <button type="button" class="ghs-toggle active">All</button>
-      <button type="button" class="ghs-toggle">Ready</button>
-      <button type="button" class="ghs-toggle">Off-Plan</button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'all' }"
+        @click="homeStatus = 'all'"
+      >
+        {{ t('allPurpose') || (isRtl ? 'الكل' : 'All') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'ready' }"
+        @click="homeStatus = 'ready'"
+      >
+        {{ t('readyToMove') || (isRtl ? 'جاهز' : 'Ready') }}
+      </button>
+      <button
+        type="button"
+        class="ghs-toggle"
+        :class="{ active: homeStatus === 'offplan' }"
+        @click="homeStatus = 'offplan'"
+      >
+        {{ t('offPlan') || (isRtl ? 'على المخطط' : 'Off-Plan') }}
+      </button>
     </div>
     
     <div class="ghs-select-wrap">
-      <select class="ghs-select">
-        <option>Residential</option>
+      <select class="ghs-select" v-model="homeType">
+        <option value="all">{{ isRtl ? 'جميع العقارات' : 'All Properties' }}</option>
+        <option value="Apartment">{{ t('apartment') }}</option>
+        <option value="Villa">{{ t('villa') }}</option>
+        <option value="Penthouse">{{ t('penthouse') }}</option>
+        <option value="Townhouse">{{ t('townhouse') }}</option>
+        <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
       </select>
       <i class="fa-solid fa-caret-down ghs-caret"></i>
     </div>
     
     <div class="ghs-select-wrap">
-      <select class="ghs-select">
-        <option>Beds & Baths</option>
+      <select class="ghs-select" v-model="homeBedrooms">
+        <option value="any">{{ t('bedsAndBaths') }}</option>
+        <option value="1">{{ isRtl ? '1 غرفة' : '1 Bed' }}</option>
+        <option value="2">{{ isRtl ? '2 غرفة' : '2 Beds' }}</option>
+        <option value="3">{{ isRtl ? '3 غرف' : '3 Beds' }}</option>
+        <option value="4">{{ isRtl ? '4 غرف' : '4 Beds' }}</option>
+        <option value="5+">{{ isRtl ? '5+ غرف' : '5+ Beds' }}</option>
       </select>
       <i class="fa-solid fa-caret-down ghs-caret"></i>
     </div>
     
     <div class="ghs-select-wrap">
-      <select class="ghs-select">
-        <option>Price (AED)</option>
+      <select class="ghs-select" v-model="homePrice">
+        <option value="any">{{ t('priceAed') }}</option>
+        <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : '< AED 2M' }}</option>
+        <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M-5M' }}</option>
+        <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M-10M' }}</option>
+        <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
       </select>
       <i class="fa-solid fa-caret-down ghs-caret"></i>
     </div>
@@ -172,7 +233,7 @@
 
                     <!-- Top Badges -->
                     <div class="card-top-badges">
-                      <span class="card-property-tag" :style="prop.badgeStyle">
+                      <span class="card-property-tag" :class="{ 'is-luxury-type': prop.type === 'Villa' || prop.type === 'Penthouse' }">
                         {{ prop.type }}
                       </span>
                       <span class="card-verified-tag">
@@ -368,7 +429,7 @@
                     </button>
 
                     <!-- Type Tag -->
-                    <span class="nearby-prop-type" :style="prop.badgeStyle">
+                    <span class="nearby-prop-type" :class="{ 'is-luxury-type': prop.type === 'Villa' || prop.type === 'Penthouse' }">
                       {{ prop.type }}
                     </span>
                   </div>
@@ -909,14 +970,37 @@ const searchMessage = ref('')
 const toastMessage = ref('')
 const toastVisible = ref(false)
 
-const handleSearch = () => {
-  const q = query.value.trim()
-  if (!q) return
+const homePurpose = ref('sale')
+const homeLocation = ref('')
+const homeStatus = ref('all')
+const homeType = ref('all')
+const homeBedrooms = ref('any')
+const homePrice = ref('any')
 
-  // توجيه فوري لصفحة البحث الكاملة بدلاً من الشاشات التجريبية الفارغة
+const handleSearch = () => {
+  const q = (query.value || '').trim()
+  const loc = (homeLocation.value || '').trim()
+  const queryObj = {}
+
+  if (q) queryObj.q = q
+  if (loc) queryObj.location = loc
+  if (homePurpose.value && homePurpose.value !== 'all') queryObj.purpose = homePurpose.value
+  if (homeType.value && homeType.value !== 'all') queryObj.type = homeType.value
+  if (homeStatus.value && homeStatus.value !== 'all') queryObj.status = homeStatus.value
+  if (homeBedrooms.value && homeBedrooms.value !== 'any') queryObj.bedrooms = homeBedrooms.value
+  if (homePrice.value && homePrice.value !== 'any') queryObj.price = homePrice.value
+
   router.push({
     path: '/search',
-    query: { q }
+    query: queryObj
+  })
+}
+
+const searchByArea = (areaName) => {
+  if (!areaName) return
+  router.push({
+    path: '/search',
+    query: { location: areaName }
   })
 }
 
@@ -1001,11 +1085,6 @@ const toggleFavorite = (prop) => {
 /* removed duplicate handleSearch
   runAiSearch(query.value)
 }*/
-
-const searchByArea = (areaName) => {
-  query.value = areaName
-  handleSearch()
-}
 
 const scrollTo = (id) => {
   mobileMenuOpen.value = false

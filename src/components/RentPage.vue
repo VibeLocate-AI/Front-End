@@ -181,16 +181,26 @@
                   class="btn-view-mode"
                   :class="{ active: viewMode === 'grid' }"
                   @click="viewMode = 'grid'"
+                  :title="isRtl ? 'عرض شبكة' : 'Grid View'"
                 >
-                  <i class="fa-solid fa-border-all"></i> {{ t('grid') }}
+                  <i class="fa-solid fa-border-all"></i> {{ isRtl ? 'شبكة' : 'Grid' }}
                 </button>
                 <button
                   type="button"
                   class="btn-view-mode"
-                  :class="{ active: viewMode === 'map' }"
-                  @click="router.push('/map')"
+                  :class="{ active: viewMode === 'list' }"
+                  @click="viewMode = 'list'"
+                  :title="isRtl ? 'عرض قائمة' : 'List View'"
                 >
-                  <i class="fa-solid fa-map-location-dot"></i> {{ t('map') }}
+                  <i class="fa-solid fa-list-ul"></i> {{ isRtl ? 'قائمة' : 'List' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-view-mode"
+                  @click="router.push('/map')"
+                  :title="isRtl ? 'عرض الخريطة' : 'Map View'"
+                >
+                  <i class="fa-solid fa-map-location-dot"></i> {{ isRtl ? 'خريطة' : 'Map' }}
                 </button>
               </div>
 
@@ -205,7 +215,7 @@
           </div>
 
           <!-- Properties List -->
-          <div v-if="isLoading" class="rent-props-list">
+          <div v-if="isLoading" class="rent-props-list" :class="{ 'is-grid-layout': viewMode === 'grid', 'is-list-layout': viewMode === 'list' }">
             <div v-for="n in 6" :key="'skel-' + n" class="rent-prop-card rent-skeleton-card">
               <div class="rent-skeleton-thumb"></div>
               <div class="rent-card-details">
@@ -227,7 +237,7 @@
             </button>
           </div>
 
-          <div v-else class="rent-props-list">
+          <div v-else class="rent-props-list" :class="{ 'is-grid-layout': viewMode === 'grid', 'is-list-layout': viewMode === 'list' }">
             <article
               v-for="prop in paginatedList"
               :key="prop.id || prop.title"
@@ -480,15 +490,18 @@ const loadRentalProperties = async () => {
   try {
     const langKey = isRtl.value ? 'ar' : 'en'
     const [propRes, areasRes] = await Promise.allSettled([
-      propertyService.getProperties(),
+      propertyService.getProperties({ action_type: 'rent', per_page: 60 }),
       propertyService.getPopularAreas(langKey)
     ])
 
-    if (propRes.status === 'fulfilled' && propRes.value?.data) {
+    if (propRes.status === 'fulfilled' && propRes.value?.data && propRes.value.data.length > 0) {
       const rentals = propRes.value.data.filter(isRental).map(toCatalogProperty)
-      catalogProperties.value = rentals
+      catalogProperties.value = rentals.length > 0 ? rentals : propRes.value.data.map(toCatalogProperty)
     } else {
-      catalogProperties.value = []
+      // Fallback to broader catalog
+      const fallback = await propertyService.getProperties({ per_page: 100 })
+      const rentals = (fallback.data || []).filter(isRental).map(toCatalogProperty)
+      catalogProperties.value = rentals
     }
 
     if (areasRes.status === 'fulfilled' && areasRes.value?.data) {
@@ -507,7 +520,7 @@ const selectCategory = (catName) => {
   currentPage.value = 1
 }
 
-const resetFilters = () => {
+const resetFilters = async () => {
   filterState.value = {
     keyword: '',
     location: 'All',
@@ -520,10 +533,20 @@ const resetFilters = () => {
   selectedCategory.value = 'All Properties'
   sortBy.value = 'ai-match'
   currentPage.value = 1
+  await loadRentalProperties()
 }
 
-const applyFilters = () => {
+const applyFilters = async () => {
   currentPage.value = 1
+  const kw = filterState.value.keyword.trim()
+  if (kw) {
+    try {
+      const res = await propertyService.getProperties({ action_type: 'rent', search: kw, per_page: 50 })
+      if (res.data && res.data.length > 0) {
+        catalogProperties.value = res.data.map(toCatalogProperty)
+      }
+    } catch {}
+  }
   showToast(isRtl.value ? 'تم تطبيق الفلاتر!' : 'Filters applied to catalog!')
 }
 
@@ -654,6 +677,92 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition: all 0.3s ease;
+}
+
+/* GRID LAYOUT STYLES */
+.rent-props-list.is-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.rent-props-list.is-grid-layout .rent-prop-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rent-props-list.is-grid-layout .rent-prop-card::before {
+  display: none;
+}
+
+.rent-props-list.is-grid-layout .rent-card-thumb {
+  width: 100%;
+  height: 200px;
+}
+
+.rent-props-list.is-grid-layout .rent-card-details {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rent-props-list.is-grid-layout .rent-card-title {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 2.7em;
+}
+
+.rent-props-list.is-grid-layout .rent-card-specs {
+  margin-top: 6px;
+  padding-top: 10px;
+  justify-content: space-between;
+}
+
+.rent-props-list.is-grid-layout .rent-card-footer {
+  margin-top: 10px;
+}
+
+.rent-props-list.is-grid-layout .rent-btn-view {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 14px;
+}
+
+.rent-props-list.is-grid-layout .rent-skeleton-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.rent-props-list.is-grid-layout .rent-skeleton-thumb {
+  width: 100%;
+  height: 200px;
+}
+
+/* LIST LAYOUT STYLES (Default horizontal) */
+.rent-props-list.is-list-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rent-props-list.is-list-layout .rent-prop-card {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+}
+
+.rent-props-list.is-list-layout .rent-card-thumb {
+  width: 180px;
+  height: 135px;
 }
 
 /* Individual Card */
