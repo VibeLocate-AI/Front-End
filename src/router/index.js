@@ -117,6 +117,20 @@ const routes = [
     component: ProfilePage
   },
   {
+    path: '/agent-dashboard',
+    name: 'AgentDashboard',
+    redirect: '/profile/agent-dashboard',
+    alias: [
+      '/agent/dashboard', 
+      '/agent-tools',
+      '/agent/properties',
+      '/agent/requests',
+      '/agent/messages',
+      '/agent/analytics',
+      '/agent/verification'
+    ]
+  },
+  {
     path: '/login',
     name: 'Login',
     component: LoginPage

@@ -110,6 +110,32 @@ export const authService = {
     const nameParts = fullName.split(' ')
     const firstName = userData.first_name || nameParts[0] || 'User'
     const lastName = userData.last_name || nameParts.slice(1).join(' ') || ''
+    const isAgent = userData.role_slug === 'agent' || userData.role === 'agent'
+
+    // If agent registration with agency/license, attempt the dedicated agent registration endpoint first
+    if (isAgent && (userData.agency_name || userData.license_number)) {
+      try {
+        const agentPayload = {
+          first_name: firstName,
+          last_name: lastName,
+          email: (userData.email || '').trim(),
+          phone: userData.phone || '+971500000000',
+          password: userData.password,
+          password_confirmation: userData.password_confirmation || userData.confirmPassword || userData.password,
+          agency_name: userData.agency_name || 'VibeLocate Partner',
+          license_number: userData.license_number || 'RERA-PENDING'
+        }
+        const agentRes = await apiClient.post('/agent/register', agentPayload)
+        const accessToken = agentRes?.access_token || agentRes?.token || agentRes?.data?.token
+        const refreshToken = agentRes?.refresh_token || agentRes?.data?.refresh_token
+        if (accessToken) {
+          this.setTokens(accessToken, refreshToken, true)
+        }
+        return agentRes
+      } catch (agentErr) {
+        console.warn('[authService] /agent/register fallback to /register:', agentErr?.message)
+      }
+    }
 
     const payload = {
       first_name: firstName,
@@ -118,7 +144,7 @@ export const authService = {
       phone: userData.phone || '+971500000000',
       password: userData.password,
       password_confirmation: userData.password_confirmation || userData.confirmPassword || userData.password,
-      role_slug: userData.role_slug || 'tenant',
+      role_slug: isAgent ? 'agent' : (userData.role_slug || 'tenant'),
       city: userData.city || 'Dubai',
       country: userData.country || 'United Arab Emirates'
     }
@@ -397,6 +423,54 @@ export const authService = {
    */
   async completeProfile(payload = { preferred_language: 'en', currency: 'AED' }) {
     return await apiClient.post('/complete-profile', payload)
+  },
+
+  /**
+   * Update User Search & Lifestyle Preferences
+   * PUT /api/profile/preferences
+   */
+  async updatePreferences(payload) {
+    return await apiClient.put('/profile/preferences', payload)
+  },
+
+  /**
+   * Get User Saved Properties from Backend
+   * GET /api/profile/saved-properties?page=1&per_page=12
+   */
+  async getSavedProperties(page = 1, perPage = 12) {
+    return await apiClient.get('/profile/saved-properties', { params: { page, per_page: perPage } })
+  },
+
+  /**
+   * Get User Recently Viewed Properties from Backend
+   * GET /api/profile/recently-viewed?page=1&per_page=12
+   */
+  async getRecentlyViewed(page = 1, perPage = 12) {
+    return await apiClient.get('/profile/recently-viewed', { params: { page, per_page: perPage } })
+  },
+
+  /**
+   * Get User Search Alerts
+   * GET /api/profile/search-alerts?page=1&per_page=12
+   */
+  async getSearchAlerts(page = 1, perPage = 12) {
+    return await apiClient.get('/profile/search-alerts', { params: { page, per_page: perPage } })
+  },
+
+  /**
+   * Create a new Search Alert
+   * POST /api/search-alerts
+   */
+  async createSearchAlert(payload) {
+    return await apiClient.post('/search-alerts', payload)
+  },
+
+  /**
+   * Get User Inquiries
+   * GET /api/profile/inquiries?page=1&per_page=12
+   */
+  async getInquiries(page = 1, perPage = 12) {
+    return await apiClient.get('/profile/inquiries', { params: { page, per_page: perPage } })
   },
 
   // =========================================================================

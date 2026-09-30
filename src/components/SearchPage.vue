@@ -64,8 +64,16 @@
               <button
                 type="button"
                 class="swc-purpose-btn"
-                :class="{ active: filters.purpose !== 'rent' }"
-                @click="filters.purpose = 'sale'"
+                :class="{ active: filters.purpose === 'all' }"
+                @click="filters.purpose = 'all'; runSearch()"
+              >
+                {{ isRtl ? 'الكل' : 'All' }}
+              </button>
+              <button
+                type="button"
+                class="swc-purpose-btn"
+                :class="{ active: filters.purpose === 'sale' }"
+                @click="filters.purpose = 'sale'; runSearch()"
               >
                 {{ t('forSale') }}
               </button>
@@ -73,7 +81,7 @@
                 type="button"
                 class="swc-purpose-btn"
                 :class="{ active: filters.purpose === 'rent' }"
-                @click="filters.purpose = 'rent'"
+                @click="filters.purpose = 'rent'; runSearch()"
               >
                 {{ t('forRent') }}
               </button>
@@ -111,7 +119,7 @@
                 type="button"
                 class="swc-status-chip"
                 :class="{ active: filters.status === 'all' }"
-                @click="filters.status = 'all'"
+                @click="filters.status = 'all'; runSearch()"
               >
                 {{ t('allPurpose') }}
               </button>
@@ -119,7 +127,7 @@
                 type="button"
                 class="swc-status-chip"
                 :class="{ active: filters.status === 'ready' }"
-                @click="filters.status = 'ready'"
+                @click="filters.status = 'ready'; runSearch()"
               >
                 {{ t('readyToMove') }}
               </button>
@@ -127,7 +135,7 @@
                 type="button"
                 class="swc-status-chip"
                 :class="{ active: filters.status === 'offplan' }"
-                @click="filters.status = 'offplan'"
+                @click="filters.status = 'offplan'; runSearch()"
               >
                 {{ t('offPlan') }}
               </button>
@@ -138,19 +146,22 @@
 
             <!-- Residential / Type -->
             <div class="swc-filter-select-wrap">
-              <select v-model="filters.type" class="swc-filter-select">
-                <option value="all">{{ t('residential') }}</option>
+              <select v-model="filters.type" class="swc-filter-select" @change="runSearch">
+                <option value="all">{{ t('allProperties') || (isRtl ? 'جميع الأنواع' : 'All Types') }}</option>
                 <option value="Apartment">{{ t('apartment') }}</option>
                 <option value="Villa">{{ t('villa') }}</option>
                 <option value="Penthouse">{{ t('penthouse') }}</option>
                 <option value="Townhouse">{{ t('townhouse') }}</option>
+                <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
+                <option value="Commercial">{{ isRtl ? 'تجاري' : 'Commercial' }}</option>
+                <option value="Building">{{ isRtl ? 'مبنى بالكامل' : 'Full Building' }}</option>
               </select>
               <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
             </div>
 
             <!-- Beds & Baths -->
             <div class="swc-filter-select-wrap">
-              <select v-model="filters.bedrooms" class="swc-filter-select">
+              <select v-model="filters.bedrooms" class="swc-filter-select" @change="runSearch">
                 <option value="any">{{ t('bedsAndBaths') }}</option>
                 <option value="1">{{ isRtl ? '1 غرفة' : '1 Bed' }}</option>
                 <option value="2">{{ isRtl ? '2 غرفة' : '2 Beds' }}</option>
@@ -163,7 +174,7 @@
 
             <!-- Price (AED) -->
             <div class="swc-filter-select-wrap">
-              <select v-model="filters.priceRange" class="swc-filter-select">
+              <select v-model="filters.priceRange" class="swc-filter-select" @change="runSearch">
                 <option value="any">{{ t('priceAed') }}</option>
                 <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : 'Under AED 2M' }}</option>
                 <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M – 5M' }}</option>
@@ -530,7 +541,7 @@ const toastVisible = ref(false)
 let toastTimer = null
 
 const filters = ref({
-  purpose: 'sale',
+  purpose: 'all',
   type: 'all',
   priceRange: 'any',
   bedrooms: 'any',
@@ -561,12 +572,14 @@ const trendingCategories = computed(() => [
 
 // ======= Computed =======
 const hasActiveFilters = computed(() =>
-  filters.value.purpose !== 'sale' ||
+  filters.value.purpose !== 'all' ||
   filters.value.type !== 'all' ||
   filters.value.priceRange !== 'any' ||
   filters.value.bedrooms !== 'any' ||
   filters.value.location !== 'all' ||
-  filters.value.status !== 'all'
+  filters.value.status !== 'all' ||
+  Boolean(locationQuery.value.trim()) ||
+  Boolean(searchQuery.value.trim())
 )
 
 const purposeLabel = computed(() => {
@@ -588,26 +601,58 @@ const priceLabel = computed(() => {
 const displayProperties = computed(() => {
   let list = [...allResults.value]
 
-  // Purpose filter
+  // 1. Live text search filtering across title, location, area, type, description, tags, specs
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
+    const translatedQ = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(q).toLowerCase() : ''
+    const rawWords = q.split(/\s+/).filter(w => w.length > 1)
+    const transWords = translatedQ ? translatedQ.split(/\s+/).filter(w => w.length > 1) : []
+    const allWords = [...new Set([...rawWords, ...transWords])]
+
+    list = list.filter(p => {
+      const pText = [
+        p.title || '',
+        p.location || '',
+        p.area || '',
+        p.type || '',
+        p.category || '',
+        p.description || '',
+        p.summary || '',
+        ...(p.tags || []),
+        p.beds ? `${p.beds} bed` : '',
+        p.isForRent ? 'rent للايجار ايجار' : 'sale buy للبيع شراء'
+      ].join(' ').toLowerCase()
+
+      return pText.includes(q) || (translatedQ && pText.includes(translatedQ)) || allWords.some(w => pText.includes(w))
+    })
+  }
+
+  // 2. Purpose filter
   if (filters.value.purpose === 'sale') list = list.filter(p => !p.isForRent)
   else if (filters.value.purpose === 'rent') list = list.filter(p => p.isForRent)
 
-  // Type filter
+  // 3. Type filter
   if (filters.value.type !== 'all') {
-    list = list.filter(p => p.type === filters.value.type)
+    const t = filters.value.type.toLowerCase()
+    list = list.filter(p => (p.type || '').toLowerCase().includes(t) || (p.category || '').toLowerCase().includes(t))
   }
 
-  // Location filter — driven by locationQuery text or filters.location dropdown
+  // 4. Location filter — driven by locationQuery text or filters.location dropdown
   const locVal = locationQuery.value.trim() || (filters.value.location !== 'all' ? filters.value.location : '')
   if (locVal) {
     const loc = locVal.toLowerCase()
-    list = list.filter(p => (p.location || p.area || '').toLowerCase().includes(loc))
+    const transLoc = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(loc).toLowerCase() : ''
+    list = list.filter(p => {
+      const pLoc = `${p.location || ''} ${p.area || ''}`.toLowerCase()
+      return pLoc.includes(loc) || (transLoc && pLoc.includes(transLoc))
+    })
   }
 
-  // Status filter (All / Ready / Off-Plan)
+  // 5. Status filter (All / Ready / Off-Plan)
   if (filters.value.status === 'ready') list = list.filter(p => !p.isOffPlan)
   else if (filters.value.status === 'offplan') list = list.filter(p => p.isOffPlan)
-  // Bedrooms filter
+
+  // 6. Bedrooms filter
   if (filters.value.bedrooms !== 'any') {
     const beds = filters.value.bedrooms
     if (beds === '5+') {
@@ -617,7 +662,7 @@ const displayProperties = computed(() => {
     }
   }
 
-  // Price filter
+  // 7. Price filter
   if (filters.value.priceRange !== 'any') {
     list = list.filter(p => {
       const price = Number(p.price) || 0
@@ -629,7 +674,7 @@ const displayProperties = computed(() => {
     })
   }
 
-  // Sort
+  // 8. Sorting
   if (sortBy.value === 'price-asc') list.sort((a, b) => a.price - b.price)
   else if (sortBy.value === 'price-desc') list.sort((a, b) => b.price - a.price)
   else if (sortBy.value === 'ai-match') list.sort((a, b) => (b.matchScore || b.aiMatch || 0) - (a.matchScore || a.aiMatch || 0))
@@ -661,26 +706,51 @@ const onImgError = (e) => {
 const runSearch = async () => {
   isLoading.value = true
   hasSearched.value = true
-  isAiSearch.value = false
   page.value = 1
 
   try {
     const query = searchQuery.value.trim()
+    const loc = locationQuery.value.trim() || (filters.value.location !== 'all' ? filters.value.location : '')
+
+    // Prepare API search query parameters
+    const apiParams = {
+      per_page: 50,
+      page: 1
+    }
 
     if (query) {
-      // Use AI contextual search
+      apiParams.search = query
+    } else if (loc) {
+      apiParams.search = loc
+    }
+
+    if (filters.value.purpose === 'rent') {
+      apiParams.action_type = 'rent'
+    } else if (filters.value.purpose === 'sale') {
+      apiParams.action_type = 'buy'
+    }
+
+    if (filters.value.type && filters.value.type !== 'all') {
+      apiParams.type = filters.value.type
+    }
+
+    if (filters.value.bedrooms && filters.value.bedrooms !== 'any') {
+      apiParams.bedrooms = filters.value.bedrooms.replace('+', '')
+    }
+
+    if (query) {
       isAiSearch.value = true
       const result = await propertyService.searchWithAi(query)
-      if (result.success && result.data.length > 0) {
+      if (result.success && result.data && result.data.length > 0) {
         allResults.value = result.data
       } else {
-        // Fall back to all properties
-        const res = await propertyService.getProperties({ per_page: 50 })
+        // Fall back to API properties with active parameters
+        const res = await propertyService.getProperties(apiParams)
         allResults.value = res.data || []
       }
     } else {
-      // No text query — load all properties
-      const res = await propertyService.getProperties({ per_page: 50 })
+      isAiSearch.value = false
+      const res = await propertyService.getProperties(apiParams)
       allResults.value = res.data || []
     }
 
@@ -699,7 +769,16 @@ const loadMore = async () => {
   isLoadingMore.value = true
   page.value++
   try {
-    const res = await propertyService.getProperties({ per_page: perPage, page: page.value })
+    const query = searchQuery.value.trim()
+    const loc = locationQuery.value.trim() || (filters.value.location !== 'all' ? filters.value.location : '')
+    const apiParams = { per_page: perPage, page: page.value }
+    if (query) apiParams.search = query
+    else if (loc) apiParams.search = loc
+    if (filters.value.purpose === 'rent') apiParams.action_type = 'rent'
+    else if (filters.value.purpose === 'sale') apiParams.action_type = 'buy'
+    if (filters.value.type && filters.value.type !== 'all') apiParams.type = filters.value.type
+
+    const res = await propertyService.getProperties(apiParams)
     const more = res.data || []
     allResults.value = [...allResults.value, ...more]
     if (more.length < perPage) canLoadMore.value = false
@@ -712,34 +791,31 @@ const loadMore = async () => {
 
 const clearSearch = () => {
   searchQuery.value = ''
-  allResults.value = []
-  hasSearched.value = false
-  isAiSearch.value = false
-  canLoadMore.value = false
+  runSearch()
 }
 
 const clearAllFilters = () => {
-  filters.value = { purpose: 'sale', type: 'all', priceRange: 'any', bedrooms: 'any', location: 'all', status: 'all' }
+  filters.value = { purpose: 'all', type: 'all', priceRange: 'any', bedrooms: 'any', location: 'all', status: 'all' }
   locationQuery.value = ''
+  searchQuery.value = ''
   sortBy.value = 'recommended'
-  clearSearch()
+  runSearch()
 }
 
 let debounceTimer = null
 const onQueryInput = () => {
-  // auto-search after 600ms of no typing
+  // auto-search after 450ms of no typing
   if (debounceTimer) clearTimeout(debounceTimer)
   if (searchQuery.value.trim().length >= 2) {
-    debounceTimer = setTimeout(() => runSearch(), 600)
+    debounceTimer = setTimeout(() => runSearch(), 450)
   }
 }
 
 const onLocationInput = () => {
-  // locationQuery is reactive — displayProperties re-computes automatically
-  // Optionally trigger full re-search after 800ms for fresh API results
+  // auto-search after 600ms of no typing
   if (debounceTimer) clearTimeout(debounceTimer)
   if (locationQuery.value.trim().length >= 2) {
-    debounceTimer = setTimeout(() => runSearch(), 800)
+    debounceTimer = setTimeout(() => runSearch(), 600)
   }
 }
 
@@ -772,6 +848,28 @@ const toggleFavorite = (prop) => {
   }
 }
 
+// Watch URL query parameter changes
+watch(
+  () => route.query,
+  (newQuery) => {
+    const q = newQuery.q || newQuery.query || ''
+    const type = newQuery.type || ''
+    const purpose = newQuery.purpose || ''
+    const location = newQuery.location || ''
+
+    if (q !== undefined) searchQuery.value = q
+    if (type) filters.value.type = type
+    if (purpose) filters.value.purpose = purpose
+    if (location) {
+      locationQuery.value = location
+      filters.value.location = location
+    }
+
+    runSearch()
+  },
+  { deep: true }
+)
+
 // ======= Lifecycle =======
 onMounted(async () => {
   // Read query from URL if provided
@@ -783,24 +881,12 @@ onMounted(async () => {
   if (q) searchQuery.value = q
   if (type) filters.value.type = type
   if (purpose) filters.value.purpose = purpose
-  if (location) filters.value.location = location
-
-  if (q || type || purpose || location) {
-    await runSearch()
-  } else {
-    // Load initial set
-    try {
-      isLoading.value = true
-      const res = await propertyService.getProperties({ per_page: perPage })
-      allResults.value = res.data || []
-      hasSearched.value = false
-      canLoadMore.value = (res.data || []).length >= perPage
-    } catch {
-      allResults.value = []
-    } finally {
-      isLoading.value = false
-    }
+  if (location) {
+    locationQuery.value = location
+    filters.value.location = location
   }
+
+  await runSearch()
 })
 
 onUnmounted(() => {

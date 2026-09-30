@@ -1783,41 +1783,41 @@ onUnmounted(() => {
 
 /* Dark Theme Support for POIs */
 [data-theme="dark"] .poi-dock-inner {
-  background: rgba(10, 25, 45, 0.94);
+  background: rgba(30, 41, 59, 0.92);
   border-color: rgba(0, 210, 255, 0.25);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 [data-theme="dark"] .poi-main-toggle {
-  background: #112a42;
+  background: #1e293b;
   color: #cbd5e1;
 }
 [data-theme="dark"] .poi-chip-btn {
-  background: #0d2238;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #1e293b;
+  border-color: #334155;
   color: #cbd5e1;
 }
 [data-theme="dark"] .poi-chip-btn:hover {
   border-color: #00d2ff;
   color: #00d2ff;
-  background: rgba(0, 210, 255, 0.1);
+  background: rgba(0, 210, 255, 0.15);
 }
 [data-theme="dark"] .poi-chip-btn.active {
   background: #0284c7;
   color: #ffffff;
 }
 [data-theme="dark"] :deep(.poi-pin-bubble) {
-  background: #092036;
+  background: #1e293b;
 }
 [data-theme="dark"] :deep(.poi-glass-popup .leaflet-popup-content-wrapper) {
-  background: #0a1f33 !important;
+  background: #1e293b !important;
   border-color: rgba(0, 210, 255, 0.3) !important;
 }
 [data-theme="dark"] :deep(.poi-pop-name) {
   color: #ffffff;
 }
 [data-theme="dark"] :deep(.poi-pop-gmaps-btn) {
-  background: #112a42;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #24344d;
+  border-color: #334155;
   color: #00d2ff;
 }
 </style>

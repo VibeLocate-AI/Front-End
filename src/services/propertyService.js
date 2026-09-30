@@ -162,8 +162,8 @@ export function normalizeProperty(raw) {
     reviews: Array.isArray(raw.reviews) ? raw.reviews : [],
     aiMatch: 88 + ((raw.id * 7) % 12),
     badgeStyle: type === 'Villa' || type === 'Penthouse'
-      ? 'background: var(--gold-accent); color: var(--navy-dark);'
-      : 'background: var(--cyan-accent);',
+      ? 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);'
+      : 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: featuresList.length > 0 ? featuresList.slice(0, 4) : [type, areaText.split(',')[0], `${beds} Beds`],
     specs: {
       beds: `${beds} Bedrooms`,
@@ -197,7 +197,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 98,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Villa', 'Palm Jumeirah', '5 Beds', 'Private Pool'],
     description: 'Signature beachfront villa with private pool, direct beach access, and lush landscaping.',
     specs: { beds: '5 Bedrooms', baths: '6 Bathrooms', area: '6,500 sq.ft', parking: 'Included', amenities: ['Pool', 'Beach Access', 'Gym'] }
@@ -219,7 +219,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 96,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Dubai Marina', '2 Beds', 'Marina View'],
     description: 'Ultra-luxury high-rise apartment with panoramic views of Dubai Marina and easy metro access.',
     specs: { beds: '2 Bedrooms', baths: '3 Bathrooms', area: '1,450 sq.ft', parking: 'Included', amenities: ['Balcony', 'Pool', 'Concierge'] }
@@ -241,7 +241,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 94,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Penthouse', 'Downtown Dubai', '4 Beds', 'Burj View'],
     description: 'Iconic cantilever penthouse featuring 360-degree skyline views of Burj Khalifa and Dubai Fountain.',
     specs: { beds: '4 Bedrooms', baths: '5 Bathrooms', area: '3,200 sq.ft', parking: 'Included', amenities: ['Private Terrace', 'Spa', 'Valet'] }
@@ -263,7 +263,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 92,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Townhouse', 'JVC', '3 Beds', 'Garden'],
     description: 'Contemporary family townhome situated in a vibrant community with private garden and parks.',
     specs: { beds: '3 Bedrooms', baths: '4 Bathrooms', area: '2,100 sq.ft', parking: 'Included', amenities: ['Garden', 'Playground', 'Gym'] }
@@ -285,7 +285,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 90,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Dubai Marina', '1 Bed'],
     description: 'Chic designer 1-bedroom suite overlooking yachts with immediate promenade access.',
     specs: { beds: '1 Bedroom', baths: '2 Bathrooms', area: '850 sq.ft', parking: 'Included', amenities: ['Pool', 'Sauna', 'Security'] }
@@ -307,7 +307,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 89,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Townhouse', 'JVC', '3 Beds'],
     description: 'Modern 3-bedroom residence with landscaped courtyard and sleek open-concept kitchen.',
     specs: { beds: '3 Bedrooms', baths: '3 Bathrooms', area: '1,800 sq.ft', parking: 'Included', amenities: ['Courtyard', 'Balcony', 'Smart Lock'] }
@@ -329,7 +329,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 88,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Business Bay', '2 Beds'],
     description: 'Prime executive residence along the Dubai Canal offering sunset water views.',
     specs: { beds: '2 Bedrooms', baths: '2 Bathrooms', area: '1,200 sq.ft', parking: 'Included', amenities: ['Canal View', 'Gym', 'Infinity Pool'] }
@@ -351,14 +351,65 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 95,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Villa', 'Dubai Hills', '5 Beds', 'Golf Course'],
     description: 'Prestigious golf course villa with expansive garden, maid room, and grand double-height ceilings.',
     specs: { beds: '5 Bedrooms', baths: '6 Bathrooms', area: '5,200 sq.ft', parking: 'Included', amenities: ['Golf View', 'Private Garden', 'Clubhouse'] }
   }
 ]
 
+export function translateSearchTerm(query) {
+  if (!query) return ''
+  let text = String(query).trim()
+  if (!text) return ''
+
+  const dict = [
+    { ar: /دبي\s*مارينا/gi, en: 'Dubai Marina' },
+    { ar: /مارينا/gi, en: 'Marina' },
+    { ar: /داون\s*تاون|وسط\s*المدينة/gi, en: 'Downtown' },
+    { ar: /برج\s*خليفة/gi, en: 'Burj Khalifa' },
+    { ar: /نخلة\s*جميرا/gi, en: 'Palm Jumeirah' },
+    { ar: /جميرا/gi, en: 'Jumeirah' },
+    { ar: /الخليج\s*التجاري|بزنس\s*باي/gi, en: 'Business Bay' },
+    { ar: /دبي\s*هيلز/gi, en: 'Dubai Hills' },
+    { ar: /قرية\s*جميرا/gi, en: 'Jumeirah Village' },
+    { ar: /دبي/gi, en: 'Dubai' },
+    { ar: /شقق|شقة/gi, en: 'Apartment' },
+    { ar: /فلل|فيلا/gi, en: 'Villa' },
+    { ar: /بنتهاوس/gi, en: 'Penthouse' },
+    { ar: /تاون\s*هاوس/gi, en: 'Townhouse' },
+    { ar: /مكاتب|مكتب/gi, en: 'Office' },
+    { ar: /مستودع|مخزن/gi, en: 'Warehouse' },
+    { ar: /فندق|فنادق/gi, en: 'Hotel' },
+    { ar: /مطعم|مطاعم/gi, en: 'Restaurant' },
+    { ar: /كافيه|مقهى/gi, en: 'Cafe' },
+    { ar: /مبنى|عمارة/gi, en: 'Building' },
+    { ar: /تجاري/gi, en: 'Commercial' },
+    { ar: /سكني/gi, en: 'Residential' },
+    { ar: /مسبح/gi, en: 'Pool' },
+    { ar: /بحر|شاطئ|شاطيء|واجهة\s*مائية/gi, en: 'Beach Waterfront' },
+    { ar: /مفروش/gi, en: 'Furnished' },
+    { ar: /فاخر|فخم/gi, en: 'Luxury' },
+    { ar: /استوديو/gi, en: 'Studio' },
+    { ar: /غرفة\s*نوم|غرفة/gi, en: '1 Bed' },
+    { ar: /غرفتين/gi, en: '2 Beds' },
+    { ar: /3\s*غرف|ثلاث\s*غرف/gi, en: '3 Beds' },
+    { ar: /4\s*غرف|اربع\s*غرف/gi, en: '4 Beds' },
+    { ar: /5\s*غرف|خمس\s*غرف/gi, en: '5 Beds' }
+  ]
+
+  for (const { ar, en } of dict) {
+    text = text.replace(ar, en)
+  }
+
+  // Remove common Arabic particles that hinder SQL LIKE queries
+  text = text.replace(/\b(في|مع|على|من|إلى|قرب|بجانب|للبيع|للايجار|ايجار|بيع|شراء)\b/gi, '').trim()
+  return text
+}
+
 export const propertyService = {
+  translateSearchTerm,
+
   /**
    * Fetch real property listings directly from backend database API (/api/properties)
    * @param {Object} params - { search, type_id, bedrooms, bathrooms, min_price, max_price, page, per_page }
@@ -366,14 +417,43 @@ export const propertyService = {
   async getProperties(params = {}) {
     const queryParams = { ...params }
 
+    // Smart search term normalization for backend LIKE query
+    if (queryParams.search) {
+      const orig = String(queryParams.search).trim()
+      const translated = translateSearchTerm(orig)
+      if (translated && translated !== orig) {
+        queryParams.search = translated
+      }
+    }
+
     // Map frontend filters to Laravel PropertyController query parameters
     if (params.type && params.type !== 'all') {
       const t = params.type.toLowerCase()
-      if (t.includes('apartment')) queryParams.type_id = 1
-      else if (t.includes('villa')) queryParams.type_id = 2
-      else if (t.includes('penthouse')) queryParams.type_id = 3
-      else if (t.includes('townhouse')) queryParams.type_id = 4
+      if (t.includes('apartment') || t.includes('شقة')) queryParams.type_id = 1
+      else if (t.includes('villa') || t.includes('فيلا') || t.includes('فلل')) queryParams.type_id = 2
+      else if (t.includes('penthouse') || t.includes('بنتهاوس')) queryParams.type_id = 3
+      else if (t.includes('townhouse') || t.includes('تاون')) queryParams.type_id = 4
+      else if (t.includes('house') || t.includes('منزل')) queryParams.type_id = 5
+      else if (t.includes('office') || t.includes('مكتب')) queryParams.type_id = 6
+      else if (t.includes('warehouse') || t.includes('مستودع')) queryParams.type_id = 7
+      else if (t.includes('land') || t.includes('أرض')) queryParams.type_id = 8
+      else if (t.includes('restaurant') || t.includes('مطعم')) queryParams.type_id = 9
+      else if (t.includes('hotel') || t.includes('فندق')) queryParams.type_id = 10
+      else if (t.includes('building') || t.includes('مبنى')) queryParams.type_id = 11
+      else if (t.includes('commercial') || t.includes('تجاري')) queryParams.type_id = 14
+      else if (t.includes('showroom') || t.includes('معرض')) queryParams.type_id = 15
+      else if (t.includes('cafe') || t.includes('كافيه')) queryParams.type_id = 16
       delete queryParams.type
+    }
+
+    if (params.purpose) {
+      if (params.purpose === 'rent') queryParams.action_type = 'rent'
+      else if (params.purpose === 'sale' || params.purpose === 'buy') queryParams.action_type = 'buy'
+      delete queryParams.purpose
+    }
+
+    if (params.bedrooms && params.bedrooms !== 'any') {
+      queryParams.bedrooms = String(params.bedrooms).replace('+', '')
     }
 
     try {
@@ -574,12 +654,15 @@ export const propertyService = {
       return { success: true, data: [] }
     }
 
+    const translatedTerm = translateSearchTerm(term)
+    const effectiveSearchTerm = translatedTerm || term
+
     try {
       // 1. Call official backend AI contextual search endpoint
       const response = await apiClient.post('/ai/contextual-search', {
-        query: term,
-        search: term,
-        prompt: term
+        query: effectiveSearchTerm,
+        search: effectiveSearchTerm,
+        prompt: effectiveSearchTerm
       })
 
       // Extract array from response payload
@@ -621,37 +704,56 @@ export const propertyService = {
           source: 'backend_ai'
         }
       }
-    } catch (err) {
-      console.warn('Backend /ai/contextual-search endpoint returned error, applying intelligent fallback:', err)
+    } catch {
+      // Backend /ai/contextual-search not supported; proceed to intelligent database query
     }
 
-    // 2. Intelligent Fallback: Database property query with client-side AI relevance scoring
+    // 2. Intelligent Fallback: Database property query with bilingual matching and AI relevance scoring
     try {
-      const res = await this.getProperties({ search: term, per_page: 20 })
-      const words = term.toLowerCase().split(/\s+/).filter(Boolean)
+      // Search with translated term first
+      let res = await this.getProperties({ search: effectiveSearchTerm, per_page: 50 })
+      
+      // If no items returned and translated term differed, try raw term
+      if ((!res.data || res.data.length === 0) && effectiveSearchTerm !== term) {
+        res = await this.getProperties({ search: term, per_page: 50 })
+      }
+
+      // If still empty (e.g. specialized keywords), fetch broader set to score client-side
+      if (!res.data || res.data.length === 0) {
+        res = await this.getProperties({ per_page: 50 })
+      }
+
+      const words = `${term} ${translatedTerm}`.toLowerCase().split(/\s+/).filter(w => w.length > 1)
 
       const scored = (res.data || []).map(p => {
-        let score = 75
-        const content = `${p.title} ${p.area} ${p.type} ${p.summary} ${p.tags.join(' ')}`.toLowerCase()
+        let score = 70
+        let matchesCount = 0
+        const content = `${p.title || ''} ${p.area || ''} ${p.location || ''} ${p.type || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
 
         words.forEach(w => {
           if (content.includes(w)) {
-            score += 7
+            score += 8
+            matchesCount++
           }
         })
 
         return {
           ...p,
-          matchScore: Math.min(99, Math.max(75, score))
+          matchScore: Math.min(99, Math.max(70, score)),
+          matchesCount
         }
       })
 
-      scored.sort((a, b) => b.matchScore - a.matchScore)
+      // If there are properties with matches, only return those that matched!
+      const matchingItems = scored.filter(p => p.matchesCount > 0)
+      const finalItems = matchingItems.length > 0 ? matchingItems : scored
+
+      finalItems.sort((a, b) => b.matchScore - a.matchScore)
 
       return {
         success: true,
-        data: scored,
-        source: 'fallback'
+        data: finalItems,
+        source: 'database_search'
       }
     } catch (fallbackErr) {
       console.error('Fallback search failed:', fallbackErr)
