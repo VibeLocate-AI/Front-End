@@ -20,6 +20,7 @@ import PaymentPage from '../components/PaymentPage.vue'
 import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 import NotificationsPage from '../components/NotificationsPage.vue'
 import AgentContactPage from '../components/AgentContactPage.vue'
+import SearchPage from '../components/SearchPage.vue'
 
 const routes = [
   {
@@ -74,6 +75,11 @@ const routes = [
     component: AgentContactPage
   },
   {
+    path: '/search',
+    name: 'Search',
+    component: SearchPage
+  },
+  {
     path: '/favorites',
     name: 'Favorites',
     component: FavoritesPage
@@ -95,6 +101,12 @@ const routes = [
     alias: '/property/add'
   },
   {
+    path: '/my-properties',
+    name: 'MyProperties',
+    component: () => import('../components/OwnerPropertiesPage.vue'),
+    alias: ['/owner-properties', '/properties/my']
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: ProfilePage
@@ -103,6 +115,20 @@ const routes = [
     path: '/profile/:tab',
     name: 'ProfileTab',
     component: ProfilePage
+  },
+  {
+    path: '/agent-dashboard',
+    name: 'AgentDashboard',
+    redirect: '/profile/agent-dashboard',
+    alias: [
+      '/agent/dashboard', 
+      '/agent-tools',
+      '/agent/properties',
+      '/agent/requests',
+      '/agent/messages',
+      '/agent/analytics',
+      '/agent/verification'
+    ]
   },
   {
     path: '/login',
