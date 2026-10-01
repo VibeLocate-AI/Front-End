@@ -64,9 +64,9 @@
                 <div class="dropdown-user-info">
                   <strong class="dropdown-user-name">{{ displayName }}</strong>
                   <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge">
-                    <i class="fa-solid fa-circle-check"></i>
-                    {{ isLoggedIn ? (isRtl ? 'عضو موثق' : 'Verified Member') : (isRtl ? 'حساب زائر' : 'Guest Account') }}
+                  <span class="dropdown-user-badge" :style="isAgent ? 'background: rgba(2, 132, 199, 0.15); color: #0284c7; border-color: rgba(2, 132, 199, 0.3);' : ''">
+                    <i class="fa-solid" :class="isAgent ? 'fa-briefcase' : 'fa-circle-check'"></i>
+                    {{ isAgent ? (isRtl ? 'وكيل عقاري معتمد' : 'Certified Agent') : (isLoggedIn ? (isRtl ? 'عضو موثق' : 'Verified Member') : (isRtl ? 'حساب زائر' : 'Guest Account')) }}
                   </span>
                 </div>
               </div>
@@ -74,6 +74,11 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
+                <!-- Direct Agent Dashboard Shortcut -->
+                <button v-if="isLoggedIn && isAgent" class="dropdown-menu-item" style="background: rgba(2, 132, 199, 0.08); color: #0284c7;" @click="goto('/profile/agent-dashboard')">
+                  <i class="fa-solid fa-briefcase"></i>
+                  <span><strong>{{ isRtl ? 'لوحة تحكم الوكيل' : 'Agent Dashboard' }}</strong></span>
+                </button>
                 <button v-if="isLoggedIn" class="dropdown-menu-item" @click="goto('/profile')">
                   <i class="fa-regular fa-user"></i>
                   <span>{{ isRtl ? 'ملفي الشخصي' : 'My Profile' }}</span>
@@ -160,9 +165,9 @@
                 <div class="drawer-user-meta">
                   <span class="drawer-user-name">{{ displayName }}</span>
                   <span class="drawer-user-email">{{ displayEmail }}</span>
-                  <span class="drawer-user-status">
-                    <i class="fa-solid fa-circle-check"></i>
-                    {{ isRtl ? 'عضو موثق' : 'Verified Member' }}
+                  <span class="drawer-user-status" :style="isAgent ? 'color: #0284c7;' : ''">
+                    <i class="fa-solid" :class="isAgent ? 'fa-briefcase' : 'fa-circle-check'"></i>
+                    {{ isAgent ? (isRtl ? 'وكيل عقاري معتمد' : 'Certified Agent') : (isRtl ? 'عضو موثق' : 'Verified Member') }}
                   </span>
                 </div>
                 <i class="fa-solid fa-chevron-left drawer-card-arrow" v-if="isRtl"></i>
@@ -259,6 +264,11 @@
                 </router-link>
 
                 <template v-if="isLoggedIn">
+                  <router-link v-if="isAgent" to="/profile/agent-dashboard" class="drawer-nav-item" style="color: #0284c7; font-weight: 600;" active-class="active" @click="mobileMenuOpen = false">
+                    <div class="drawer-nav-icon" style="color: #0284c7;"><i class="fa-solid fa-briefcase"></i></div>
+                    <span class="drawer-nav-label">{{ isRtl ? 'لوحة تحكم الوكيل' : 'Agent Dashboard' }}</span>
+                  </router-link>
+
                   <router-link to="/profile" class="drawer-nav-item" active-class="active" @click="mobileMenuOpen = false">
                     <div class="drawer-nav-icon"><i class="fa-regular fa-user"></i></div>
                     <span class="drawer-nav-label">{{ isRtl ? 'الملف الشخصي' : 'Profile Settings' }}</span>
@@ -322,13 +332,31 @@ const isLoggedIn = computed(() => !!currentUser.value)
 
 const parseUserData = (raw) => {
   if (!raw) return null
-  const profile = raw?.data?.user || raw?.data || raw?.user || raw
+  const profile = raw?.data?.profile || raw?.data?.user || raw?.data || raw?.user || raw
   const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.username || ''
   const email = profile.email || ''
-  const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || ''
-  if (name || email || avatar) return { name, email, avatar }
+  let avatar = profile.avatar || profile.avatar_url || profile.profile_photo_url || profile.picture || profile.photo || profile.image || ''
+  if (avatar && !avatar.startsWith('http') && !avatar.startsWith('data:') && !avatar.startsWith('/')) {
+    avatar = `https://vibelocate-laravel.onrender.com/${avatar}`
+  }
+  const role = profile.role || (Array.isArray(profile.roles) && profile.roles.includes('agent') ? 'agent' : 'tenant')
+  const accountType = profile.account_type || profile.accountType || (role === 'agent' ? 'agent' : 'Free Member')
+  const roles = profile.roles || [role]
+  if (name || email || avatar || role) return { name, email, avatar, role, accountType, roles }
   return null
 }
+
+const isAgent = computed(() => {
+  const role = currentUser.value?.role || ''
+  const accountType = currentUser.value?.accountType || ''
+  const roles = currentUser.value?.roles || []
+  return (
+    role === 'agent' ||
+    accountType === 'agent' ||
+    (Array.isArray(roles) && roles.some(r => r === 'agent' || r?.slug === 'agent')) ||
+    localStorage.getItem('vibe_user_role') === 'agent'
+  )
+})
 
 const loadUser = () => {
   const stored = localStorage.getItem('auth_user') || localStorage.getItem('user') || sessionStorage.getItem('auth_user') || sessionStorage.getItem('user')
