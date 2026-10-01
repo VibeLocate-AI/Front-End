@@ -34,7 +34,7 @@
         </button>
 
         <button
-          class="icon-action-btn"
+          class="icon-action-btn header-fav-btn"
           :class="{ 'has-saved': favCount > 0 }"
           type="button"
           aria-label="Saved Properties"
@@ -987,16 +987,47 @@ onUnmounted(() => {
 }
 
 @media (max-width: 992px) {
-  .header-inner { padding: 0 20px; gap: 14px; }
+  .header-inner { padding: 0 16px; gap: 10px; }
   .nav-links { display: none !important; }
-  .menu-toggle { display: flex; }
-  .btn-list-property { display: none; }
+  .btn-list-property { display: none !important; }
+  .menu-toggle { display: flex !important; }
 }
 
-@media (max-width: 480px) {
-  .header-inner { padding: 0 14px; gap: 8px; }
+@media (max-width: 768px) {
+  .header-inner { padding: 0 12px; gap: 8px; }
+  .header-actions { gap: 6px; }
+  .header-actions :deep(.nav-controls-group),
+  .nav-controls-group {
+    display: none !important;
+  }
+  .menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    flex-shrink: 0 !important;
+    order: 99 !important;
+    background: rgba(0, 210, 255, 0.14) !important;
+    border: 1.5px solid rgba(0, 210, 255, 0.45) !important;
+    color: #00d2ff !important;
+    border-radius: 10px !important;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 210, 255, 0.2);
+    margin-inline-start: 4px;
+  }
+}
+
+@media (max-width: 520px) {
+  .header-fav-btn {
+    display: none !important;
+  }
+  .header-inner { padding: 0 10px; gap: 6px; }
   .brand-title { font-size: 1.05rem; }
-  .brand-logo-img { height: 30px; }
+  .brand-logo-img { height: 32px; }
   .icon-action-btn { width: 34px; height: 34px; }
+  .user-profile-menu { height: 36px; padding: 2px 4px 2px 2px; }
+  .header-avatar { width: 28px; height: 28px; }
 }
 </style>

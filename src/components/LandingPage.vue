@@ -11,13 +11,14 @@
           </div>
         </a>
 
-        <nav class="nav-menu" :class="{ open: mobileMenuOpen }" id="navMenu">
+        <!-- Desktop Nav Links -->
+        <nav class="nav-menu desktop-nav-menu" id="navMenu">
           <ul class="nav-links">
-            <li><a href="#hero" class="nav-link" :class="{ active: activeSection === 'hero' }" @click.prevent="scrollTo('hero'); closeMobileMenu()">Home</a></li>
-            <li><a href="#about" class="nav-link" :class="{ active: activeSection === 'about' }" @click.prevent="scrollTo('about'); closeMobileMenu()">Services</a></li>
-            <li><a href="#about" class="nav-link" @click.prevent="scrollTo('about'); closeMobileMenu()">About</a></li>
-            <li><a href="#testimonials" class="nav-link" :class="{ active: activeSection === 'testimonials' }" @click.prevent="scrollTo('testimonials'); closeMobileMenu()">Testimonial</a></li>
-            <li><a href="#contact" class="nav-link" :class="{ active: activeSection === 'contact' }" @click.prevent="scrollTo('contact'); closeMobileMenu()">Contact</a></li>
+            <li><a href="#hero" class="nav-link" :class="{ active: activeSection === 'hero' }" @click.prevent="scrollTo('hero')">Home</a></li>
+            <li><a href="#about" class="nav-link" :class="{ active: activeSection === 'about' }" @click.prevent="scrollTo('about')">Services</a></li>
+            <li><a href="#about" class="nav-link" @click.prevent="scrollTo('about')">About</a></li>
+            <li><a href="#testimonials" class="nav-link" :class="{ active: activeSection === 'testimonials' }" @click.prevent="scrollTo('testimonials')">Testimonial</a></li>
+            <li><a href="#contact" class="nav-link" :class="{ active: activeSection === 'contact' }" @click.prevent="scrollTo('contact')">Contact</a></li>
           </ul>
         </nav>
 
@@ -26,22 +27,98 @@
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
           <template v-if="isLoggedIn">
-            <button class="btn btn-accent btn-glow btn-sm" @click="router.push('/home')">
+            <button class="btn btn-accent btn-glow btn-sm nav-auth-btn nav-home-btn" @click="router.push('/home')">
               <i class="fa-solid fa-house" style="margin-right: 4px;"></i> Home
             </button>
           </template>
           <template v-else>
-            <button class="btn btn-outline btn-sm" @click="goToLogin">Log In</button>
-            <button class="btn btn-accent btn-glow btn-sm" @click="goToSignup">Sign Up</button>
+            <button class="btn btn-outline btn-sm nav-auth-btn nav-login-btn" @click="goToLogin">Log In</button>
+            <button class="btn btn-accent btn-glow btn-sm nav-auth-btn nav-signup-btn" @click="goToSignup">Sign Up</button>
           </template>
-          <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu" @click="mobileMenuOpen = !mobileMenuOpen">
-            <span></span>
-            <span></span>
-            <span></span>
+
+          <!-- MOBILE SIDEBAR TOGGLE BUTTON (Clear, high-contrast, always visible on mobile) -->
+          <button 
+            class="mobile-sidebar-toggle-btn" 
+            id="mobileToggle" 
+            aria-label="Open Sidebar Menu" 
+            @click="mobileMenuOpen = !mobileMenuOpen"
+          >
+            <i class="fa-solid" :class="mobileMenuOpen ? 'fa-xmark' : 'fa-bars-staggered'"></i>
           </button>
         </div>
       </div>
     </header>
+
+    <!-- ==================== MOBILE OFF-CANVAS SIDEBAR DRAWER ==================== -->
+    <Teleport to="body">
+      <!-- Backdrop -->
+      <Transition name="drawer-fade">
+        <div 
+          v-if="mobileMenuOpen" 
+          class="landing-drawer-backdrop" 
+          @click="mobileMenuOpen = false"
+        ></div>
+      </Transition>
+
+      <!-- Sidebar Panel -->
+      <Transition name="drawer-slide">
+        <aside v-if="mobileMenuOpen" class="landing-sidebar-drawer">
+          <!-- Drawer Header -->
+          <div class="landing-drawer-header">
+            <div class="landing-drawer-brand">
+              <img src="/logo_transparent.png" alt="VibeLocate" class="drawer-logo-img">
+              <span class="drawer-brand-text">Vibe<span class="text-cyan-bright">Locate</span> AI</span>
+            </div>
+            <button class="landing-drawer-close" @click="mobileMenuOpen = false" aria-label="Close sidebar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Drawer Navigation Links -->
+          <div class="landing-drawer-body">
+            <nav class="landing-drawer-nav">
+              <a href="#hero" class="drawer-nav-item" :class="{ active: activeSection === 'hero' }" @click.prevent="scrollTo('hero'); closeMobileMenu()">
+                <div class="drawer-nav-icon"><i class="fa-solid fa-house"></i></div>
+                <span>Home</span>
+              </a>
+              <a href="#about" class="drawer-nav-item" :class="{ active: activeSection === 'about' }" @click.prevent="scrollTo('about'); closeMobileMenu()">
+                <div class="drawer-nav-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <span>Services & About</span>
+              </a>
+              <a href="#rentals" class="drawer-nav-item" :class="{ active: activeSection === 'rentals' }" @click.prevent="scrollTo('rentals'); closeMobileMenu()">
+                <div class="drawer-nav-icon"><i class="fa-solid fa-building"></i></div>
+                <span>Explore Rentals</span>
+              </a>
+              <a href="#testimonials" class="drawer-nav-item" :class="{ active: activeSection === 'testimonials' }" @click.prevent="scrollTo('testimonials'); closeMobileMenu()">
+                <div class="drawer-nav-icon"><i class="fa-solid fa-comments"></i></div>
+                <span>Testimonial</span>
+              </a>
+              <a href="#contact" class="drawer-nav-item" :class="{ active: activeSection === 'contact' }" @click.prevent="scrollTo('contact'); closeMobileMenu()">
+                <div class="drawer-nav-icon"><i class="fa-solid fa-envelope"></i></div>
+                <span>Contact Us</span>
+              </a>
+            </nav>
+
+            <!-- Drawer Auth / Actions -->
+            <div class="landing-drawer-actions">
+              <template v-if="isLoggedIn">
+                <button class="btn btn-accent btn-glow drawer-action-btn" @click="router.push('/home'); closeMobileMenu()">
+                  <i class="fa-solid fa-house" style="margin-right: 6px;"></i> Go to Dashboard / Home
+                </button>
+              </template>
+              <template v-else>
+                <button class="btn btn-outline drawer-action-btn" @click="goToLogin(); closeMobileMenu()">
+                  <i class="fa-solid fa-right-to-bracket" style="margin-right: 6px;"></i> Log In
+                </button>
+                <button class="btn btn-accent btn-glow drawer-action-btn" @click="goToSignup(); closeMobileMenu()">
+                  <i class="fa-solid fa-user-plus" style="margin-right: 6px;"></i> Sign Up
+                </button>
+              </template>
+            </div>
+          </div>
+        </aside>
+      </Transition>
+    </Teleport>
 
     <!-- ==================== HERO SECTION ==================== -->
     <section class="hero-section" id="hero">

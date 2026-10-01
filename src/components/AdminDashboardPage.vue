@@ -1,16 +1,28 @@
 <template>
   <div class="admin-shell" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme" :class="{ 'light-theme': !isDark }">
     
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div 
+      v-if="mobileSidebarOpen" 
+      class="admin-sidebar-backdrop" 
+      @click="mobileSidebarOpen = false"
+    ></div>
+
     <!-- =========================================================================
          RIGHT SIDEBAR: EXACT MATCH TO USER IMAGE (VibeLocate Admin)
          ========================================================================= -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" :class="{ 'mobile-open': mobileSidebarOpen }">
       <div class="admin-brand-header">
         <div class="brand-title-wrap">
           <span class="brand-white">VibeLocate</span>
           <span class="brand-cyan">Admin</span>
         </div>
-        <span class="admin-badge-live">LIVE</span>
+        <div class="brand-header-actions">
+          <span class="admin-badge-live">LIVE</span>
+          <button class="admin-mobile-close-btn" @click="mobileSidebarOpen = false" aria-label="Close sidebar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
 
       <nav class="admin-nav-menu">
@@ -19,7 +31,7 @@
           :key="item.key"
           class="admin-nav-item"
           :class="{ active: activeSection === item.key }"
-          @click="activeSection = item.key"
+          @click="activeSection = item.key; mobileSidebarOpen = false"
         >
           <span class="nav-dot">•</span>
           <span class="nav-label">{{ isRtl ? item.labelAr : item.labelEn }}</span>
@@ -67,14 +79,28 @@
       
       <!-- Top Action & Search Header -->
       <header class="admin-top-bar">
-        <div class="header-titles">
-          <h1 class="page-title">{{ currentSectionTitle }}</h1>
-          <p class="page-timestamp">
-            {{ isRtl ? 'آخر تحديث:' : 'Last updated:' }} {{ lastUpdatedTime }}
-            <button class="btn-refresh-data" @click="loadAllAdminData" :title="isRtl ? 'تحديث البيانات' : 'Refresh Data'">
-              <i class="fa-solid fa-rotate" :class="{ 'fa-spin': isRefreshing }"></i>
-            </button>
-          </p>
+        <div class="top-bar-left-group">
+          <!-- Mobile Sidebar Toggle Button -->
+          <button 
+            class="admin-mobile-toggle" 
+            type="button" 
+            @click="mobileSidebarOpen = !mobileSidebarOpen" 
+            :title="isRtl ? 'فتح القائمة الجانبية' : 'Toggle Admin Sidebar'"
+            aria-label="Toggle admin sidebar"
+          >
+            <i class="fa-solid" :class="mobileSidebarOpen ? 'fa-xmark' : 'fa-bars-staggered'"></i>
+            <span class="admin-toggle-text">{{ isRtl ? 'القائمة' : 'Menu' }}</span>
+          </button>
+
+          <div class="header-titles">
+            <h1 class="page-title">{{ currentSectionTitle }}</h1>
+            <p class="page-timestamp">
+              {{ isRtl ? 'آخر تحديث:' : 'Last updated:' }} {{ lastUpdatedTime }}
+              <button class="btn-refresh-data" @click="loadAllAdminData" :title="isRtl ? 'تحديث البيانات' : 'Refresh Data'">
+                <i class="fa-solid fa-rotate" :class="{ 'fa-spin': isRefreshing }"></i>
+              </button>
+            </p>
+          </div>
         </div>
 
         <div class="top-actions-group">
@@ -1436,6 +1462,7 @@ const router = useRouter()
 const { isRtl, isDark, theme, toggleTheme, toggleLanguage, lang } = useThemeAndLanguage()
 
 const activeSection = ref('overview')
+const mobileSidebarOpen = ref(false)
 const isRefreshing = ref(false)
 const searchQuery = ref('')
 const lastUpdatedTime = ref(new Date().toLocaleTimeString())
@@ -1886,21 +1913,21 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 16px 14px;
-  z-index: 100;
-  order: 2; /* In RTL, sidebar stays on right */
-  position: sticky;
+  z-index: 1000;
+  position: fixed;
   top: 16px;
-  align-self: flex-start; /* CRITICAL: Prevents stretching down with full page height */
+  right: 16px;
   height: auto;
   max-height: calc(100vh - 32px);
-  margin: 16px 16px 16px 0;
+  margin: 0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.05);
   overflow-y: auto;
 }
 
 [dir="ltr"] .admin-sidebar {
-  order: 0;
-  margin: 16px 0 16px 16px;
+  right: auto;
+  left: 16px;
+  margin: 0;
 }
 
 .admin-sidebar::-webkit-scrollbar {
@@ -2124,9 +2151,16 @@ onMounted(() => {
 .admin-main-viewport {
   flex: 1;
   padding: 24px 32px;
-  overflow-y: auto;
   min-height: 100vh;
-  order: 1;
+  margin-right: 282px;
+  margin-left: 0;
+  width: calc(100% - 282px);
+  box-sizing: border-box;
+}
+
+[dir="ltr"] .admin-main-viewport {
+  margin-right: 0;
+  margin-left: 282px;
 }
 
 /* TOP HEADER */
@@ -3810,20 +3844,113 @@ input:checked + .slider:before {
   }
 }
 
-@media (max-width: 768px) {
-  .admin-shell {
-    flex-direction: column;
+.admin-mobile-toggle,
+.admin-mobile-close-btn,
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+.top-bar-left-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .admin-mobile-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(6, 182, 212, 0.16);
+    border: 1.5px solid rgba(6, 182, 212, 0.45);
+    border-radius: 10px;
+    color: #06b6d4;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(6, 182, 212, 0.2);
+    transition: all 0.2s ease;
+  }
+  .admin-mobile-toggle:hover {
+    background: rgba(6, 182, 212, 0.28);
+    border-color: #06b6d4;
+    color: #ffffff;
+  }
+  .admin-mobile-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    cursor: pointer;
   }
   .admin-sidebar {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 280px !important;
+    max-width: 82vw;
+    z-index: 99999;
+    transform: translateX(110%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6);
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto;
+  }
+  [dir="ltr"] .admin-sidebar {
+    right: auto;
+    left: 0;
+    transform: translateX(-110%);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.6);
+  }
+  .admin-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+  .admin-sidebar-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 19, 41, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 99998;
+  }
+  .admin-main-viewport {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 16px 14px;
+  }
+  .admin-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .top-actions-group {
     width: 100%;
-    border-left: none;
-    border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+    flex-wrap: wrap;
+  }
+  .admin-search-wrap {
+    flex: 1;
+    min-width: 200px;
   }
   .admin-kpi-row {
     grid-template-columns: 1fr;
-  }
-  .admin-main-viewport {
-    padding: 16px;
   }
 }
 /* =========================================================================
