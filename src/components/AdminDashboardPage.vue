@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-shell" :dir="isRtl ? 'rtl' : 'ltr'">
+  <div class="admin-shell" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme" :class="{ 'light-theme': !isDark }">
     
     <!-- =========================================================================
          RIGHT SIDEBAR: EXACT MATCH TO USER IMAGE (VibeLocate Admin)
@@ -36,6 +36,18 @@
           </div>
         </div>
 
+        <!-- Sidebar Quick Toggles (Theme & Lang) -->
+        <div class="sidebar-ctrls-row">
+          <button class="sidebar-ctrl-btn" @click="toggleTheme" :title="isDark ? (isRtl ? 'الوضع النهاري' : 'Light Mode') : (isRtl ? 'الوضع الليلي' : 'Dark Mode')">
+            <i class="fa-solid" :class="isDark ? 'fa-sun text-amber' : 'fa-moon text-cyan'"></i>
+            <span>{{ isDark ? (isRtl ? 'نهاري' : 'Light') : (isRtl ? 'ليلي' : 'Dark') }}</span>
+          </button>
+          <button class="sidebar-ctrl-btn" @click="toggleLanguage" :title="isRtl ? 'Switch to English' : 'التحويل إلى العربية'">
+            <i class="fa-solid fa-globe text-cyan"></i>
+            <span>{{ isRtl ? 'English' : 'العربية' }}</span>
+          </button>
+        </div>
+
         <div class="footer-action-links">
           <button class="btn-return-site" @click="router.push('/home')">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -65,7 +77,7 @@
           </p>
         </div>
 
-        <div class="top-search-group">
+        <div class="top-actions-group">
           <div class="admin-search-wrap">
             <input 
               type="text" 
@@ -77,6 +89,27 @@
             <button class="btn-search-exec" @click="handleSearch">
               <i class="fa-solid fa-magnifying-glass"></i>
               <span>{{ isRtl ? 'بحث' : 'Search' }}</span>
+            </button>
+          </div>
+
+          <!-- Quick Theme & Language Buttons in Top Bar -->
+          <div class="admin-quick-controls">
+            <button 
+              class="admin-ctrl-btn" 
+              @click="toggleTheme" 
+              :title="isDark ? (isRtl ? 'التبديل إلى الوضع النهاري' : 'Switch to Light Mode') : (isRtl ? 'التبديل إلى الوضع الليلي' : 'Switch to Dark Mode')"
+            >
+              <i class="fa-solid" :class="isDark ? 'fa-sun text-amber' : 'fa-moon text-cyan'"></i>
+              <span>{{ isDark ? (isRtl ? 'نهاري' : 'Light') : (isRtl ? 'ليلي' : 'Dark') }}</span>
+            </button>
+
+            <button 
+              class="admin-ctrl-btn" 
+              @click="toggleLanguage" 
+              :title="isRtl ? 'Switch to English' : 'التحويل إلى العربية'"
+            >
+              <i class="fa-solid fa-globe text-cyan"></i>
+              <span>{{ isRtl ? 'English' : 'العربية' }}</span>
             </button>
           </div>
         </div>
@@ -1400,7 +1433,7 @@ import adminService from '../services/adminService'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const router = useRouter()
-const { isRtl } = useThemeAndLanguage()
+const { isRtl, isDark, theme, toggleTheme, toggleLanguage, lang } = useThemeAndLanguage()
 
 const activeSection = ref('overview')
 const isRefreshing = ref(false)
@@ -2132,6 +2165,72 @@ onMounted(() => {
 
 .btn-refresh-data:hover {
   opacity: 0.8;
+}
+
+.top-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-quick-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-ctrl-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #0b172a;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  color: #f1f5f9;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.admin-ctrl-btn:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.5);
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.sidebar-ctrls-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sidebar-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sidebar-ctrl-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
 }
 
 .admin-search-wrap {
@@ -3726,5 +3825,194 @@ input:checked + .slider:before {
   .admin-main-viewport {
     padding: 16px;
   }
+}
+/* =========================================================================
+   LIGHT THEME PALETTE FOR ADMIN PANEL (When .light-theme is active)
+   ========================================================================= */
+.admin-shell.light-theme {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-sidebar {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.admin-shell.light-theme .brand-white {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-nav-item {
+  color: #475569;
+}
+
+.admin-shell.light-theme .admin-nav-item:hover {
+  background: rgba(2, 132, 199, 0.06);
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .admin-nav-item.active {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: #0284c7;
+  color: #0284c7;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.15);
+}
+
+.admin-shell.light-theme .page-title {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-glass-panel,
+.admin-shell.light-theme .admin-kpi-card {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.15);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .panel-title,
+.admin-shell.light-theme .kpi-metric-number,
+.admin-shell.light-theme .model-name,
+.admin-shell.light-theme .breakdown-title,
+.admin-shell.light-theme .vibe-value,
+.admin-shell.light-theme .setting-lbl,
+.admin-shell.light-theme .zone-head strong,
+.admin-shell.light-theme .modal-header-line h3,
+.admin-shell.light-theme .user-modal-header h4,
+.admin-shell.light-theme .property-modal-summary h4,
+.admin-shell.light-theme .report-detail-card h4,
+.admin-shell.light-theme .report-subject-text {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-search-wrap,
+.admin-shell.light-theme .admin-subsearch-input-wrap,
+.admin-shell.light-theme .admin-form-input,
+.admin-shell.light-theme .admin-select,
+.admin-shell.light-theme .console-textarea {
+  background: #f8fafc;
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-search-input,
+.admin-shell.light-theme .admin-subsearch-input {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .admin-search-input::placeholder,
+.admin-shell.light-theme .admin-subsearch-input::placeholder {
+  color: #94a3b8;
+}
+
+.admin-shell.light-theme .admin-data-table td {
+  color: #334155;
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+.admin-shell.light-theme .admin-data-table th {
+  color: #64748b;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.admin-shell.light-theme .admin-data-table tbody tr:hover {
+  background: rgba(2, 132, 199, 0.03);
+}
+
+.admin-shell.light-theme .report-strip-item,
+.admin-shell.light-theme .ai-mini-stat-card,
+.admin-shell.light-theme .model-status-card,
+.admin-shell.light-theme .ai-metric-box,
+.admin-shell.light-theme .breakdown-card,
+.admin-shell.light-theme .vibe-metric-box,
+.admin-shell.light-theme .cost-card,
+.admin-shell.light-theme .vibe-zone-card,
+.admin-shell.light-theme .admin-modal-box {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.admin-shell.light-theme .ai-stat-val,
+.admin-shell.light-theme .metric-val {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .console-output-box {
+  background: #f8fafc;
+  border-color: rgba(2, 132, 199, 0.2);
+}
+
+.admin-shell.light-theme .json-code-viewer {
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .filter-pill-btn,
+.admin-shell.light-theme .report-tab-btn,
+.admin-shell.light-theme .btn-page-nav,
+.admin-shell.light-theme .btn-page-num {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #475569;
+}
+
+.admin-shell.light-theme .filter-pill-btn:hover,
+.admin-shell.light-theme .report-tab-btn:hover {
+  background: rgba(2, 132, 199, 0.06);
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .filter-pill-btn.active,
+.admin-shell.light-theme .report-tab-btn.active {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .admin-user-pill {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.admin-shell.light-theme .admin-email {
+  color: #0f172a;
+}
+
+.admin-shell.light-theme .btn-return-site {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #334155;
+}
+
+.admin-shell.light-theme .btn-return-site:hover {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .admin-ctrl-btn {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.admin-shell.light-theme .admin-ctrl-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.admin-shell.light-theme .sidebar-ctrl-btn {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #334155;
+}
+
+.admin-shell.light-theme .sidebar-ctrl-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: #0284c7;
+  color: #0284c7;
 }
 </style>
