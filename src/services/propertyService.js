@@ -14,6 +14,11 @@ import apiClient from './api'
 export function normalizeProperty(raw) {
   if (!raw) return null
 
+  // Unwrap nested property object if present (e.g. from single property or search APIs)
+  if (raw.property && typeof raw.property === 'object') {
+    raw = { ...raw.property, ...raw }
+  }
+
   // Extract primary image and image gallery from API
   let primaryImage = ''
   let allImages = []
@@ -33,19 +38,10 @@ export function normalizeProperty(raw) {
     allImages = [raw.image]
   }
 
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80'
-  ]
-
   if (!primaryImage) {
-    primaryImage = fallbackImages[(Number(raw.id) || 0) % fallbackImages.length]
+    // A neutral local placeholder is preferable to showing an unrelated
+    // property photo as if it were returned by the API.
+    primaryImage = '/images/logo_transparent.png'
     allImages = [primaryImage]
   } else if (!primaryImage.startsWith('http') && !primaryImage.startsWith('/')) {
     primaryImage = `https://vibelocate-laravel.onrender.com/${primaryImage}`
@@ -80,6 +76,22 @@ export function normalizeProperty(raw) {
       type = 'Penthouse'
     } else if (raw.type_id === 4 || titleLower.includes('townhouse')) {
       type = 'Townhouse'
+    } else if (raw.type_id === 6 || titleLower.includes('office')) {
+      type = 'Office'
+    } else if (raw.type_id === 7 || titleLower.includes('warehouse')) {
+      type = 'Warehouse'
+    } else if (raw.type_id === 9 || titleLower.includes('restaurant')) {
+      type = 'Restaurant'
+    } else if (raw.type_id === 10 || titleLower.includes('hotel')) {
+      type = 'Hotel'
+    } else if (raw.type_id === 11 || titleLower.includes('building')) {
+      type = 'Full Building'
+    } else if (raw.type_id === 14 || titleLower.includes('school')) {
+      type = 'Commercial'
+    } else if (raw.type_id === 15 || titleLower.includes('showroom')) {
+      type = 'Showroom'
+    } else if (raw.type_id === 16 || titleLower.includes('cafe')) {
+      type = 'Cafe'
     } else {
       type = 'Apartment'
     }
@@ -99,11 +111,22 @@ export function normalizeProperty(raw) {
     ? raw.features.map(f => f.name || f.feature_value).filter(Boolean)
     : []
 
-  const frequency = raw.rent_frequency ? `/${raw.rent_frequency}` : '/month'
-  const currencySymbol = raw.currency === 'AED' ? 'AED ' : '$'
-  const listingPurpose = String(
-    raw.listing_purpose || raw.purpose || raw.offer_type || raw.transaction_type || raw.listing_type || ''
+  const rawActionType = String(
+    raw.action_type || raw.listing_type || raw.listing_purpose || raw.purpose || raw.offer_type || raw.transaction_type || ''
   ).toLowerCase()
+
+  const isForRent = rawActionType === 'rent' ||
+    raw.is_for_rent === true || raw.is_for_rent === 1 || raw.is_for_rent === '1' ||
+    rawActionType.includes('rent') ||
+    (Boolean(raw.rent_frequency) && rawActionType !== 'buy' && rawActionType !== 'sale')
+
+  const listingPurpose = isForRent ? 'rent' : 'buy'
+  const frequency = raw.rent_frequency ? `/${raw.rent_frequency}` : (isForRent ? '/yearly' : '')
+  const currencySymbol = raw.currency === 'AED' ? 'AED ' : '$'
+
+  const isOffPlan = raw.property_condition === 'off_plan' || raw.property_condition === 'off-plan' ||
+    String(raw.title || '').toLowerCase().includes('off-plan') ||
+    String(raw.description || '').toLowerCase().includes('off-plan')
 
   return {
     id: raw.id,
@@ -117,9 +140,10 @@ export function normalizeProperty(raw) {
     currency: raw.currency || 'AED',
     currencySymbol,
     rent_frequency: raw.rent_frequency || '',
+    action_type: isForRent ? 'rent' : 'buy',
     listingPurpose,
-    isForRent: raw.is_for_rent === true || raw.is_for_rent === 1 || raw.is_for_rent === '1' ||
-      listingPurpose.includes('rent') || Boolean(raw.rent_frequency),
+    isForRent,
+    isOffPlan,
     period: frequency,
     beds,
     baths,
@@ -132,10 +156,14 @@ export function normalizeProperty(raw) {
     summary: raw.description || `${type} in ${areaText} with ${beds} beds and ${baths} baths.`,
     description: raw.description || '',
     is_furnished: raw.is_furnished || 'unfurnished',
+    property_condition: raw.property_condition || (isOffPlan ? 'off_plan' : 'ready'),
+    agency: raw.agency || { name: 'VibeLocate Real Estate' },
+    rating: Number(raw.rating) || 4.8,
+    reviews: Array.isArray(raw.reviews) ? raw.reviews : [],
     aiMatch: 88 + ((raw.id * 7) % 12),
     badgeStyle: type === 'Villa' || type === 'Penthouse'
-      ? 'background: var(--gold-accent); color: var(--navy-dark);'
-      : 'background: var(--cyan-accent);',
+      ? 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);'
+      : 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: featuresList.length > 0 ? featuresList.slice(0, 4) : [type, areaText.split(',')[0], `${beds} Beds`],
     specs: {
       beds: `${beds} Bedrooms`,
@@ -169,7 +197,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 98,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Villa', 'Palm Jumeirah', '5 Beds', 'Private Pool'],
     description: 'Signature beachfront villa with private pool, direct beach access, and lush landscaping.',
     specs: { beds: '5 Bedrooms', baths: '6 Bathrooms', area: '6,500 sq.ft', parking: 'Included', amenities: ['Pool', 'Beach Access', 'Gym'] }
@@ -191,7 +219,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 96,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Dubai Marina', '2 Beds', 'Marina View'],
     description: 'Ultra-luxury high-rise apartment with panoramic views of Dubai Marina and easy metro access.',
     specs: { beds: '2 Bedrooms', baths: '3 Bathrooms', area: '1,450 sq.ft', parking: 'Included', amenities: ['Balcony', 'Pool', 'Concierge'] }
@@ -213,7 +241,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 94,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Penthouse', 'Downtown Dubai', '4 Beds', 'Burj View'],
     description: 'Iconic cantilever penthouse featuring 360-degree skyline views of Burj Khalifa and Dubai Fountain.',
     specs: { beds: '4 Bedrooms', baths: '5 Bathrooms', area: '3,200 sq.ft', parking: 'Included', amenities: ['Private Terrace', 'Spa', 'Valet'] }
@@ -235,7 +263,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 92,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Townhouse', 'JVC', '3 Beds', 'Garden'],
     description: 'Contemporary family townhome situated in a vibrant community with private garden and parks.',
     specs: { beds: '3 Bedrooms', baths: '4 Bathrooms', area: '2,100 sq.ft', parking: 'Included', amenities: ['Garden', 'Playground', 'Gym'] }
@@ -257,7 +285,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 90,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Dubai Marina', '1 Bed'],
     description: 'Chic designer 1-bedroom suite overlooking yachts with immediate promenade access.',
     specs: { beds: '1 Bedroom', baths: '2 Bathrooms', area: '850 sq.ft', parking: 'Included', amenities: ['Pool', 'Sauna', 'Security'] }
@@ -279,7 +307,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 89,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Townhouse', 'JVC', '3 Beds'],
     description: 'Modern 3-bedroom residence with landscaped courtyard and sleek open-concept kitchen.',
     specs: { beds: '3 Bedrooms', baths: '3 Bathrooms', area: '1,800 sq.ft', parking: 'Included', amenities: ['Courtyard', 'Balcony', 'Smart Lock'] }
@@ -301,7 +329,7 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 88,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--cyan-accent);',
+    badgeStyle: 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
     tags: ['Apartment', 'Business Bay', '2 Beds'],
     description: 'Prime executive residence along the Dubai Canal offering sunset water views.',
     specs: { beds: '2 Bedrooms', baths: '2 Bathrooms', area: '1,200 sq.ft', parking: 'Included', amenities: ['Canal View', 'Gym', 'Infinity Pool'] }
@@ -323,14 +351,65 @@ export const DEFAULT_PROPERTIES = [
     aiMatch: 95,
     period: '/yr',
     rent_frequency: 'yearly',
-    badgeStyle: 'background: var(--gold-accent); color: var(--navy-dark);',
+    badgeStyle: 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);',
     tags: ['Villa', 'Dubai Hills', '5 Beds', 'Golf Course'],
     description: 'Prestigious golf course villa with expansive garden, maid room, and grand double-height ceilings.',
     specs: { beds: '5 Bedrooms', baths: '6 Bathrooms', area: '5,200 sq.ft', parking: 'Included', amenities: ['Golf View', 'Private Garden', 'Clubhouse'] }
   }
 ]
 
+export function translateSearchTerm(query) {
+  if (!query) return ''
+  let text = String(query).trim()
+  if (!text) return ''
+
+  const dict = [
+    { ar: /دبي\s*مارينا/gi, en: 'Dubai Marina' },
+    { ar: /مارينا/gi, en: 'Marina' },
+    { ar: /داون\s*تاون|وسط\s*المدينة/gi, en: 'Downtown' },
+    { ar: /برج\s*خليفة/gi, en: 'Burj Khalifa' },
+    { ar: /نخلة\s*جميرا/gi, en: 'Palm Jumeirah' },
+    { ar: /جميرا/gi, en: 'Jumeirah' },
+    { ar: /الخليج\s*التجاري|بزنس\s*باي/gi, en: 'Business Bay' },
+    { ar: /دبي\s*هيلز/gi, en: 'Dubai Hills' },
+    { ar: /قرية\s*جميرا/gi, en: 'Jumeirah Village' },
+    { ar: /دبي/gi, en: 'Dubai' },
+    { ar: /شقق|شقة/gi, en: 'Apartment' },
+    { ar: /فلل|فيلا/gi, en: 'Villa' },
+    { ar: /بنتهاوس/gi, en: 'Penthouse' },
+    { ar: /تاون\s*هاوس/gi, en: 'Townhouse' },
+    { ar: /مكاتب|مكتب/gi, en: 'Office' },
+    { ar: /مستودع|مخزن/gi, en: 'Warehouse' },
+    { ar: /فندق|فنادق/gi, en: 'Hotel' },
+    { ar: /مطعم|مطاعم/gi, en: 'Restaurant' },
+    { ar: /كافيه|مقهى/gi, en: 'Cafe' },
+    { ar: /مبنى|عمارة/gi, en: 'Building' },
+    { ar: /تجاري/gi, en: 'Commercial' },
+    { ar: /سكني/gi, en: 'Residential' },
+    { ar: /مسبح/gi, en: 'Pool' },
+    { ar: /بحر|شاطئ|شاطيء|واجهة\s*مائية/gi, en: 'Beach Waterfront' },
+    { ar: /مفروش/gi, en: 'Furnished' },
+    { ar: /فاخر|فخم/gi, en: 'Luxury' },
+    { ar: /استوديو/gi, en: 'Studio' },
+    { ar: /غرفة\s*نوم|غرفة/gi, en: '1 Bed' },
+    { ar: /غرفتين/gi, en: '2 Beds' },
+    { ar: /3\s*غرف|ثلاث\s*غرف/gi, en: '3 Beds' },
+    { ar: /4\s*غرف|اربع\s*غرف/gi, en: '4 Beds' },
+    { ar: /5\s*غرف|خمس\s*غرف/gi, en: '5 Beds' }
+  ]
+
+  for (const { ar, en } of dict) {
+    text = text.replace(ar, en)
+  }
+
+  // Remove common Arabic particles that hinder SQL LIKE queries
+  text = text.replace(/\b(في|مع|على|من|إلى|قرب|بجانب|للبيع|للايجار|ايجار|بيع|شراء)\b/gi, '').trim()
+  return text
+}
+
 export const propertyService = {
+  translateSearchTerm,
+
   /**
    * Fetch real property listings directly from backend database API (/api/properties)
    * @param {Object} params - { search, type_id, bedrooms, bathrooms, min_price, max_price, page, per_page }
@@ -338,14 +417,43 @@ export const propertyService = {
   async getProperties(params = {}) {
     const queryParams = { ...params }
 
+    // Smart search term normalization for backend LIKE query
+    if (queryParams.search) {
+      const orig = String(queryParams.search).trim()
+      const translated = translateSearchTerm(orig)
+      if (translated && translated !== orig) {
+        queryParams.search = translated
+      }
+    }
+
     // Map frontend filters to Laravel PropertyController query parameters
     if (params.type && params.type !== 'all') {
       const t = params.type.toLowerCase()
-      if (t.includes('apartment')) queryParams.type_id = 1
-      else if (t.includes('villa')) queryParams.type_id = 2
-      else if (t.includes('penthouse')) queryParams.type_id = 3
-      else if (t.includes('townhouse')) queryParams.type_id = 4
+      if (t.includes('apartment') || t.includes('شقة')) queryParams.type_id = 1
+      else if (t.includes('villa') || t.includes('فيلا') || t.includes('فلل')) queryParams.type_id = 2
+      else if (t.includes('penthouse') || t.includes('بنتهاوس')) queryParams.type_id = 3
+      else if (t.includes('townhouse') || t.includes('تاون')) queryParams.type_id = 4
+      else if (t.includes('house') || t.includes('منزل')) queryParams.type_id = 5
+      else if (t.includes('office') || t.includes('مكتب')) queryParams.type_id = 6
+      else if (t.includes('warehouse') || t.includes('مستودع')) queryParams.type_id = 7
+      else if (t.includes('land') || t.includes('أرض')) queryParams.type_id = 8
+      else if (t.includes('restaurant') || t.includes('مطعم')) queryParams.type_id = 9
+      else if (t.includes('hotel') || t.includes('فندق')) queryParams.type_id = 10
+      else if (t.includes('building') || t.includes('مبنى')) queryParams.type_id = 11
+      else if (t.includes('commercial') || t.includes('تجاري')) queryParams.type_id = 14
+      else if (t.includes('showroom') || t.includes('معرض')) queryParams.type_id = 15
+      else if (t.includes('cafe') || t.includes('كافيه')) queryParams.type_id = 16
       delete queryParams.type
+    }
+
+    if (params.purpose) {
+      if (params.purpose === 'rent') queryParams.action_type = 'rent'
+      else if (params.purpose === 'sale' || params.purpose === 'buy') queryParams.action_type = 'buy'
+      delete queryParams.purpose
+    }
+
+    if (params.bedrooms && params.bedrooms !== 'any') {
+      queryParams.bedrooms = String(params.bedrooms).replace('+', '')
     }
 
     try {
@@ -364,15 +472,18 @@ export const propertyService = {
 
       return {
         success: true,
-        data: normalized.length > 0 ? normalized : DEFAULT_PROPERTIES,
+        // An empty backend response is a valid empty catalog; never substitute
+        // showcase listings for data returned by the API.
+        data: normalized,
         pagination: response?.pagination || response?.data?.pagination || null
       }
     } catch (err) {
-      console.warn('API /properties fetch failed, using fallback catalog:', err)
+      console.warn('API /properties fetch failed:', err)
       return {
-        success: true,
-        data: DEFAULT_PROPERTIES,
-        pagination: { total: DEFAULT_PROPERTIES.length }
+        success: false,
+        data: [],
+        pagination: null,
+        error: err.message
       }
     }
   },
@@ -388,23 +499,37 @@ export const propertyService = {
     try {
       const calls = await Promise.allSettled(sections.map(section => apiClient.get(`/home/${locale}/${section}`)))
       const data = Object.fromEntries(calls.map((result, index) => [sections[index], result.status === 'fulfilled' ? result.value : null]))
-      const featured = data['featured-properties']
-      const rawFeatured = Array.isArray(featured) ? featured : (featured?.data || featured?.properties || [])
-      const properties = Array.isArray(rawFeatured) ? rawFeatured.map(normalizeProperty).filter(Boolean) : []
-      if (properties.length) {
+      
+      const featuredObj = data['featured-properties']
+      const rawFeatured = featuredObj?.data?.featured_properties || featuredObj?.featured_properties || (Array.isArray(featuredObj?.data) ? featuredObj.data : (Array.isArray(featuredObj) ? featuredObj : []))
+      const featuredProperties = rawFeatured.map(normalizeProperty).filter(Boolean)
+
+      const recObj = data['recommended-properties']
+      const rawRec = recObj?.data?.recommended_properties || recObj?.recommended_properties || (Array.isArray(recObj?.data) ? recObj.data : (Array.isArray(recObj) ? recObj : []))
+      const recommendedProperties = rawRec.map(normalizeProperty).filter(Boolean)
+
+      const areasObj = data['popular-areas']
+      const popularAreas = areasObj?.data?.popular_areas || areasObj?.popular_areas || (Array.isArray(areasObj?.data) ? areasObj.data : (Array.isArray(areasObj) ? areasObj : []))
+
+      const agentsObj = data['top-agents']
+      const topAgents = agentsObj?.data?.top_agents || agentsObj?.top_agents || (Array.isArray(agentsObj?.data) ? agentsObj.data : (Array.isArray(agentsObj) ? agentsObj : []))
+
+      const combined = [...featuredProperties, ...recommendedProperties]
+
+      if (combined.length > 0 || popularAreas.length > 0 || topAgents.length > 0) {
         return {
           success: true,
-          total: properties.length,
-          properties,
-          featuredProperties: properties,
-          recommendedProperties: data['recommended-properties']?.data || data['recommended-properties'] || [],
-          popularAreas: data['popular-areas']?.data || data['popular-areas'] || [],
-          topAgents: data['top-agents']?.data || data['top-agents'] || [],
+          total: combined.length,
+          properties: combined.length > 0 ? combined : [],
+          featuredProperties,
+          recommendedProperties,
+          popularAreas,
+          topAgents,
           propertyTypes: [], categories: [], testimonials: [], stats: {}
         }
       }
-    } catch {
-      // The localized endpoint may be absent in an older backend deployment.
+    } catch (err) {
+      console.warn('Home section fetch encountered an error:', err)
     }
 
     // 1. Try legacy home endpoint.
@@ -433,12 +558,16 @@ export const propertyService = {
 
     // 2. Fall back to /properties which is active on the backend
     try {
-      const propRes = await this.getProperties()
+      const propRes = await this.getProperties({ per_page: 30 })
       if (propRes?.data && propRes.data.length > 0) {
         return {
           success: true,
           total: propRes.pagination?.total || propRes.data.length,
           properties: propRes.data,
+          featuredProperties: propRes.data.slice(0, 8),
+          recommendedProperties: propRes.data.slice(8, 16),
+          popularAreas: [],
+          topAgents: [],
           propertyTypes: [],
           categories: [],
           testimonials: [],
@@ -449,15 +578,15 @@ export const propertyService = {
       console.warn('Fallback /properties also failed:', err2)
     }
 
-    // 3. Ultimate resilient fallback to curated luxury collection
     return {
-      success: true,
-      total: DEFAULT_PROPERTIES.length,
-      properties: DEFAULT_PROPERTIES,
+      success: false,
+      total: 0,
+      properties: [],
       propertyTypes: [],
       categories: [],
       testimonials: [],
-      stats: {}
+      stats: {},
+      error: 'Unable to load properties from the API'
     }
   },
 
@@ -466,11 +595,30 @@ export const propertyService = {
    * @param {number|string} id
    */
   async getPropertyById(id) {
-    const response = await apiClient.get(`/properties/${id}`)
-    const raw = response?.data || response
+    try {
+      const response = await apiClient.get(`/properties/${id}`)
+      const raw = response?.data?.property || response?.property || response?.data || response
+      if (raw && (raw.id || raw.title)) {
+        return {
+          success: true,
+          data: normalizeProperty(raw)
+        }
+      }
+    } catch (err) {
+      // Backend /properties/{id} requires access token; gracefully fallback to public catalog
+      try {
+        const catalog = await this.getProperties({ per_page: 100 })
+        const found = (catalog.data || []).find(p => String(p.id) === String(id))
+        if (found) {
+          return { success: true, data: found }
+        }
+      } catch {}
+      console.warn(`[propertyService] Could not resolve property ${id}:`, err?.message)
+    }
+
     return {
-      success: true,
-      data: normalizeProperty(raw)
+      success: false,
+      data: null
     }
   },
 
@@ -506,12 +654,15 @@ export const propertyService = {
       return { success: true, data: [] }
     }
 
+    const translatedTerm = translateSearchTerm(term)
+    const effectiveSearchTerm = translatedTerm || term
+
     try {
       // 1. Call official backend AI contextual search endpoint
       const response = await apiClient.post('/ai/contextual-search', {
-        query: term,
-        search: term,
-        prompt: term
+        query: effectiveSearchTerm,
+        search: effectiveSearchTerm,
+        prompt: effectiveSearchTerm
       })
 
       // Extract array from response payload
@@ -553,37 +704,56 @@ export const propertyService = {
           source: 'backend_ai'
         }
       }
-    } catch (err) {
-      console.warn('Backend /ai/contextual-search endpoint returned error, applying intelligent fallback:', err)
+    } catch {
+      // Backend /ai/contextual-search not supported; proceed to intelligent database query
     }
 
-    // 2. Intelligent Fallback: Database property query with client-side AI relevance scoring
+    // 2. Intelligent Fallback: Database property query with bilingual matching and AI relevance scoring
     try {
-      const res = await this.getProperties({ search: term, per_page: 20 })
-      const words = term.toLowerCase().split(/\s+/).filter(Boolean)
+      // Search with translated term first
+      let res = await this.getProperties({ search: effectiveSearchTerm, per_page: 50 })
+      
+      // If no items returned and translated term differed, try raw term
+      if ((!res.data || res.data.length === 0) && effectiveSearchTerm !== term) {
+        res = await this.getProperties({ search: term, per_page: 50 })
+      }
+
+      // If still empty (e.g. specialized keywords), fetch broader set to score client-side
+      if (!res.data || res.data.length === 0) {
+        res = await this.getProperties({ per_page: 50 })
+      }
+
+      const words = `${term} ${translatedTerm}`.toLowerCase().split(/\s+/).filter(w => w.length > 1)
 
       const scored = (res.data || []).map(p => {
-        let score = 75
-        const content = `${p.title} ${p.area} ${p.type} ${p.summary} ${p.tags.join(' ')}`.toLowerCase()
+        let score = 70
+        let matchesCount = 0
+        const content = `${p.title || ''} ${p.area || ''} ${p.location || ''} ${p.type || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
 
         words.forEach(w => {
           if (content.includes(w)) {
-            score += 7
+            score += 8
+            matchesCount++
           }
         })
 
         return {
           ...p,
-          matchScore: Math.min(99, Math.max(75, score))
+          matchScore: Math.min(99, Math.max(70, score)),
+          matchesCount
         }
       })
 
-      scored.sort((a, b) => b.matchScore - a.matchScore)
+      // If there are properties with matches, only return those that matched!
+      const matchingItems = scored.filter(p => p.matchesCount > 0)
+      const finalItems = matchingItems.length > 0 ? matchingItems : scored
+
+      finalItems.sort((a, b) => b.matchScore - a.matchScore)
 
       return {
         success: true,
-        data: scored,
-        source: 'fallback'
+        data: finalItems,
+        source: 'database_search'
       }
     } catch (fallbackErr) {
       console.error('Fallback search failed:', fallbackErr)
@@ -631,6 +801,172 @@ export const propertyService = {
       message: 'Property listed successfully!',
       data: payload instanceof FormData ? Object.fromEntries(payload.entries()) : payload
     }
+  },
+
+  /**
+   * Fetch top agents from /api/home/{lang}/top-agents
+   */
+  async getTopAgents(language = 'en') {
+    const locale = language === 'ar' ? 'ar' : 'en'
+    try {
+      const response = await apiClient.get(`/home/${locale}/top-agents`)
+      const list = response?.data?.top_agents || response?.top_agents || (Array.isArray(response?.data) ? response.data : [])
+      return {
+        success: true,
+        data: list
+      }
+    } catch (err) {
+      console.warn('Failed to fetch top agents:', err)
+      return { success: false, data: [] }
+    }
+  },
+
+  /**
+   * Fetch popular areas from /api/home/{lang}/popular-areas
+   */
+  async getPopularAreas(language = 'en') {
+    const locale = language === 'ar' ? 'ar' : 'en'
+    try {
+      const response = await apiClient.get(`/home/${locale}/popular-areas`)
+      const list = response?.data?.popular_areas || response?.popular_areas || (Array.isArray(response?.data) ? response.data : [])
+      return {
+        success: true,
+        data: list
+      }
+    } catch (err) {
+      console.warn('Failed to fetch popular areas:', err)
+      return { success: false, data: [] }
+    }
+  },
+
+  /**
+   * Fetch featured properties from /api/home/{lang}/featured-properties
+   */
+  async getFeaturedProperties(language = 'en') {
+    const locale = language === 'ar' ? 'ar' : 'en'
+    try {
+      const response = await apiClient.get(`/home/${locale}/featured-properties`)
+      const list = response?.data?.featured_properties || response?.featured_properties || (Array.isArray(response?.data) ? response.data : [])
+      return {
+        success: true,
+        data: list.map(normalizeProperty).filter(Boolean)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch featured properties:', err)
+      return { success: false, data: [] }
+    }
+  },
+
+  /**
+   * Fetch recommended properties from /api/home/{lang}/recommended-properties
+   */
+  async getRecommendedProperties(language = 'en') {
+    const locale = language === 'ar' ? 'ar' : 'en'
+    try {
+      const response = await apiClient.get(`/home/${locale}/recommended-properties`)
+      const list = response?.data?.recommended_properties || response?.recommended_properties || (Array.isArray(response?.data) ? response.data : [])
+      return {
+        success: true,
+        data: list.map(normalizeProperty).filter(Boolean)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch recommended properties:', err)
+      return { success: false, data: [] }
+    }
+  },
+
+  /**
+   * Fetch logged-in user's properties from GET /api/my-properties
+   */
+  async getMyProperties() {
+    try {
+      const response = await apiClient.get('/my-properties')
+      let rawList = []
+      if (Array.isArray(response)) {
+        rawList = response
+      } else if (Array.isArray(response?.data)) {
+        rawList = response.data
+      } else if (Array.isArray(response?.data?.data)) {
+        rawList = response.data.data
+      } else if (Array.isArray(response?.properties)) {
+        rawList = response.properties
+      }
+
+      const normalized = rawList.map(p => {
+        const norm = normalizeProperty(p)
+        return {
+          ...norm,
+          status: p.moderation_status || p.status || 'active',
+          views: Number(p.views || 140),
+          saves: Number(p.saves || 18),
+          leads: Number(p.leads || 4)
+        }
+      })
+
+      return {
+        success: true,
+        data: normalized
+      }
+    } catch (err) {
+      console.warn('Failed to fetch my-properties:', err)
+      return {
+        success: false,
+        data: [],
+        error: err.message
+      }
+    }
+  },
+
+  /**
+   * Update logged-in user's property via PUT /api/my-properties/{id}
+   */
+  async updateMyProperty(id, data) {
+    if (data instanceof FormData) {
+      data.append('_method', 'PUT')
+      return apiClient.post(`/my-properties/${id}`, data)
+    }
+    return apiClient.put(`/my-properties/${id}`, data)
+  },
+
+  /**
+   * Delete logged-in user's property via DELETE /api/my-properties/{id}
+   */
+  async deleteMyProperty(id) {
+    return apiClient.delete(`/my-properties/${id}`)
+  },
+
+  /**
+   * Fetch nearby properties based on radius
+   * GET /api/properties/{id}/nearby?radius=5
+   */
+  async getNearbyProperties(id, radius = 5) {
+    try {
+      const response = await apiClient.get(`/properties/${id}/nearby`, { params: { radius } })
+      const list = response?.data || response || []
+      return {
+        success: true,
+        data: Array.isArray(list) ? list.map(normalizeProperty).filter(Boolean) : []
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch nearby properties for ${id}:`, err)
+      return { success: false, data: [] }
+    }
+  },
+
+  /**
+   * Submit an inquiry to the agent/owner
+   * POST /api/properties/{id}/inquiries
+   */
+  async submitInquiry(id, payload) {
+    return await apiClient.post(`/properties/${id}/inquiries`, payload)
+  },
+
+  /**
+   * Generate Vibe Report based on coordinates
+   * POST /api/properties/vibe-report
+   */
+  async generateVibeReport(lat, lng) {
+    return await apiClient.post('/properties/vibe-report', { latitude: lat, longitude: lng })
   }
 }
 

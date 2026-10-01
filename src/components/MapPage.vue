@@ -119,6 +119,40 @@
 
       <section class="map-view-panel">
         <div id="leaflet-map"></div>
+
+        <!-- POI Floating Controls Toolbar -->
+        <div class="map-poi-dock" :dir="isRtl ? 'rtl' : 'ltr'">
+          <div class="poi-dock-inner">
+            <button
+              type="button"
+              class="poi-main-toggle"
+              :class="{ active: showPois }"
+              @click="togglePoiLayer"
+              :title="isRtl ? 'إظهار / إخفاء معالم ومرافق دبي' : 'Toggle Dubai Points of Interest'"
+            >
+              <i class="fa-solid fa-map-pin"></i>
+              <span>{{ isRtl ? 'معالم دبي' : 'Dubai POIs' }}</span>
+              <span class="poi-count-badge" v-if="renderedPoisCount > 0">{{ renderedPoisCount.toLocaleString() }}</span>
+              <i v-if="loadingPois" class="fa-solid fa-spinner fa-spin poi-spin"></i>
+            </button>
+
+            <div v-show="showPois" class="poi-chips-scroll">
+              <button
+                v-for="grp in poiFilterGroups"
+                :key="grp.id"
+                type="button"
+                class="poi-chip-btn"
+                :class="{ active: selectedPoiGroup === grp.id }"
+                @click="changePoiGroup(grp.id)"
+              >
+                <span class="chip-emoji" v-if="grp.emoji">{{ grp.emoji }}</span>
+                <i v-else-if="grp.icon" :class="grp.icon"></i>
+                <span>{{ isRtl ? grp.labelAr : grp.labelEn }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="map-layer-selector">
           <button class="layer-btn active" data-layer="day" type="button"><i class="fa-solid fa-sun"></i><span>Day Luxury</span></button>
           <button class="layer-btn" data-layer="satellite" type="button"><i class="fa-solid fa-earth-americas"></i><span>Satellite</span></button>
@@ -229,6 +263,7 @@ import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import { propertyService } from '../services/propertyService'
 import { favoritesService } from '../services/favoritesService'
+import { poiService, POI_FILTER_GROUPS } from '../services/poiService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
@@ -236,6 +271,16 @@ import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 const { t, isRtl, isDark, theme: currentTheme } = useThemeAndLanguage()
 
 const router = useRouter()
+
+// POI layer state
+const showPois = ref(true)
+const selectedPoiGroup = ref('all')
+const poiFilterGroups = POI_FILTER_GROUPS
+const totalPoisCount = ref(0)
+const renderedPoisCount = ref(0)
+const loadingPois = ref(false)
+let rawPoisList = []
+let poiClusterLayer = null
 
 // Navbar states
 const isScrolled = ref(false)
@@ -355,18 +400,18 @@ const STATIC_FALLBACK_PROPERTIES = [
 
 let currentProperties = [...STATIC_FALLBACK_PROPERTIES]
 let mapInstance = null, activeTileLayer = null, markersMap = new Map(), activePropertyId = null
-let filteredProperties = [...currentProperties], toastTimeout = null
+let filteredProperties = [...STATIC_FALLBACK_PROPERTIES], toastTimeout = null
 
 function formatMapProperty(raw) {
   const priceNum = Number(raw.price) || 0
-  const lat = parseFloat(raw.latitude) || 25.14
-  const lng = parseFloat(raw.longitude) || 55.22
-  const areaName = raw.neighborhood || raw.neighborhood_name || (raw.address ? raw.address.split(',')[0].trim() : 'Dubai')
+  const lat = parseFloat(raw.latitude ?? raw.lat ?? raw.location?.latitude ?? raw.location?.lat) || 25.14
+  const lng = parseFloat(raw.longitude ?? raw.lng ?? raw.location?.longitude ?? raw.location?.lng) || 55.22
+  const areaName = raw.neighborhood || raw.neighborhood_name || raw.location?.neighborhood_name || raw.location?.address_line_1 || (raw.address ? raw.address.split(',')[0].trim() : 'Dubai')
   const type = raw.property_type || (raw.type_id === 2 ? 'Villa' : raw.type_id === 3 ? 'Penthouse' : raw.type_id === 4 ? 'Townhouse' : 'Apartment')
   const beds = Number(raw.bedrooms || 0)
   const baths = Number(raw.bathrooms || 0)
   const sqft = Math.round(Number(raw.area_sqft || 0))
-  const img = raw.primary_image?.image_url || raw.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80'
+  const img = raw.primary_image?.image_url || raw.images?.find(image => image.is_primary)?.image_url || raw.images?.[0]?.image_url || raw.image || '/images/logo_transparent.png'
 
   // Distance relative to Downtown Dubai [25.1972, 55.2744]
   const dLat = (lat - 25.1972) * 111
@@ -419,9 +464,19 @@ function formatMapProperty(raw) {
 
 async function fetchLiveMapProperties() {
   try {
+    let rawList = []
     const res = await propertyService.getMapProperties()
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-      currentProperties = res.data.map(formatMapProperty)
+      rawList = res.data
+    } else {
+      const catalogRes = await propertyService.getProperties({ per_page: 100 })
+      if (catalogRes?.success && Array.isArray(catalogRes.data) && catalogRes.data.length > 0) {
+        rawList = catalogRes.data
+      }
+    }
+
+    if (rawList.length > 0) {
+      currentProperties = rawList.map(formatMapProperty)
       filteredProperties = [...currentProperties]
       if (mapInstance) {
         renderMarkers(filteredProperties)
@@ -434,7 +489,7 @@ async function fetchLiveMapProperties() {
       showToast(`Loaded ${currentProperties.length} live properties from VibeLocate API`)
     }
   } catch (err) {
-    console.warn('Map API load failed, using fallback properties:', err)
+    console.warn('Map API load failed, keeping active properties:', err)
   }
 }
 
@@ -446,9 +501,45 @@ const TILE_LAYERS = {
 
 function loadLeaflet() {
   return new Promise((resolve) => {
-    if (window.L) { resolve(); return }
-    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css)
-    const script = document.createElement('script'); script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; script.onload = resolve; document.head.appendChild(script)
+    const loadCluster = () => {
+      if (window.L && window.L.markerClusterGroup) {
+        resolve()
+        return
+      }
+      if (!document.querySelector('link[data-cluster-css]')) {
+        const c1 = document.createElement('link')
+        c1.rel = 'stylesheet'
+        c1.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'
+        c1.setAttribute('data-cluster-css', 'true')
+        document.head.appendChild(c1)
+
+        const c2 = document.createElement('link')
+        c2.rel = 'stylesheet'
+        c2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css'
+        document.head.appendChild(c2)
+      }
+      const clusterScript = document.createElement('script')
+      clusterScript.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'
+      clusterScript.onload = () => resolve()
+      clusterScript.onerror = () => resolve()
+      document.head.appendChild(clusterScript)
+    }
+
+    if (window.L) {
+      loadCluster()
+      return
+    }
+
+    const css = document.createElement('link')
+    css.rel = 'stylesheet'
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    document.head.appendChild(css)
+
+    const script = document.createElement('script')
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    script.onload = loadCluster
+    script.onerror = () => resolve()
+    document.head.appendChild(script)
   })
 }
 
@@ -462,6 +553,128 @@ function initMap() {
   renderMarkers(filteredProperties)
   renderSidebarList(filteredProperties)
   mapInstance.on('click', (e) => { if (e.originalEvent.target.id === 'leaflet-map') clearActiveStates() })
+}
+
+async function fetchAndRenderPois() {
+  if (rawPoisList.length === 0) {
+    loadingPois.value = true
+    try {
+      rawPoisList = await poiService.loadPois()
+      totalPoisCount.value = rawPoisList.length
+    } catch (e) {
+      console.warn('Failed to load POIs in MapPage:', e)
+    } finally {
+      loadingPois.value = false
+    }
+  }
+  renderPoiMarkers()
+}
+
+function renderPoiMarkers() {
+  if (!mapInstance || !window.L) return
+
+  if (poiClusterLayer) {
+    mapInstance.removeLayer(poiClusterLayer)
+    poiClusterLayer = null
+  }
+
+  if (!showPois.value) {
+    renderedPoisCount.value = 0
+    return
+  }
+
+  const filtered = poiService.filterByGroup(rawPoisList, selectedPoiGroup.value)
+  renderedPoisCount.value = filtered.length
+
+  const L = window.L
+
+  if (typeof L.markerClusterGroup === 'function') {
+    poiClusterLayer = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 42,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      iconCreateFunction: function(cluster) {
+        const count = cluster.getChildCount()
+        const cClass = count < 25 ? 'sm' : count < 100 ? 'md' : 'lg'
+        return L.divIcon({
+          html: `<div class="poi-cluster-pill ${cClass}"><span>${count}</span></div>`,
+          className: 'poi-cluster-wrap',
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        })
+      }
+    })
+  } else {
+    poiClusterLayer = L.layerGroup()
+  }
+
+  filtered.forEach(poi => {
+    const meta = poiService.getCategoryMeta(poi.subcategory)
+    const poiIcon = L.divIcon({
+      className: 'poi-marker-container',
+      html: `<div class="poi-pin-bubble" style="--poi-color:${meta.color};" title="${poi.name}">
+              <span class="poi-pin-emoji">${poi.icon || meta.icon}</span>
+             </div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    })
+
+    const marker = L.marker([poi.latitude, poi.longitude], { icon: poiIcon })
+    const catLabel = isRtl.value ? meta.labelAr : meta.labelEn
+    const safeName = (poi.name || '').replace(/'/g, "\\'")
+
+    const popupHtml = `
+      <div class="poi-popup-card">
+        <div class="poi-pop-header">
+          <div class="poi-pop-icon" style="background:${meta.color}20; color:${meta.color}; border: 1px solid ${meta.color}45;">
+            ${poi.icon || meta.icon}
+          </div>
+          <div class="poi-pop-info">
+            <h4 class="poi-pop-name">${poi.name}</h4>
+            <span class="poi-pop-badge" style="background:${meta.color}15; color:${meta.color};">${catLabel}</span>
+          </div>
+        </div>
+        <div class="poi-pop-btn-row">
+          <button class="poi-pop-nav-btn" onclick="window.__vibeMap.routeToPoi(${poi.latitude}, ${poi.longitude}, '${safeName}')">
+            <i class="fa-solid fa-diamond-turn-right"></i>
+            <span>${isRtl.value ? 'رسم المسار والاتجاهات' : 'Route Directions'}</span>
+          </button>
+          <a class="poi-pop-gmaps-btn" href="https://www.google.com/maps/search/?api=1&query=${poi.latitude},${poi.longitude}" target="_blank" title="Google Maps">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+      </div>
+    `
+
+    marker.bindPopup(L.popup({
+      offset: [0, -10],
+      closeButton: true,
+      className: 'custom-glass-popup poi-glass-popup'
+    }).setContent(popupHtml))
+
+    poiClusterLayer.addLayer(marker)
+  })
+
+  mapInstance.addLayer(poiClusterLayer)
+}
+
+function togglePoiLayer() {
+  showPois.value = !showPois.value
+  renderPoiMarkers()
+  showToast(
+    showPois.value
+      ? (isRtl.value ? `📍 تم إظهار معالم ومرافق دبي (${renderedPoisCount.value.toLocaleString()} موقع)` : `📍 Dubai POIs enabled (${renderedPoisCount.value.toLocaleString()} locations)`)
+      : (isRtl.value ? 'تم إخفاء معالم ومرافق دبي' : 'Dubai POIs hidden')
+  )
+}
+
+function changePoiGroup(groupId) {
+  selectedPoiGroup.value = groupId
+  renderPoiMarkers()
+  const grp = POI_FILTER_GROUPS.find(g => g.id === groupId)
+  const lbl = grp ? (isRtl.value ? grp.labelAr : grp.labelEn) : groupId
+  showToast(isRtl.value ? `فلترة المرافق: ${lbl} (${renderedPoisCount.value.toLocaleString()})` : `POI filter: ${lbl} (${renderedPoisCount.value.toLocaleString()})`)
 }
 
 function setTileLayer(type) {
@@ -720,10 +933,14 @@ function showRouteCard(prop) {
   if (titleEl) titleEl.textContent = prop.title
 
   // Calculate real distance if user location known
-  let distKm = prop.distanceKm
+  let distKm = prop.distanceKm || 0
   if (userLat && userLng) {
     const dLat = (prop.lat - userLat) * 111
     const dLng = (prop.lng - userLng) * 100
+    distKm = Math.max(0.1, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10)
+  } else if (!distKm) {
+    const dLat = (prop.lat - 25.1972) * 111
+    const dLng = (prop.lng - 55.2744) * 100
     distKm = Math.max(0.1, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10)
   }
 
@@ -784,12 +1001,21 @@ onMounted(async () => {
     showRouteCard: (id) => {
       const prop = currentProperties.find(p => p.id === id)
       if (prop) showRouteCard(prop)
+    },
+    routeToPoi: (lat, lng, name) => {
+      showRouteCard({
+        title: name,
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        distanceKm: 0
+      })
     }
   }
   await loadLeaflet()
   initMap()
   setupEvents()
   fetchLiveMapProperties()
+  fetchAndRenderPois()
 })
 
 onUnmounted(() => {
@@ -797,6 +1023,10 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', handleKeyDown)
   document.body.style.overflow = ''
+  if (poiClusterLayer && mapInstance) {
+    mapInstance.removeLayer(poiClusterLayer)
+    poiClusterLayer = null
+  }
   if (mapInstance) { mapInstance.remove(); mapInstance = null }
   delete window.__vibeMap
 })
@@ -1312,11 +1542,282 @@ onUnmounted(() => {
   .filter-groups { flex-direction: column; }
   .filter-dropdown-wrap { width: 100%; }
   .btn-scan-map { width: 100%; justify-content: center; }
-  .modal-specs-grid { grid-template-columns: repeat(2, 1fr); }
   .map-route-card { left: 12px; right: 12px; width: auto; bottom: 12px; }
+  .map-poi-dock { bottom: 12px; max-width: calc(100% - 16px); }
+  .poi-chips-scroll { max-width: 200px; }
   .footer-top {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
+}
+
+/* ==================== POI FLOATING CONTROLS & MARKERS ==================== */
+.map-poi-dock {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: calc(100% - 32px);
+  pointer-events: none;
+}
+.poi-dock-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  border-radius: 40px;
+  padding: 6px 10px;
+  pointer-events: auto;
+  max-width: 100%;
+}
+.poi-main-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.22s ease;
+  flex-shrink: 0;
+}
+.poi-main-toggle.active {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+.poi-spin { font-size: 0.75rem; margin-inline-start: 4px; }
+.poi-count-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.28);
+  color: inherit;
+}
+.poi-chips-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 4px;
+  max-width: 580px;
+  scrollbar-width: none;
+}
+.poi-chips-scroll::-webkit-scrollbar { display: none; }
+.poi-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.poi-chip-btn:hover {
+  border-color: #0284c7;
+  color: #0284c7;
+  background: #f0f9ff;
+}
+.poi-chip-btn.active {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+/* Cluster & Pins */
+:deep(.poi-marker-container) { background: transparent; border: none; }
+:deep(.poi-pin-bubble) {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--poi-color, #0284c7);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+:deep(.poi-pin-bubble:hover) {
+  transform: scale(1.25);
+  z-index: 1000 !important;
+}
+:deep(.poi-cluster-wrap) { background: transparent; border: none; }
+:deep(.poi-cluster-pill) {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+:deep(.poi-cluster-pill.sm) {
+  background: linear-gradient(135deg, #0284c7, #06b6d4);
+  border: 2px solid #ffffff;
+}
+:deep(.poi-cluster-pill.md) {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: 2px solid #ffffff;
+}
+:deep(.poi-cluster-pill.lg) {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  border: 2px solid #ffffff;
+}
+
+/* POI Glass Popup */
+:deep(.poi-glass-popup .leaflet-popup-content-wrapper) {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2) !important;
+}
+:deep(.poi-glass-popup .leaflet-popup-content) {
+  width: 240px !important;
+  margin: 0 !important;
+}
+:deep(.poi-popup-card) {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:deep(.poi-pop-header) {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+:deep(.poi-pop-icon) {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+:deep(.poi-pop-info) {
+  flex: 1;
+  min-width: 0;
+}
+:deep(.poi-pop-name) {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px;
+  line-height: 1.25;
+}
+:deep(.poi-pop-badge) {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+:deep(.poi-pop-btn-row) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+:deep(.poi-pop-nav-btn) {
+  flex: 1;
+  height: 30px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+:deep(.poi-pop-nav-btn:hover) { opacity: 0.9; }
+:deep(.poi-pop-gmaps-btn) {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+:deep(.poi-pop-gmaps-btn:hover) {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Dark Theme Support for POIs */
+[data-theme="dark"] .poi-dock-inner {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(0, 210, 255, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .poi-main-toggle {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .poi-chip-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .poi-chip-btn:hover {
+  border-color: #00d2ff;
+  color: #00d2ff;
+  background: rgba(0, 210, 255, 0.15);
+}
+[data-theme="dark"] .poi-chip-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+}
+[data-theme="dark"] :deep(.poi-pin-bubble) {
+  background: #1e293b;
+}
+[data-theme="dark"] :deep(.poi-glass-popup .leaflet-popup-content-wrapper) {
+  background: #1e293b !important;
+  border-color: rgba(0, 210, 255, 0.3) !important;
+}
+[data-theme="dark"] :deep(.poi-pop-name) {
+  color: #ffffff;
+}
+[data-theme="dark"] :deep(.poi-pop-gmaps-btn) {
+  background: #24344d;
+  border-color: #334155;
+  color: #00d2ff;
 }
 </style>

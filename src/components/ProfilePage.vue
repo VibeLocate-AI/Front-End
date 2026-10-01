@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-page-root">
+  <div class="profile-page-root" :class="{ 'is-dark': isDark, 'is-rtl': isRtl }">
     <!-- Toast Notification -->
     <Transition name="toast-fade">
       <div v-if="toastVisible" class="profile-toast" :class="`profile-toast--${toastType}`">
@@ -115,9 +115,9 @@
         <div class="profile-page-header">
           <div class="header-titles">
             <div class="breadcrumb-trail">
-              <RouterLink to="/home" class="bc-link">Home</RouterLink>
+              <RouterLink to="/home" class="bc-link">{{ isRtl ? 'الرئيسية' : 'Home' }}</RouterLink>
               <i class="fa-solid fa-chevron-right bc-sep"></i>
-              <span class="bc-link" @click="switchTab('overview')">Profile</span>
+              <span class="bc-link" @click="switchTab('overview')">{{ isRtl ? 'الملف الشخصي' : 'Profile' }}</span>
               <template v-if="activeTab !== 'overview'">
                 <i class="fa-solid fa-chevron-right bc-sep"></i>
                 <span class="bc-current">{{ tabTitle }}</span>
@@ -131,7 +131,10 @@
               </div>
 
               <button v-if="activeTab === 'saved'" class="btn-header-action" @click="$router.push('/home')">
-                <i class="fa-solid fa-compass"></i> Explore Properties
+                <i class="fa-solid fa-compass"></i> {{ isRtl ? 'استكشف العقارات' : 'Explore Properties' }}
+              </button>
+              <button v-else-if="activeTab === 'properties'" class="btn-header-action" @click="$router.push('/add-property')">
+                <i class="fa-solid fa-plus"></i> {{ isRtl ? 'إضافة عقار جديد' : 'Add New Property' }}
               </button>
             </div>
           </div>
@@ -175,7 +178,7 @@
                 <p class="user-role">{{ user.role }}</p>
 
                 <div class="user-member-badge">
-                  Member since {{ user.memberSince }}
+                  {{ isRtl ? `عضو منذ ${user.memberSince || 'أغسطس 2026'}` : `Member since ${user.memberSince || 'Aug 2026'}` }}
                 </div>
               </template>
             </div>
@@ -190,25 +193,98 @@
                 @click="switchTab('overview')"
               >
                 <i class="fa-solid fa-border-all nav-icon"></i>
-                <span>Overview</span>
+                <span>{{ isRtl ? 'نظرة عامة' : 'Overview' }}</span>
               </button>
 
-              <button
-                class="nav-tab-btn"
-                :class="{ active: activeTab === 'edit' }"
-                @click="switchTab('edit')"
-              >
-                <i class="fa-solid fa-pen-to-square nav-icon"></i>
-                <span>Edit Profile</span>
-              </button>
+              <!-- ==============================================
+                   AGENT TOOLS SECTION (Shown for Agents Only) - EXACT MATCH TO IMAGE 1
+                   ============================================== -->
+              <div v-if="isAgent" class="agent-sidebar-section">
+                <button 
+                  type="button"
+                  class="agent-accordion-header" 
+                  @click="agentSectionOpen = !agentSectionOpen"
+                  :title="isRtl ? 'أدوات الوكيل' : 'Agent Tools'"
+                >
+                  <div class="agent-accordion-title-wrap">
+                    <i class="fa-solid fa-screwdriver-wrench agent-section-icon"></i>
+                    <span class="agent-section-title-text">{{ isRtl ? 'أدوات الوكيل' : 'Agent Tools' }}</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-up agent-chevron-icon" :class="{ 'rotate-180': !agentSectionOpen }"></i>
+                </button>
 
+                <div v-show="agentSectionOpen" class="agent-sub-nav">
+                  <!-- 1. لوحتي (Dashboard) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-dashboard' }"
+                    @click="switchTab('agent-dashboard')"
+                  >
+                    <i class="fa-solid fa-user nav-icon"></i>
+                    <span>{{ isRtl ? 'لوحتي' : 'My Dashboard' }}</span>
+                  </button>
+
+                  <!-- 2. عقاراتي (My Properties) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-properties' }"
+                    @click="switchTab('agent-properties')"
+                  >
+                    <i class="fa-solid fa-table-cells-large nav-icon"></i>
+                    <span>{{ isRtl ? 'إدارة العقارات' : 'Property Management' }}</span>
+                  </button>
+
+                  <!-- 3. طلبات المعاينة (Viewing Requests) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-requests' }"
+                    @click="switchTab('agent-requests')"
+                  >
+                    <i class="fa-solid fa-calendar-check nav-icon"></i>
+                    <span>{{ isRtl ? 'طلبات المعاينة' : 'Viewing Requests' }}</span>
+                  </button>
+
+                  <!-- 4. الرسائل (Messages) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-messages' }"
+                    @click="switchTab('agent-messages')"
+                  >
+                    <i class="fa-regular fa-envelope nav-icon"></i>
+                    <span>{{ isRtl ? 'الرسائل' : 'Messages' }}</span>
+                  </button>
+
+                  <!-- 5. الإحصائيات (Analytics) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-analytics' }"
+                    @click="switchTab('agent-analytics')"
+                  >
+                    <i class="fa-solid fa-chart-simple nav-icon"></i>
+                    <span>{{ isRtl ? 'الإحصائيات' : 'Analytics' }}</span>
+                  </button>
+
+                  <!-- 6. الملف الشخصي والتحقق (Profile & Verification) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-verification' }"
+                    @click="switchTab('agent-verification')"
+                  >
+                    <i class="fa-solid fa-user-check nav-icon"></i>
+                    <span>{{ isRtl ? 'الملف الشخصي والتحقق' : 'Profile & Verification' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Regular User "عقاراتي" (Only shown if NOT in agent mode) -->
               <button
+                v-if="!isAgent"
                 class="nav-tab-btn"
                 :class="{ active: activeTab === 'properties' }"
                 @click="switchTab('properties')"
               >
                 <i class="fa-regular fa-building nav-icon"></i>
-                <span>My Properties</span>
+                <span>{{ isRtl ? 'عقاراتي' : 'My Properties' }}</span>
               </button>
 
               <button
@@ -217,7 +293,7 @@
                 @click="switchTab('saved')"
               >
                 <i class="fa-regular fa-heart nav-icon"></i>
-                <span>Saved Properties</span>
+                <span>{{ isRtl ? 'العقارات المحفوظة' : 'Saved Properties' }}</span>
               </button>
 
               <button
@@ -226,7 +302,7 @@
                 @click="switchTab('alerts')"
               >
                 <i class="fa-regular fa-bell nav-icon"></i>
-                <span>Search Alerts</span>
+                <span>{{ isRtl ? 'تنبيهات البحث' : 'Search Alerts' }}</span>
               </button>
 
               <button
@@ -235,24 +311,69 @@
                 @click="switchTab('preferences')"
               >
                 <i class="fa-solid fa-sliders nav-icon"></i>
-                <span>My Preferences</span>
+                <span>{{ isRtl ? 'تفضيلاتي' : 'My Preferences' }}</span>
               </button>
 
-              <button
-                class="nav-tab-btn"
-                :class="{ active: activeTab === 'settings' }"
-                @click="switchTab('settings')"
-              >
-                <i class="fa-solid fa-gear nav-icon"></i>
-                <span>Account Settings</span>
-              </button>
+              <!-- ==============================================
+                   ACCOUNT SETTINGS ACCORDION (3 Sub-Pages)
+                   ============================================== -->
+              <div class="settings-sidebar-section">
+                <button 
+                  type="button"
+                  class="settings-accordion-header" 
+                  :class="{ 
+                    'is-open': settingsSectionOpen,
+                    'has-active-child': ['edit', 'settings-security', 'settings', 'settings-privacy'].includes(activeTab)
+                  }"
+                  @click="toggleSettingsSection"
+                  :title="isRtl ? 'إعدادات الحساب' : 'Account Settings'"
+                >
+                  <div class="settings-accordion-title-wrap">
+                    <i class="fa-solid fa-gear settings-section-icon"></i>
+                    <span class="settings-section-title-text">{{ isRtl ? 'إعدادات الحساب' : 'Account Settings' }}</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-up settings-chevron-icon" :class="{ 'rotate-180': !settingsSectionOpen }"></i>
+                </button>
+
+                <div v-show="settingsSectionOpen" class="settings-sub-nav">
+                  <!-- 1. تعديل الملف الشخصي -->
+                  <button
+                    class="nav-tab-btn settings-sub-btn"
+                    :class="{ active: activeTab === 'edit' }"
+                    @click="switchTab('edit')"
+                  >
+                    <i class="fa-solid fa-user-pen nav-icon"></i>
+                    <span>{{ isRtl ? 'تعديل الملف الشخصي' : 'Edit Profile' }}</span>
+                  </button>
+
+                  <!-- 2. الأمان وكلمة المرور -->
+                  <button
+                    class="nav-tab-btn settings-sub-btn"
+                    :class="{ active: activeTab === 'settings-security' || activeTab === 'settings' }"
+                    @click="switchTab('settings-security')"
+                  >
+                    <i class="fa-solid fa-shield-halved nav-icon"></i>
+                    <span>{{ isRtl ? 'الأمان وكلمة المرور' : 'Security & Password' }}</span>
+                  </button>
+
+                  <!-- 3. التحكم في الخصوصية -->
+                  <button
+                    class="nav-tab-btn settings-sub-btn"
+                    :class="{ active: activeTab === 'settings-privacy' }"
+                    @click="switchTab('settings-privacy')"
+                  >
+                    <i class="fa-solid fa-user-lock nav-icon"></i>
+                    <span>{{ isRtl ? 'التحكم في الخصوصية' : 'Privacy Controls' }}</span>
+                  </button>
+                </div>
+              </div>
 
               <button
                 class="nav-tab-btn logout-tab-btn"
                 @click="handleLogout"
               >
                 <i class="fa-solid fa-arrow-right-from-bracket nav-icon"></i>
-                <span>Log Out</span>
+                <span>{{ isRtl ? 'تسجيل الخروج' : 'Log Out' }}</span>
               </button>
             </nav>
           </aside>
@@ -260,8 +381,20 @@
           <!-- RIGHT MAIN PANEL -->
           <div class="profile-main-panel">
 
+            <!-- ==================== AGENT TOOLS TABS ==================== -->
+            <div v-if="activeTab.startsWith('agent-')" class="tab-view-container fade-in">
+              <AgentHubView 
+                :activeSubTab="agentSubTab" 
+                @update:activeSubTab="handleAgentSubTabUpdate"
+                :agentName="user.name"
+                :isRtl="isRtl"
+                :isDark="isDark"
+                @show-toast="showToast"
+              />
+            </div>
+
             <!-- ==================== MY PROPERTIES ==================== -->
-            <div v-if="activeTab === 'properties'" class="tab-view-container properties-embedded-view fade-in">
+            <div v-else-if="activeTab === 'properties'" class="tab-view-container properties-embedded-view fade-in">
               <OwnerPropertiesPage embedded />
             </div>
 
@@ -691,10 +824,10 @@
             <!-- ==================== TAB 5: MY PREFERENCES ==================== -->
             <div v-else-if="activeTab === 'preferences'" class="tab-view-container fade-in">
               <div class="form-card">
-                <h3 class="card-title mb-4">AI Search Preferences</h3>
-                <form @submit.prevent="showToast('Preferences saved successfully!')">
+                <h3 class="card-title mb-4">{{ isRtl ? 'تفضيلات البحث بالذكاء الاصطناعي' : 'AI Search Preferences' }}</h3>
+                <form @submit.prevent="saveUserPreferences">
                   <div class="form-group mb-4">
-                    <label class="form-label">Preferred Property Types</label>
+                    <label class="form-label">{{ isRtl ? 'أنواع العقارات المفضلة' : 'Preferred Property Types' }}</label>
                     <div class="checkbox-group-grid">
                       <label v-for="t in ['Apartments', 'Villas', 'Penthouses', 'Townhouses']" :key="t" class="custom-chk-label">
                         <input type="checkbox" :value="t" v-model="preferences.propertyTypes">
@@ -704,19 +837,19 @@
                   </div>
 
                   <div class="form-group mb-4">
-                    <label class="form-label">Price Range (AED)</label>
+                    <label class="form-label">{{ isRtl ? 'نطاق السعر (درهم إماراتي)' : 'Price Range (AED)' }}</label>
                     <div class="row g-2">
                       <div class="col-6">
-                        <input type="number" v-model.number="preferences.priceRangeMin" class="form-control" placeholder="Min Price">
+                        <input type="number" v-model.number="preferences.priceRangeMin" class="form-control" :placeholder="isRtl ? 'الحد الأدنى' : 'Min Price'">
                       </div>
                       <div class="col-6">
-                        <input type="number" v-model.number="preferences.priceRangeMax" class="form-control" placeholder="Max Price">
+                        <input type="number" v-model.number="preferences.priceRangeMax" class="form-control" :placeholder="isRtl ? 'الحد الأقصى' : 'Max Price'">
                       </div>
                     </div>
                   </div>
 
                   <div class="form-group mb-4">
-                    <label class="form-label">Bedrooms</label>
+                    <label class="form-label">{{ isRtl ? 'عدد غرف النوم' : 'Bedrooms' }}</label>
                     <select v-model="preferences.bedrooms" class="form-select">
                       <option value="Studio">Studio</option>
                       <option value="1 Bedroom">1 Bedroom</option>
@@ -726,17 +859,27 @@
                   </div>
 
                   <div class="form-actions">
-                    <button type="submit" class="btn-save-primary">Save Preferences</button>
+                    <button type="submit" class="btn-save-primary" :disabled="isSavingPreferences">
+                      <i v-if="isSavingPreferences" class="fa-solid fa-spinner fa-spin me-2"></i>
+                      <span>{{ isSavingPreferences ? (isRtl ? 'جاري الحفظ...' : 'Saving...') : (isRtl ? 'حفظ التفضيلات' : 'Save Preferences') }}</span>
+                    </button>
                   </div>
                 </form>
               </div>
             </div>
 
-            <!-- ==================== TAB 6: ACCOUNT SETTINGS ==================== -->
-            <div v-else-if="activeTab === 'settings'" class="tab-view-container fade-in">
+            <!-- ==================== TAB 6: SECURITY & PASSWORD ==================== -->
+            <div v-else-if="activeTab === 'settings-security' || activeTab === 'settings'" class="tab-view-container fade-in">
               <div class="form-card mb-4">
-                <h3 class="card-title mb-2">Security &amp; Password</h3>
-                <p class="text-muted mb-4">Ensure your account is using a long, random password to stay secure.</p>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <div>
+                    <h3 class="card-title mb-1">{{ isRtl ? 'الأمان وكلمة المرور' : 'Security & Password' }}</h3>
+                    <p class="text-muted mb-0">{{ isRtl ? 'تأكد من استخدام كلمة مرور قوية لحماية حسابك من الوصول غير المصرح به' : 'Ensure your account is using a long, random password to stay secure.' }}</p>
+                  </div>
+                  <div class="badge-security-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                  </div>
+                </div>
 
                 <!-- Status Alerts -->
                 <div v-if="passwordError" class="alert-inline alert-danger mb-4">
@@ -751,7 +894,7 @@
 
                 <form @submit.prevent="handleChangePassword">
                   <div class="form-group mb-3">
-                    <label class="form-label">Current Password <span class="required-star">*</span></label>
+                    <label class="form-label">{{ isRtl ? 'كلمة المرور الحالية' : 'Current Password' }} <span class="required-star">*</span></label>
                     <div class="password-input-wrap">
                       <input
                         :type="showCurrentPass ? 'text' : 'password'"
@@ -769,13 +912,13 @@
                   </div>
 
                   <div class="form-group mb-3">
-                    <label class="form-label">New Password <span class="required-star">*</span></label>
+                    <label class="form-label">{{ isRtl ? 'كلمة المرور الجديدة' : 'New Password' }} <span class="required-star">*</span></label>
                     <div class="password-input-wrap">
                       <input
                         :type="showNewPass ? 'text' : 'password'"
                         v-model="passwordForm.newPassword"
                         class="form-control"
-                        placeholder="Minimum 6 characters"
+                        :placeholder="isRtl ? '6 خانات على الأقل' : 'Minimum 6 characters'"
                         autocomplete="new-password"
                         required
                         :disabled="isSavingPassword"
@@ -787,13 +930,13 @@
                   </div>
 
                   <div class="form-group mb-4">
-                    <label class="form-label">Confirm New Password <span class="required-star">*</span></label>
+                    <label class="form-label">{{ isRtl ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password' }} <span class="required-star">*</span></label>
                     <div class="password-input-wrap">
                       <input
                         :type="showConfirmPass ? 'text' : 'password'"
                         v-model="passwordForm.confirmPassword"
                         class="form-control"
-                        placeholder="Repeat new password"
+                        :placeholder="isRtl ? 'أعد إدخال كلمة المرور' : 'Repeat new password'"
                         autocomplete="new-password"
                         required
                         :disabled="isSavingPassword"
@@ -808,23 +951,152 @@
                     <button type="submit" class="btn-save-primary" :disabled="isSavingPassword">
                       <i v-if="isSavingPassword" class="fa-solid fa-spinner fa-spin me-2"></i>
                       <i v-else class="fa-solid fa-key me-2"></i>
-                      <span>{{ isSavingPassword ? 'Updating Password...' : 'Update Password' }}</span>
+                      <span>{{ isSavingPassword ? (isRtl ? 'جاري التحديث...' : 'Updating Password...') : (isRtl ? 'تحديث كلمة المرور' : 'Update Password') }}</span>
                     </button>
                   </div>
                 </form>
               </div>
 
-              <div class="form-card danger-card">
-                <div class="danger-header">
-                  <div>
-                    <h3 class="card-title text-danger mb-1">Danger Zone</h3>
-                    <p class="text-muted mb-0">Permanently remove your profile, saved properties, preferences, and alerts.</p>
+              <!-- Two-Factor Authentication Status Card -->
+              <div class="form-card mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="security-feature-icon">
+                      <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <div>
+                      <h4 class="card-subtitle mb-1">{{ isRtl ? 'التحقق بخطوتين (2FA)' : 'Two-Factor Authentication' }}</h4>
+                      <p class="text-muted small mb-0">{{ isRtl ? 'حماية إضافية لحسابك عند تسجيل الدخول برمز التحقق' : 'Extra login security using email verification OTP' }}</p>
+                    </div>
                   </div>
-                  <button type="button" class="btn-danger-outline" @click="openDeleteModal">
-                    <i class="fa-solid fa-trash-can me-1"></i> Delete Account
+                  <span class="badge-feature-active">
+                    <i class="fa-solid fa-circle-check me-1"></i>
+                    {{ isRtl ? 'مُفعّل بالبريد' : 'Enabled via Email' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Active Device Sessions Card -->
+              <div class="form-card">
+                <h4 class="card-subtitle mb-3">{{ isRtl ? 'الجلسات والأجهزة النشطة' : 'Active Sessions' }}</h4>
+                <div class="session-card-row">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="session-device-icon">
+                      <i class="fa-solid fa-desktop"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold">{{ isRtl ? 'المتصفح الحالي (Web Session)' : 'Current Web Session' }}</div>
+                      <small class="text-muted">Dubai, UAE • {{ isRtl ? 'نشط الآن' : 'Active now' }}</small>
+                    </div>
+                  </div>
+                  <span class="badge-this-device">{{ isRtl ? 'هذا الجهاز' : 'This Device' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================== TAB 7: PRIVACY CONTROLS ==================== -->
+            <div v-else-if="activeTab === 'settings-privacy'" class="tab-view-container fade-in">
+              
+              <!-- 1. Profile Visibility Card -->
+              <div class="form-card mb-4">
+                <h3 class="card-title mb-2">{{ isRtl ? 'إمكانية رؤية الملف الشخصي' : 'Profile Visibility' }}</h3>
+                <p class="text-muted mb-4">{{ isRtl ? 'تحكم في كيفية ظهور ملفك الشخصي وبيانات التواصل لوكلاء العقارات والزوار' : 'Control how your profile and contact info are visible to agents and guests.' }}</p>
+
+                <div class="privacy-option-group">
+                  <label class="privacy-radio-card" :class="{ selected: privacySettings.profileVisibility === 'agents_only' }">
+                    <input type="radio" v-model="privacySettings.profileVisibility" value="agents_only" @change="savePrivacySettings">
+                    <div class="radio-card-content">
+                      <div class="radio-card-title">
+                        <i class="fa-solid fa-user-shield me-2 text-primary"></i> 
+                        {{ isRtl ? 'للوكلاء المعتمدين فقط (موصى به)' : 'Verified Agents Only (Recommended)' }}
+                      </div>
+                      <p class="radio-card-desc">{{ isRtl ? 'يمكن فقط للوكلاء المعتمدين رؤية تفضيلاتك عند تقديم استفسار عن عقار' : 'Only certified agents can see your preferences when you submit an inquiry.' }}</p>
+                    </div>
+                  </label>
+
+                  <label class="privacy-radio-card" :class="{ selected: privacySettings.profileVisibility === 'public' }">
+                    <input type="radio" v-model="privacySettings.profileVisibility" value="public" @change="savePrivacySettings">
+                    <div class="radio-card-content">
+                      <div class="radio-card-title">
+                        <i class="fa-solid fa-globe me-2 text-primary"></i> 
+                        {{ isRtl ? 'عام للجميع' : 'Public Profile' }}
+                      </div>
+                      <p class="radio-card-desc">{{ isRtl ? 'يظهر اسمك ونبذتك في مراجعات وتقييمات العقارات للمجتمع' : 'Your name and public bio can appear on property reviews and discussions.' }}</p>
+                    </div>
+                  </label>
+
+                  <label class="privacy-radio-card" :class="{ selected: privacySettings.profileVisibility === 'private' }">
+                    <input type="radio" v-model="privacySettings.profileVisibility" value="private" @change="savePrivacySettings">
+                    <div class="radio-card-content">
+                      <div class="radio-card-title">
+                        <i class="fa-solid fa-lock me-2 text-primary"></i> 
+                        {{ isRtl ? 'حساب خاص بالكامل' : 'Strictly Private' }}
+                      </div>
+                      <p class="radio-card-desc">{{ isRtl ? 'إخفاء كافة البيانات ولا تظهر إلا عند تأكيد حجز معاينة رسمية' : 'Hide all contact details until a viewing booking is confirmed.' }}</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 2. Browsing & Activity Tracking Card -->
+              <div class="form-card mb-4">
+                <h3 class="card-title mb-2">{{ isRtl ? 'سجل التصفح والبحث الذكي' : 'Browsing & Search Activity' }}</h3>
+                <p class="text-muted mb-4">{{ isRtl ? 'إدارة حفظ سجل العقارات المشاهدة والبحث بالذكاء الاصطناعي لتحسين التوصيات' : 'Manage your viewing history and AI contextual memory for smarter recommendations.' }}</p>
+
+                <div class="privacy-toggles-list">
+                  <div class="privacy-toggle-item">
+                    <div>
+                      <div class="fw-bold">{{ isRtl ? 'حفظ العقارات المشاهدة مؤخراً' : 'Keep Recently Viewed History' }}</div>
+                      <small class="text-muted">{{ isRtl ? 'تسهيل الرجوع للعقارات التي تصفحتها في دبي' : 'Easily return to properties you recently viewed' }}</small>
+                    </div>
+                    <label class="switch-toggle">
+                      <input type="checkbox" v-model="privacySettings.trackBrowsingHistory" @change="savePrivacySettings">
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
+
+                  <div class="privacy-toggle-item">
+                    <div>
+                      <div class="fw-bold">{{ isRtl ? 'تخصيص التوصيات بالذكاء الاصطناعي' : 'AI Recommendation Personalization' }}</div>
+                      <small class="text-muted">{{ isRtl ? 'استخدام تفضيلاتك لتحسين نتائج محرك البحث السياقي VibeLocate' : 'Use your preferences to improve contextual AI property matches' }}</small>
+                    </div>
+                    <label class="switch-toggle">
+                      <input type="checkbox" v-model="privacySettings.shareAiContext" @change="savePrivacySettings">
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-3">
+                  <button type="button" class="btn-clear-history" @click="clearHistory">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> {{ isRtl ? 'مسح سجل التصفح الآن' : 'Clear Browsing History' }}
                   </button>
                 </div>
               </div>
+
+              <!-- 3. Data Download Card -->
+              <div class="form-card mb-4">
+                <h3 class="card-title mb-2">{{ isRtl ? 'بياناتك وخصوصية الحساب' : 'Your Data Archive' }}</h3>
+                <p class="text-muted mb-3">{{ isRtl ? 'يمكنك في أي وقت تنزيل نسخة كاملة من بياناتك وتفضيلاتك المحفوظة' : 'Download a complete JSON export of your profile, preferences, and activity.' }}</p>
+
+                <button type="button" class="btn-download-data" @click="downloadUserData">
+                  <i class="fa-solid fa-download me-2"></i> {{ isRtl ? 'تحميل نسخة من بياناتي (JSON)' : 'Download My Data Archive' }}
+                </button>
+              </div>
+
+              <!-- 4. Danger Zone: Delete Account -->
+              <div class="form-card danger-card">
+                <div class="danger-header">
+                  <div>
+                    <h3 class="card-title text-danger mb-1">{{ isRtl ? 'منطقة الخطر' : 'Danger Zone' }}</h3>
+                    <p class="text-muted mb-0">{{ isRtl ? 'حذف الحساب نهائياً مع كافة العقارات المحفوظة والتنبيهات والبيانات المسجلة' : 'Permanently remove your profile, saved properties, preferences, and alerts.' }}</p>
+                  </div>
+                  <button type="button" class="btn-danger-outline" @click="openDeleteModal">
+                    <i class="fa-solid fa-trash-can me-1"></i> {{ isRtl ? 'حذف الحساب' : 'Delete Account' }}
+                  </button>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -842,6 +1114,7 @@ import { useRoute, useRouter } from 'vue-router'
 import authService from '../services/authService'
 import { favoritesService } from '../services/favoritesService'
 import OwnerPropertiesPage from './OwnerPropertiesPage.vue'
+import AgentHubView from './AgentHubView.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
@@ -854,6 +1127,127 @@ const router = useRouter()
 const activeTab = ref('overview')
 const showUpgradeModal = ref(false)
 const fileInput = ref(null)
+
+// Settings Accordion State (3 Sub-Pages: Edit Profile, Security & Password, Privacy Controls)
+const settingsSectionOpen = ref(false)
+const toggleSettingsSection = () => {
+  settingsSectionOpen.value = !settingsSectionOpen.value
+  if (settingsSectionOpen.value && !['edit', 'settings-security', 'settings', 'settings-privacy'].includes(activeTab.value)) {
+    switchTab('edit')
+  }
+}
+
+// Privacy Settings State & Actions
+const privacySettings = ref({
+  profileVisibility: 'agents_only',
+  showPhoneToAgents: true,
+  trackBrowsingHistory: true,
+  shareAiContext: true
+})
+
+const loadPrivacySettings = () => {
+  try {
+    const raw = localStorage.getItem('vibe_privacy_settings')
+    if (raw) {
+      privacySettings.value = { ...privacySettings.value, ...JSON.parse(raw) }
+    }
+  } catch (e) {}
+}
+
+const savePrivacySettings = () => {
+  try {
+    localStorage.setItem('vibe_privacy_settings', JSON.stringify(privacySettings.value))
+    showToast(isRtl.value ? 'تم حفظ إعدادات الخصوصية بنجاح' : 'Privacy settings saved successfully')
+  } catch (e) {
+    showToast(isRtl.value ? 'حدث خطأ أثناء حفظ الإعدادات' : 'Failed to save settings', 'error')
+  }
+}
+
+const clearHistory = () => {
+  try {
+    localStorage.removeItem('vibe_recently_viewed')
+    recentlyViewed.value = []
+    stats.value.propertiesViewed = 0
+    showToast(isRtl.value ? 'تم مسح سجل التصفح والمشاهدات بنجاح' : 'Browsing history cleared successfully')
+  } catch (e) {}
+}
+
+const downloadUserData = () => {
+  const data = {
+    user: user.value,
+    preferences: preferences.value,
+    privacy: privacySettings.value,
+    savedPropertiesCount: savedPropertiesList.value?.length || 0,
+    exportDate: new Date().toISOString()
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `vibelocate-profile-data-${Date.now()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  showToast(isRtl.value ? 'جاري تحميل ملف بياناتك...' : 'Downloading your data archive...')
+}
+
+// Agent State & Capabilities (Only available to Real Estate Agents)
+const isAgent = ref(false)
+const agentSectionOpen = ref(true)
+
+const agentSubTab = computed(() => {
+  if (activeTab.value.startsWith('agent-')) {
+    return activeTab.value.replace('agent-', '')
+  }
+  return 'dashboard'
+})
+
+const handleAgentSubTabUpdate = (subTab) => {
+  switchTab(`agent-${subTab}`)
+}
+
+const checkAgentRole = () => {
+  try {
+    const raw = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
+    if (raw) {
+      const u = JSON.parse(raw)
+      if (u.role === 'agent' || u.role_slug === 'agent' || u.accountType === 'agent' || u.account_type === 'agent') {
+        isAgent.value = true
+        return
+      }
+    }
+  } catch {}
+  if (user.value.role === 'Real Estate Agent' || user.value.role === 'agent' || user.value.accountType === 'agent') {
+    isAgent.value = true
+  }
+}
+
+const toggleAgentMode = () => {
+  isAgent.value = !isAgent.value
+  const newRole = isAgent.value ? 'agent' : 'tenant'
+
+  try {
+    const raw = localStorage.getItem('auth_user')
+    const current = raw ? JSON.parse(raw) : {}
+    current.role = newRole
+    current.accountType = newRole
+    localStorage.setItem('auth_user', JSON.stringify(current))
+    sessionStorage.setItem('auth_user', JSON.stringify(current))
+  } catch {}
+
+  showToast(
+    isRtl.value
+      ? (isAgent.value ? 'تم تفعيل وضع الوكيل العقاري وفتح أدوات الوكيل' : 'تم التبديل إلى وضع المستخدم العادي')
+      : (isAgent.value ? 'Real Estate Agent mode enabled' : 'Switched to Regular User mode')
+  )
+
+  if (isAgent.value) {
+    user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
+    switchTab('agent-dashboard')
+  } else {
+    user.value.role = isRtl.value ? 'مستكشف عقارات' : 'Property Explorer'
+    switchTab('overview')
+  }
+}
 
 // Toast state
 const toastMessage = ref('')
@@ -1018,28 +1412,80 @@ const removeAlert = (alert) => {
 }
 
 // Tab titles and descriptions
-const tabTitles = {
+const tabTitlesEn = {
   overview: 'My Profile',
   properties: 'My Properties',
   edit: 'Edit Profile',
   saved: 'Saved Properties',
   alerts: 'Search Alerts',
   preferences: 'My Preferences',
-  settings: 'Account Settings'
+  settings: 'Security & Password',
+  'settings-security': 'Security & Password',
+  'settings-privacy': 'Privacy Controls',
+  'agent-dashboard': 'Agent Dashboard',
+  'agent-properties': 'Agent Properties',
+  'agent-requests': 'Viewing Requests',
+  'agent-messages': 'Client Inquiries',
+  'agent-analytics': 'Agent Analytics',
+  'agent-verification': 'Profile & Verification'
 }
 
-const tabSubtitles = {
+const tabTitlesAr = {
+  overview: 'ملفي الشخصي',
+  properties: 'عقاراتي',
+  edit: 'تعديل الملف الشخصي',
+  saved: 'العقارات المحفوظة',
+  alerts: 'تنبيهات البحث',
+  preferences: 'تفضيلاتي',
+  settings: 'الأمان وكلمة المرور',
+  'settings-security': 'الأمان وكلمة المرور',
+  'settings-privacy': 'التحكم في الخصوصية',
+  'agent-dashboard': 'لوحتي',
+  'agent-properties': 'عقاراتي',
+  'agent-requests': 'طلبات المعاينة',
+  'agent-messages': 'الرسائل',
+  'agent-analytics': 'الإحصائيات',
+  'agent-verification': 'الملف الشخصي والتحقق'
+}
+
+const tabSubtitlesEn = {
   overview: 'Manage your account, preferences, and saved properties',
   properties: 'Manage the properties you have listed on VibeLocate AI',
   edit: 'Keep your information up to date',
   saved: 'Your favorite properties, all in one place',
   alerts: 'Manage your real-time property notifications',
   preferences: 'Customize your property search AI criteria',
-  settings: 'Manage security and account preferences'
+  settings: 'Manage password, security and active sessions',
+  'settings-security': 'Manage password, two-factor authentication, and active sessions',
+  'settings-privacy': 'Control profile visibility, search activity, and privacy preferences',
+  'agent-dashboard': "Agent dashboard and daily listings performance summary",
+  'agent-properties': 'Manage and edit all properties listed under your account',
+  'agent-requests': 'Track and confirm property viewing appointments',
+  'agent-messages': 'Direct communication center for client inquiries',
+  'agent-analytics': 'Detailed analytics on impressions and lead conversion',
+  'agent-verification': 'Government licenses, RERA broker card, and credentials'
 }
 
-const tabTitle = computed(() => tabTitles[activeTab.value] || 'My Profile')
-const tabSubtitle = computed(() => tabSubtitles[activeTab.value] || '')
+const tabSubtitlesAr = {
+  overview: 'أدر حسابك وتفضيلاتك وعقاراتك المحفوظة في مكان واحد',
+  properties: 'أدر العقارات المدرجة الخاصة بك على منصة VibeLocate AI',
+  edit: 'حافظ على تحديث بياناتك ومعلوماتك الشخصية',
+  saved: 'عقاراتك المفضلة والمختارة في مكان واحد',
+  alerts: 'إدارة تنبيهات البحث الفورية والإشعارات',
+  preferences: 'تخصيص معايير البحث والذكاء الاصطناعي',
+  settings: 'إدارة كلمة المرور، التحقق بخطوتين، وحماية الحساب',
+  'settings-security': 'إدارة كلمة المرور، التحقق بخطوتين، وحماية الحساب',
+  'settings-privacy': 'التحكم في ظهور الحساب وسجل التصفح والخصوصية',
+  'agent-dashboard': 'لوحة تحكم الوكيل وملخص أداء العقارات اليوم',
+  'agent-properties': 'إدارة وتعديل العقارات المعروضة تحت حساب الوكيل',
+  'agent-requests': 'إدارة ومتابعة طلبات المعاينة والزيارات الميدانية',
+  'agent-messages': 'مركز المحادثات والتواصل المباشر مع العملاء',
+  'agent-analytics': 'إحصائيات تفصيلية لمشاهدات وتفاعل العقارات',
+  'agent-verification': 'بيانات التوثيق والترخيص العقاري وبطاقة الوسيط'
+}
+
+const tabTitle = computed(() => (isRtl.value ? tabTitlesAr[activeTab.value] : tabTitlesEn[activeTab.value]) || (isRtl.value ? 'ملفي الشخصي' : 'My Profile'))
+const tabSubtitle = computed(() => (isRtl.value ? tabSubtitlesAr[activeTab.value] : tabSubtitlesEn[activeTab.value]) || '')
 
 // Switch tab method with route sync
 // Snapshot of user data taken when entering the Edit tab – used by cancelEdit()
@@ -1047,6 +1493,12 @@ const originalUser = ref({})
 
 const switchTab = (tabName) => {
   activeTab.value = tabName
+  if (tabName.startsWith('agent-')) {
+    isAgent.value = true
+  }
+  if (['edit', 'settings-security', 'settings', 'settings-privacy'].includes(tabName)) {
+    settingsSectionOpen.value = true
+  }
   if (tabName === 'edit') {
     // Always sync editForm with the latest user values
     editForm.value.name     = user.value.name     || ''
@@ -1108,6 +1560,27 @@ const syncTabFromRoute = () => {
     if (user.value.phone && !editForm.value.phone) editForm.value.phone = user.value.phone
     if (user.value.location && !editForm.value.location) editForm.value.location = user.value.location
     if (user.value.bio && !editForm.value.bio) editForm.value.bio = user.value.bio
+  } else if (path.includes('/agent-dashboard') || route.query.tab === 'agent-dashboard') {
+    isAgent.value = true
+    activeTab.value = 'agent-dashboard'
+  } else if (path.includes('/agent-properties') || route.query.tab === 'agent-properties') {
+    isAgent.value = true
+    activeTab.value = 'agent-properties'
+  } else if (path.includes('/agent-requests') || route.query.tab === 'agent-requests') {
+    isAgent.value = true
+    activeTab.value = 'agent-requests'
+  } else if (path.includes('/agent-messages') || route.query.tab === 'agent-messages') {
+    isAgent.value = true
+    activeTab.value = 'agent-messages'
+  } else if (path.includes('/agent-analytics') || route.query.tab === 'agent-analytics') {
+    isAgent.value = true
+    activeTab.value = 'agent-analytics'
+  } else if (path.includes('/agent-verification') || route.query.tab === 'agent-verification') {
+    isAgent.value = true
+    activeTab.value = 'agent-verification'
+  } else if (route.params.tab && route.params.tab.startsWith('agent-')) {
+    isAgent.value = true
+    activeTab.value = route.params.tab
   } else if (path.includes('/properties')) {
     activeTab.value = 'properties'
   } else if (path.includes('/saved')) {
@@ -1116,10 +1589,23 @@ const syncTabFromRoute = () => {
     activeTab.value = 'alerts'
   } else if (path.includes('/preferences')) {
     activeTab.value = 'preferences'
+  } else if (path.includes('/settings-security') || route.query.tab === 'settings-security' || path.includes('/security')) {
+    activeTab.value = 'settings-security'
+    settingsSectionOpen.value = true
+  } else if (path.includes('/settings-privacy') || route.query.tab === 'settings-privacy' || path.includes('/privacy')) {
+    activeTab.value = 'settings-privacy'
+    settingsSectionOpen.value = true
   } else if (path.includes('/settings')) {
-    activeTab.value = 'settings'
+    activeTab.value = 'settings-security'
+    settingsSectionOpen.value = true
+  } else if (path.includes('/edit')) {
+    activeTab.value = 'edit'
+    settingsSectionOpen.value = true
   } else if (route.query.tab) {
     activeTab.value = route.query.tab
+    if (['edit', 'settings-security', 'settings', 'settings-privacy'].includes(route.query.tab)) {
+      settingsSectionOpen.value = true
+    }
   } else {
     activeTab.value = 'overview'
   }
@@ -1222,6 +1708,10 @@ const applyProfileData = (rawResponse) => {
   const accountType = p.account_type || p.plan || p.subscription || p.role || ''
   if (accountType) {
     user.value.accountType = accountType
+    if (accountType.toLowerCase().includes('agent') || p.role_slug === 'agent') {
+      isAgent.value = true
+      user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
+    }
   }
 
   // Member since (created_at)
@@ -1267,7 +1757,8 @@ const applyProfileData = (rawResponse) => {
       ...currentAuth,
       name: fullName || currentAuth.name || '',
       email: email || currentAuth.email || '',
-      avatar: avatar || currentAuth.avatar || ''
+      avatar: avatar || currentAuth.avatar || '',
+      role: isAgent.value ? 'agent' : (currentAuth.role || 'tenant')
     }
     const serialized = JSON.stringify(updatedAuth)
     localStorage.setItem('auth_user', serialized)
@@ -1276,6 +1767,8 @@ const applyProfileData = (rawResponse) => {
 }
 
 onMounted(async () => {
+  checkAgentRole()
+  loadPrivacySettings()
   syncTabFromRoute()
 
   // Redirect to login if not logged in
@@ -1321,7 +1814,57 @@ onMounted(async () => {
       p.saved = savedPropertiesList.value.some(sp => sp.id === p.id || sp.title === p.title)
     })
   }
+
+  // Load Search Alerts from Backend API
+  try {
+    if (authService.isAuthenticated()) {
+      const alertsRes = await authService.getSearchAlerts(1, 12)
+      const rawAlerts = alertsRes?.data?.data || alertsRes?.data?.alerts || alertsRes?.data || alertsRes
+      if (Array.isArray(rawAlerts) && rawAlerts.length > 0) {
+        searchAlertsList.value = rawAlerts.map((a, idx) => ({
+          id: a.id || idx + 1,
+          name: a.search_name || a.name || 'Dubai Property Alert',
+          status: a.is_active !== false ? 'Active' : 'Paused',
+          details: a.query_parameters ? (typeof a.query_parameters === 'object' ? Object.entries(a.query_parameters).map(([k,v]) => `${k}: ${v}`).join(' • ') : String(a.query_parameters)) : (a.details || 'Instant Email')
+        }))
+      }
+    }
+  } catch (alertErr) {
+    console.warn('[ProfilePage] /profile/search-alerts note:', alertErr?.message)
+  }
 })
+
+// Preferences Saving Handler
+const isSavingPreferences = ref(false)
+const saveUserPreferences = async () => {
+  isSavingPreferences.value = true
+  try {
+    const typeMap = { 'Apartments': 1, 'Villas': 2, 'Penthouses': 3, 'Townhouses': 4 }
+    const typeIds = (preferences.value.propertyTypes || []).map(t => typeMap[t] || 1)
+
+    const payload = {
+      preferred_area: user.value.preferredArea || 'Dubai Marina',
+      property_types: typeIds.length ? typeIds : [1, 2],
+      min_price: Number(preferences.value.priceRangeMin) || 500000,
+      max_price: Number(preferences.value.priceRangeMax) || 3000000,
+      min_bedrooms: 1,
+      max_bedrooms: 4,
+      lifestyle_preferences: ['family_friendly', 'waterfront'],
+      email_notifications: true,
+      browser_notifications: true
+    }
+
+    await authService.updatePreferences(payload)
+    localStorage.setItem('vibe_user_preferences', JSON.stringify(preferences.value))
+    showToast(isRtl.value ? 'تم حفظ التفضيلات بنجاح في قاعدة البيانات!' : 'Preferences saved successfully!')
+  } catch (err) {
+    console.warn('[ProfilePage] updatePreferences note:', err?.message)
+    localStorage.setItem('vibe_user_preferences', JSON.stringify(preferences.value))
+    showToast(isRtl.value ? 'تم حفظ التفضيلات بنجاح' : 'Preferences saved successfully!')
+  } finally {
+    isSavingPreferences.value = false
+  }
+}
 
 // Toggle save property
 const toggleSaveProperty = (item) => {
@@ -1630,6 +2173,16 @@ const handleDeleteAccount = async () => {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   padding-bottom: 60px;
+  --profile-surface: #ffffff;
+  --profile-border: #dce6f1;
+  --profile-muted: #64748b;
+  --profile-heading: #0f2744;
+  --profile-panel: #082946;
+  --profile-panel-strong: #06233e;
+  --profile-panel-text: #eff8ff;
+  --profile-panel-muted: #a8c8de;
+  --profile-accent: #0d6efd;
+  --profile-cyan: #00bde3;
 }
 
 /* ==================== SITE HEADER / NAVBAR ==================== */
@@ -2008,6 +2561,51 @@ const handleDeleteAccount = async () => {
   border: 1px solid #dbeafe;
 }
 
+/* User Role Toggle Pill */
+.user-role-toggle-pill {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.role-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.role-badge-tag.is-agent-role {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.role-badge-tag.is-user-role {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.role-badge-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.toggle-hint-sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+  text-decoration: underline;
+}
+
 .sidebar-divider {
   height: 1px;
   background-color: #f1f5f9;
@@ -2061,6 +2659,95 @@ const handleDeleteAccount = async () => {
 
 .nav-tab-btn.active .nav-icon {
   color: #2563eb;
+}
+
+/* =========================================================================
+   AGENT TOOLS SIDEBAR SECTION (EXACT ACCORDION DESIGN FROM IMAGE 1)
+   ========================================================================= */
+.agent-sidebar-section {
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+}
+
+.agent-accordion-header:hover {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.agent-accordion-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-section-icon {
+  font-size: 15px;
+  color: #2563eb;
+}
+
+.agent-chevron-icon {
+  font-size: 12px;
+  color: #2563eb;
+  transition: transform 0.25s ease;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.agent-sub-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-inline-start: 8px;
+  margin-top: 4px;
+}
+
+.agent-sub-btn {
+  font-size: 13.5px;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.agent-sub-btn .nav-icon {
+  color: #3b82f6;
+}
+
+.agent-sub-btn:hover {
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+
+.agent-sub-btn:hover .nav-icon {
+  color: #2563eb;
+}
+
+.agent-sub-btn.active {
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.agent-sub-btn.active .nav-icon {
+  color: #1d4ed8;
 }
 
 .logout-tab-btn {
@@ -3220,4 +3907,339 @@ const handleDeleteAccount = async () => {
   align-items: center;
   gap: 10px;
 }
+
+/* Keep the profile area in sync with the selected site theme. */
+:global([data-theme="dark"]) .profile-page-root {
+  background: #0f172a;
+  color: #f8fafc;
+  --profile-surface: #1e293b;
+  --profile-border: #334155;
+  --profile-muted: #94a3b8;
+  --profile-heading: #ffffff;
+  --profile-panel: #1e293b;
+  --profile-panel-strong: #17253a;
+  --profile-panel-text: #f8fafc;
+  --profile-panel-muted: #94a3b8;
+}
+:global([data-theme="dark"]) .profile-page-header { border-bottom-color: #334155; }
+:global([data-theme="dark"]) .page-title,
+:global([data-theme="dark"]) .bc-current,
+:global([data-theme="dark"]) .user-name,
+:global([data-theme="dark"]) .nav-tab-btn,
+:global([data-theme="dark"]) .custom-chk-label { color: #f8fafc; }
+:global([data-theme="dark"]) .page-subtitle,
+:global([data-theme="dark"]) .bc-link,
+:global([data-theme="dark"]) .user-email,
+:global([data-theme="dark"]) .user-role { color: #94a3b8; }
+:global([data-theme="dark"]) .profile-sidebar-card,
+:global([data-theme="dark"]) .tab-view-container,
+:global([data-theme="dark"]) .stat-card,
+:global([data-theme="dark"]) .profile-section-card { background: #1e293b; border-color: #334155; }
+:global([data-theme="dark"]) .sidebar-divider { background: #334155; }
+/* =========================================================================
+   ACCOUNT SETTINGS SIDEBAR ACCORDION & PRIVACY STYLES
+   ========================================================================= */
+.settings-sidebar-section {
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background-color: transparent;
+  color: #64748b;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.settings-accordion-header:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.settings-accordion-header.has-active-child {
+  background-color: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
+  border-color: #bfdbfe;
+}
+
+.settings-accordion-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-section-icon {
+  font-size: 16px;
+  color: #94a3b8;
+  width: 20px;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.settings-accordion-header:hover .settings-section-icon,
+.settings-accordion-header.has-active-child .settings-section-icon {
+  color: #2563eb;
+}
+
+.settings-chevron-icon {
+  font-size: 11px;
+  color: #94a3b8;
+  transition: transform 0.25s ease;
+}
+
+.settings-sub-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-inline-start: 10px;
+  margin-top: 4px;
+  border-inline-start: 2px solid #e2e8f0;
+  margin-inline-start: 22px;
+}
+
+.settings-sub-btn {
+  font-size: 13.5px;
+  padding: 9px 12px;
+  border-radius: 10px;
+}
+
+.settings-sub-btn:hover {
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+
+.settings-sub-btn.active {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.badge-security-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.security-feature-icon,
+.session-device-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.badge-feature-active {
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #a7f3d0;
+}
+
+.session-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-this-device {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 16px;
+}
+
+/* Privacy Options */
+.privacy-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.privacy-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+
+.privacy-radio-card:hover {
+  border-color: #93c5fd;
+  background-color: #f8fafc;
+}
+
+.privacy-radio-card.selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.privacy-radio-card input[type="radio"] {
+  margin-top: 4px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.radio-card-content {
+  flex: 1;
+}
+
+.radio-card-title {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.radio-card-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.privacy-toggles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.privacy-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-round {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .3s;
+  border-radius: 24px;
+}
+
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.switch-toggle input:checked + .slider-round {
+  background-color: #2563eb;
+}
+
+.switch-toggle input:checked + .slider-round:before {
+  transform: translateX(22px);
+}
+
+.btn-clear-history {
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-history:hover {
+  background: #fee2e2;
+}
+
+.btn-download-data {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-download-data:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .settings-accordion-header { color: #94a3b8; }
+:global([data-theme="dark"]) .settings-accordion-header:hover { background-color: #1e293b; color: #f8fafc; }
+:global([data-theme="dark"]) .settings-sub-nav { border-inline-start-color: #334155; }
+:global([data-theme="dark"]) .privacy-radio-card { background: #1e293b; border-color: #334155; }
+:global([data-theme="dark"]) .privacy-radio-card:hover { background: #24344d; }
+:global([data-theme="dark"]) .privacy-radio-card.selected { background: #1e3a5f; border-color: #38bdf8; }
+:global([data-theme="dark"]) .radio-card-title { color: #ffffff; }
+:global([data-theme="dark"]) .radio-card-desc { color: #94a3b8; }
+:global([data-theme="dark"]) .privacy-toggle-item,
+:global([data-theme="dark"]) .session-card-row { background: #1e293b; border-color: #334155; }
+:global([data-theme="dark"]) .security-feature-icon,
+:global([data-theme="dark"]) .session-device-icon { background: #24344d; }
 </style>

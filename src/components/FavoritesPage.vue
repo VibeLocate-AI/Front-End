@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import favoritesService from '../services/favoritesService'
 const router=useRouter(),menuOpen=ref(false),activeType=ref('all'),sort=ref('newest'),toast=ref('')
@@ -37,9 +37,8 @@ const tabs=[{label:'All',value:'all'},{label:'Apartments',value:'Apartments'},{l
 const countType=t=>t==='all'?cards.value.length:cards.value.filter(x=>x.type===t).length
 const filteredCards=computed(()=>{let list=activeType.value==='all'?cards.value:cards.value.filter(x=>x.type===activeType.value);return [...list].sort((a,b)=>sort.value==='high'?b.priceValue-a.priceValue:sort.value==='low'?a.priceValue-b.priceValue:0)})
 const singular=t=>t==='Apartments'?'Apartment':t==='Villas'?'Villa':t==='Studios'?'Studio':t
-function remove(p){cards.value=cards.value.filter(x=>x.id!==p.id);favoritesService.remove(p.id);toast.value='Property removed from favorites';setTimeout(()=>toast.value='',2300)}
+function remove(p){cards.value=cards.value.filter(x=>x.id!==p.id);favoritesService.remove(p.title);toast.value='Property removed from favorites';setTimeout(()=>toast.value='',2300)}
 function view(p){sessionStorage.setItem('vibelocate:selected-property',JSON.stringify(p));router.push(`/property/${p.id}`)}
-onMounted(async()=>{await favoritesService.syncWithBackend();cards.value=favoritesService.savedItems.value})
 </script>
 
 <style scoped>
@@ -47,4 +46,65 @@ onMounted(async()=>{await favoritesService.syncWithBackend();cards.value=favorit
 @media(max-width:1150px){.fav-header{gap:16px}.fav-header nav{gap:13px}.fav-header nav a:nth-child(6),.fav-header nav a:nth-last-child(1){display:none}.lang,.actions>.round:not(.badge){display:none}.stats{grid-template-columns:repeat(4,1fr);right:4.6%}.cards-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.fav-header{padding:0 14px}.mobile-menu{display:block}.fav-header nav{display:none;position:absolute;top:70px;left:0;right:0;background:#031426;z-index:20;padding:17px;flex-direction:column;align-items:flex-start}.fav-header nav.open{display:flex}.actions{margin-left:auto}.list{display:none}.hero{height:430px;padding:30px 18px}.hero-heart{width:65px;height:65px}.hero h1{font-size:30px}.hero-note{display:none}.stats{left:18px;right:18px;bottom:18px;grid-template-columns:1fr 1fr}.content{padding:17px}.toolbar{align-items:stretch;gap:12px;flex-direction:column}.tabs{overflow:auto}.tabs button{white-space:nowrap}.cards-grid{grid-template-columns:1fr}.image{height:180px}}
 @media(max-width:450px){.brand strong,.brand>b,.actions .badge{display:none}.hero-title{gap:14px}.hero h1{font-size:25px}.hero p{font-size:12px}.stats>div{padding:8px}.stats i{width:34px;height:34px}.specs{gap:15px}.card-foot{gap:10px}}
+</style>
+
+<style>
+/* Light Theme Overrides for Favorites Page */
+[data-theme="light"] .favorites-page {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%), url('/images/about-hero.png') center 50% / cover !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero h1 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .hero h1 strong {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero p {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-title > div:last-child > span {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-heart {
+  background: rgba(2, 132, 199, 0.1) !important;
+  border-color: rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="light"] .favorites-page .hero-heart i {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .hero-note {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .favorites-page .stats > div {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme="light"] .favorites-page .stats i {
+  background: #f0f9ff !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .favorites-page .stats b {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .favorites-page .stats span {
+  color: #64748b !important;
+}
 </style>

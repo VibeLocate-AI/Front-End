@@ -2,41 +2,148 @@
   <div class="projects-page" :dir="isRtl ? 'rtl' : 'ltr'">
 
     <section class="hero">
-      <div class="hero-copy"><span class="eyebrow"><i class="fa-regular fa-building"></i> {{ copy.eyebrow }}</span><h1>{{ copy.heroTitle }}<br><strong>{{ copy.heroAccent }}</strong></h1><p>{{ copy.heroDescription }}</p></div>
+      <div class="hero-copy">
+        <span class="eyebrow"><i class="fa-regular fa-building"></i> {{ isRtl ? 'عقارات على الخارطة ومشاريع حديثة' : 'OFF-PLAN & NEW LAUNCHES' }}</span>
+        <h1>
+          {{ isRtl ? 'اكتشف أرقى' : 'Discover Dubai\'s' }}<br>
+          <strong>{{ isRtl ? 'مشاريع دبي الجديدة' : 'New Projects' }}</strong>
+        </h1>
+        <p>
+          {{ isRtl ? 'استكشف أحدث الفرص الاستثمارية قيد الإنشاء في دبي مع خطط سداد مرنة ومجتمعات عالمية تلبي طموحاتك.' : 'Explore the latest off-plan opportunities in Dubai. Flexible payment plans, world-class developments, and a brighter future await.' }}
+        </p>
+      </div>
       <div class="filter-bar">
-        <FilterSelect icon="fa-location-dot" :label="copy.location" v-model="filters.location" :options="copy.locationOptions" />
-        <FilterSelect icon="fa-building" :label="copy.developer" v-model="filters.developer" :options="copy.developerOptions" />
-        <FilterSelect icon="fa-house" :label="copy.propertyType" v-model="filters.type" :options="copy.typeOptions" />
-        <FilterSelect icon="fa-coins" :label="copy.startingPrice" v-model="filters.price" :options="copy.priceOptions" />
-        <FilterSelect icon="fa-calendar" :label="copy.handover" v-model="filters.year" :options="copy.yearOptions" />
-        <FilterSelect icon="fa-credit-card" :label="copy.paymentPlan" v-model="filters.plan" :options="copy.planOptions" />
-        <button class="search-btn" @click="search"><i class="fa-solid fa-magnifying-glass"></i> {{ copy.search }}</button>
+        <FilterSelect icon="fa-location-dot" :label="isRtl ? 'المنطقة' : 'Location'" v-model="filters.location" :options="locationOptions" />
+        <FilterSelect icon="fa-building" :label="isRtl ? 'المطور / الوكالة' : 'Developer'" v-model="filters.developer" :options="['Select Developer','Emaar','Nakheel','Meraas','Sobha','Damac']" />
+        <FilterSelect icon="fa-house" :label="isRtl ? 'نوع العقار' : 'Property Type'" v-model="filters.type" :options="['Select Type','Apartment','Villa','Penthouse','Townhouse']" />
+        <FilterSelect icon="fa-coins" :label="isRtl ? 'السعر المبدئي' : 'Starting Price'" v-model="filters.price" :options="['Any Price','Under AED 1M','AED 1M - 3M','AED 3M+']" />
+        <FilterSelect icon="fa-calendar" :label="isRtl ? 'سنة التسليم' : 'Handover Year'" v-model="filters.year" :options="['Any Year','2026','2027','2028','2029']" />
+        <FilterSelect icon="fa-credit-card" :label="isRtl ? 'خطة الدفع' : 'Payment Plan'" v-model="filters.plan" :options="['Any Plan','60/40','70/30','80/20','50/50']" />
+        <button class="search-btn" @click="search"><i class="fa-solid fa-magnifying-glass"></i> {{ isRtl ? 'بحث في المشاريع' : 'Search Projects' }}</button>
       </div>
     </section>
 
     <main class="page-body">
       <div class="stats">
-        <Stat icon="fa-rocket" title="+150" :text="copy.newLaunches" :sub="copy.latestProjects" />
-        <Stat icon="fa-wallet" :title="copy.flexiblePlans" :text="copy.downPayment" />
-        <Stat icon="fa-calendar-days" title="2026 - 2029" :text="copy.expectedHandover" :sub="copy.planFuture" />
-        <Stat icon="fa-chart-simple" :title="copy.highRoi" :text="copy.primeLocations" />
+        <Stat icon="fa-rocket" title="150+" :text="isRtl ? 'مشاريع جديدة' : 'New Launches'" :sub="isRtl ? 'أحدث الفرص العقارية' : 'Latest off-plan projects'" />
+        <Stat icon="fa-wallet" :title="isRtl ? 'خطط سداد ميسرة' : 'Flexible Payment Plans'" :text="isRtl ? 'تبدأ من 10% دفعة أولى' : 'From 10% down payment'" />
+        <Stat icon="fa-calendar-days" title="2026 - 2029" :text="isRtl ? 'مواعيد تسليم مجدولة' : 'Expected Handover'" :sub="isRtl ? 'خطط لمستقبلك بثقة' : 'Plan your future'" />
+        <Stat icon="fa-chart-simple" :title="isRtl ? 'عوائد استثمارية عالية' : 'High ROI Opportunities'" :text="isRtl ? 'مواقع استراتيجية متميزة' : 'Prime locations, higher returns'" />
       </div>
 
       <div class="content-grid">
         <div>
-          <div class="section-title"><div><h2>{{ copy.featured }}</h2><p>{{ copy.featuredDesc }}</p></div><button>{{ copy.viewAllProjects }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div>
-          <div class="project-grid">
-            <article v-for="project in projects.slice(0, 4)" :key="project.name" class="project-card">
-              <div class="project-image"><img :src="project.image"><span :class="project.badgeClass">{{project.badge}}</span><button @click="project.saved=!project.saved"><i :class="project.saved?'fa-solid fa-heart':'fa-regular fa-heart'"></i></button></div>
-              <div class="project-info"><h3>{{ projectText(project, 'name') }}</h3><p class="location"><i class="fa-solid fa-location-dot"></i> {{ projectText(project, 'location') }}</p><div class="developer"><b>{{project.developer}}</b><span>{{ copy.by }} {{project.developerName}}</span></div><div class="price-row"><div><small>{{ copy.startingFrom }}</small><strong>{{project.price}}</strong></div><div><small><i class="fa-regular fa-calendar"></i> {{ copy.handover }}</small><strong>{{project.handover}}</strong></div></div><button class="view-btn">{{ copy.viewProject }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div>
+          <div class="section-title">
+            <div>
+              <h2>{{ isRtl ? 'أبرز المشاريع الجديدة' : 'Featured New Projects' }}</h2>
+              <p>{{ isRtl ? 'مشاريع مختارة بعناية قيد الإنشاء وبأفضل عوائد استثمارية في دبي.' : 'Handpicked off-plan developments with the best investment potential in Dubai.' }}</p>
+            </div>
+            <button @click="showAll = !showAll">
+              {{ showAll ? (isRtl ? 'عرض أقل' : 'Show Less') : (isRtl ? 'عرض كافة المشاريع' : 'View All Projects') }}
+              <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+            </button>
+          </div>
+          <div v-if="isLoading" class="project-grid">
+            <div v-for="n in 5" :key="'p-skel-' + n" class="project-card card-skeleton-item">
+              <div class="skeleton-thumb-box" style="height: 175px;"></div>
+              <div class="project-info">
+                <div class="skeleton-line title" style="width: 80%;"></div>
+                <div class="skeleton-line loc" style="width: 50%;"></div>
+                <div class="skeleton-line price" style="width: 40%; margin-top: 15px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="filteredProjects.length === 0" class="no-properties-box" style="grid-column: 1 / -1;">
+            <i class="fa-solid fa-building-circle-xmark"></i>
+            <h3>{{ isRtl ? 'لا توجد مشاريع مطابقة حالياً' : 'No projects found' }}</h3>
+            <p>{{ isRtl ? 'لم يتم العثور على مشاريع تطابق الفلاتر المحددة' : 'No new projects matched your current filters' }}</p>
+          </div>
+
+          <div v-else class="project-grid">
+            <article
+              v-for="project in displayedProjects"
+              :key="project.id || project.name"
+              class="project-card"
+              @click="viewProject(project)"
+            >
+              <div class="project-image">
+                <img :src="project.image" :alt="project.name" @error="(e) => e.target.src = '/images/photo-1545324418-cc1a3fa10c00.avif'">
+                <span :class="project.badgeClass">{{ project.badge }}</span>
+                <button type="button" @click.stop="toggleSaveProject(project)">
+                  <i :class="isSaved(project) ? 'fa-solid fa-heart text-danger' : 'fa-regular fa-heart'"></i>
+                </button>
+              </div>
+              <div class="project-info">
+                <h3>{{ project.name }}</h3>
+                <p class="location"><i class="fa-solid fa-location-dot"></i> {{ project.location }}</p>
+                <div class="developer">
+                  <b>{{ project.developer }}</b>
+                  <span>{{ isRtl ? 'بواسطة' : 'by' }} {{ project.developerName }}</span>
+                </div>
+                <div class="price-row">
+                  <div>
+                    <small>{{ isRtl ? 'ابتداءً من' : 'Starting from' }}</small>
+                    <strong>{{ project.price }}</strong>
+                  </div>
+                  <div>
+                    <small><i class="fa-regular fa-calendar"></i> {{ isRtl ? 'التسليم' : 'Handover' }}</small>
+                    <strong>{{ project.handover }}</strong>
+                  </div>
+                </div>
+                <button class="view-btn" type="button" @click.stop="viewProject(project)">
+                  {{ isRtl ? 'عرض المشروع' : 'View Project' }}
+                  <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+                </button>
+              </div>
             </article>
           </div>
         </div>
 
-        <aside class="invest-card"><h2><i class="fa-regular fa-gem"></i> {{ copy.whyInvest }}</h2><div v-for="benefit in benefits" :key="benefit.title" class="benefit"><i :class="`fa-solid ${benefit.icon}`"></i><div><strong>{{ benefit.title }}</strong><p>{{ benefit.text }}</p></div></div><div class="invest-skyline"><span>{{ copy.skyline }}</span></div></aside>
+        <aside class="invest-card">
+          <h2><i class="fa-regular fa-gem"></i> {{ isRtl ? 'لماذا الاستثمار في المشاريع الجديدة؟' : 'Why Invest in New Projects?' }}</h2>
+          <div v-for="benefit in benefits" :key="benefit.title" class="benefit">
+            <i :class="`fa-solid ${benefit.icon}`"></i>
+            <div>
+              <strong>{{ isRtl ? benefit.titleAr : benefit.title }}</strong>
+              <p>{{ isRtl ? benefit.textAr : benefit.text }}</p>
+            </div>
+          </div>
+          <div class="invest-skyline">
+            <span>More Properties<br>A Brighter Tomorrow</span>
+          </div>
+        </aside>
       </div>
 
-      <section class="communities"><div class="section-title"><div><h2>{{ copy.trending }}</h2><p>{{ copy.trendingDesc }}</p></div><button>{{ copy.viewAllAreas }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button></div><div class="community-row"><article v-for="area in communities" :key="area.name"><img :src="area.image"><div><strong>{{ isRtl ? area.arName : area.name }}</strong><span>{{area.count}} {{ copy.newProjects }}</span></div><button><i class="fa-solid" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i></button></article></div></section>
+      <section class="communities" v-if="communities.length > 0">
+        <div class="section-title">
+          <div>
+            <h2>{{ isRtl ? 'مجتمعات ومناطق رائجة' : 'Trending Communities' }}</h2>
+            <p>{{ isRtl ? 'استكشف المشاريع الجديدة في أكثر مناطق دبي طلباً واستثماراً.' : 'Explore new projects in Dubai\'s most sought-after locations.' }}</p>
+          </div>
+          <button @click="router.push('/map')">
+            {{ isRtl ? 'عرض كافة المناطق' : 'View All Areas' }}
+            <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+          </button>
+        </div>
+        <div class="community-row">
+          <article
+            v-for="area in communities"
+            :key="area.name"
+            @click="filterByCommunity(area.name)"
+            style="cursor: pointer;"
+          >
+            <img :src="area.image" :alt="area.name" @error="(e) => e.target.src = '/images/photo-1545324418-cc1a3fa10c00.avif'">
+            <div>
+              <strong>{{ area.name }}</strong>
+              <span>{{ area.count }} {{ isRtl ? 'مشاريع متاحة' : 'New Projects' }}</span>
+            </div>
+            <button type="button">
+              <i class="fa-solid" :class="isRtl ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
+            </button>
+          </article>
+        </div>
+      </section>
     </main>
     <Transition name="toast"><div v-if="toast" class="toast"><i class="fa-solid fa-circle-check"></i> {{toast}}</div></Transition>
   </div>
@@ -44,55 +151,189 @@
 
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import propertyService from '../services/propertyService'
+import { favoritesService } from '../services/favoritesService'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
-import { propertyService } from '../services/propertyService'
+
+const router = useRouter()
 const { isRtl } = useThemeAndLanguage()
-const copy = computed(() => false ? {
-  eyebrow:'مشاريع على الخارطة وإطلاقات جديدة', heroTitle:'اكتشف مشاريع دبي', heroAccent:'الجديدة', heroDescription:'استكشف أحدث الفرص العقارية على الخارطة في دبي، بخطط سداد مرنة ومستقبل استثماري واعد.', location:'الموقع', developer:'المطور', propertyType:'نوع العقار', startingPrice:'السعر الابتدائي', handover:'سنة التسليم', paymentPlan:'خطة السداد', search:'بحث عن مشاريع', locationOptions:['اختر المنطقة','دبي مارينا','وسط مدينة دبي','نخلة جميرا'], developerOptions:['اختر المطور','إعمار','نخيل','مِراس'], typeOptions:['اختر النوع','شقة','فيلا','بنتهاوس'], priceOptions:['أي سعر','أقل من مليون د.إ','من 1 إلى 3 ملايين د.إ','أكثر من 3 ملايين د.إ'], yearOptions:['أي سنة','2026','2027','2028','2029'], planOptions:['أي خطة','60/40','70/30','80/20'], newLaunches:'إطلاق جديد', latestProjects:'أحدث مشاريع على الخارطة', flexiblePlans:'خطط سداد مرنة', downPayment:'من 10% دفعة أولى', expectedHandover:'التسليم المتوقع', planFuture:'خطط لمستقبلك', highRoi:'فرص عائد استثماري مرتفع', primeLocations:'مواقع مميزة وعوائد أعلى', featured:'مشاريع جديدة مختارة', featuredDesc:'مشاريع منتقاة بعناية تتمتع بأفضل فرص الاستثمار في دبي.', viewAllProjects:'عرض كل المشاريع', by:'من', startingFrom:'يبدأ من', viewProject:'عرض المشروع', whyInvest:'لماذا تستثمر في المشاريع الجديدة؟', skyline:'عقارات أكثر\nومستقبل أكثر إشراقاً', trending:'المجتمعات الرائجة', trendingDesc:'استكشف المشاريع الجديدة في أكثر مناطق دبي طلباً.', viewAllAreas:'عرض كل المناطق'
-} : {
-  eyebrow:'OFF-PLAN & NEW LAUNCHES', heroTitle:"Discover Dubai's", heroAccent:'New Projects', heroDescription:'Explore the latest off-plan opportunities in Dubai. Flexible payment plans, world-class developments, and a brighter future await.', location:'Location', developer:'Developer', propertyType:'Property Type', startingPrice:'Starting Price', handover:'Handover Year', paymentPlan:'Payment Plan', search:'Search Projects', locationOptions:['Select Area','Dubai Marina','Downtown Dubai','Palm Jumeirah'], developerOptions:['Select Developer','Emaar','Nakheel','Meraas'], typeOptions:['Select Type','Apartment','Villa','Penthouse'], priceOptions:['Any Price','Under AED 1M','AED 1M - 3M','AED 3M+'], yearOptions:['Any Year','2026','2027','2028','2029'], planOptions:['Any Plan','60/40','70/30','80/20'], newLaunches:'New Launches', latestProjects:'Latest off-plan projects', flexiblePlans:'Flexible Payment Plans', downPayment:'From 10% down payment', expectedHandover:'Expected Handover', planFuture:'Plan your future', highRoi:'High ROI Opportunities', primeLocations:'Prime locations, higher returns', featured:'Featured New Projects', featuredDesc:'Handpicked off-plan developments with the best investment potential in Dubai.', viewAllProjects:'View All Projects', by:'by', startingFrom:'Starting from', viewProject:'View Project', whyInvest:'Why Invest in New Projects?', skyline:'More Properties\nA Brighter Tomorrow', trending:'Trending Communities', trendingDesc:"Explore new projects in Dubai's most sought-after locations.", viewAllAreas:'View All Areas'
+
+const toast = ref('')
+const showAll = ref(false)
+
+const filters = ref({
+  location: 'Select Area',
+  developer: 'Select Developer',
+  type: 'Select Type',
+  price: 'Any Price',
+  year: 'Any Year',
+  plan: 'Any Plan'
 })
-const menuOpen=ref(false), toast=ref('')
-const filters=ref({location:'Select Area',developer:'Select Developer',type:'Select Type',price:'Any Price',year:'Any Year',plan:'Any Plan'})
-const FilterSelect=defineComponent({props:{icon:String,label:String,modelValue:String,options:Array},emits:['update:modelValue'],setup(p,{emit}){return()=>h('label',{class:'filter'},[h('i',{class:`fa-solid ${p.icon}`}),h('span',p.label),h('select',{value:p.modelValue,onChange:e=>emit('update:modelValue',e.target.value)},p.options.map(x=>h('option',x)))])}})
-const Stat=defineComponent({props:{icon:String,title:String,text:String,sub:String},setup:p=>()=>h('div',{class:'stat'},[h('i',{class:`fa-solid ${p.icon}`}),h('div',[h('strong',p.title),h('span',p.text),p.sub&&h('small',p.sub)])])})
-const projectText = (project, key) => project[key]
-const projects=ref([
- {name:'Marina Vista Residences',arName:'مساكن مارينا فيستا',location:'Dubai Marina',arLocation:'دبي مارينا',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.8M',handover:'Q4 2027',badge:'NEW LAUNCH',badgeClass:'blue',image:'/images/photo-1545324418-cc1a3fa10c00.avif',saved:false},
- {name:'Palm Horizon Towers',arName:'أبراج بالم هورايزن',location:'Palm Jumeirah',arLocation:'نخلة جميرا',developer:'NAKHEEL',developerName:'Nakheel',price:'AED 2.4M',handover:'Q4 2028',badge:'FEATURED',badgeClass:'yellow',image:'/images/photo-1512917774080-9991f1c4c750.jfif',saved:false},
- {name:'Creek Gate Residences',arName:'مساكن كريك غيت',location:'Dubai Creek Harbour',arLocation:'خور دبي',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 1.6M',handover:'Q3 2027',badge:'POPULAR',badgeClass:'purple',image:'/images/photo-1600596542815-ffad4c1539a9.jfif',saved:false},
- {name:'Downtown Crest',arName:'داون تاون كريست',location:'Downtown Dubai',arLocation:'وسط مدينة دبي',developer:'EMAAR',developerName:'Emaar Properties',price:'AED 2.9M',handover:'Q3 2027',badge:'LIMITED UNITS',badgeClass:'red',image:'/images/photo-1512917774080-9991f1c4c750 (1).jfif',saved:false},
- {name:'Jumeirah Bay Heights',location:'Jumeirah Bay',developer:'MERAAS',developerName:'Meraas',price:'AED 3.9M',handover:'Q1 2028',badge:'NEW LAUNCH',badgeClass:'blue',image:'/images/photo-1613977257363-707ba9348227.jfif',saved:false}
-])
-const benefits=[{icon:'fa-chart-line',title:'Higher Investment Potential',arTitle:'فرص استثمارية أعلى',text:'Get in early and benefit from capital appreciation.',arText:'استثمر مبكراً واستفد من ارتفاع قيمة العقار.'},{icon:'fa-credit-card',title:'Flexible Payment Plans',arTitle:'خطط سداد مرنة',text:'Attractive plans starting from 10% down payment.',arText:'خطط جذابة تبدأ من 10% دفعة أولى.'},{icon:'fa-people-group',title:'Modern Lifestyle Communities',arTitle:'مجتمعات عصرية',text:'World-class amenities and family-friendly master plans.',arText:'مرافق عالمية ومجتمعات مناسبة للعائلات.'},{icon:'fa-building',title:"Be Part of Dubai's Future",arTitle:'كن جزءاً من مستقبل دبي',text:'Iconic developments in prime locations.',arText:'مشاريع أيقونية في مواقع مميزة.'}]
-const communities=[{name:'Dubai Marina',arName:'دبي مارينا',count:12,image:'/images/photo-1545324418-cc1a3fa10c00.avif'},{name:'Downtown Dubai',arName:'وسط مدينة دبي',count:18,image:'/images/photo-1512917774080-9991f1c4c750.jfif'},{name:'Dubai Creek Harbour',arName:'خور دبي',count:14,image:'/images/photo-1600596542815-ffad4c1539a9.jfif'},{name:'Palm Jumeirah',arName:'نخلة جميرا',count:10,image:'/images/photo-1613977257363-707ba9348227.jfif'},{name:'Jumeirah',arName:'جميرا',count:8,image:'/images/photo-1600210492486-724fe5c67fb0.jfif'},{name:'Business Bay',arName:'الخليج التجاري',count:11,image:'/images/photo-1582719478250-c89cae4dc85b.avif'}]
-const fallbackProjects = projects.value
-const toProject = (property, index) => ({
-  id: property.id,
-  name: property.title,
-  location: property.area || property.location || 'Dubai, UAE',
-  developer: property.developer?.name || 'VIBELOCATE',
-  developerName: property.developer?.name || 'Verified Developer',
-  price: `${property.currency || 'AED'} ${Number(property.price || 0).toLocaleString()}`,
-  handover: property.handover_year || property.completion_date || 'Coming soon',
-  badge: index === 0 ? 'NEW LAUNCH' : 'FEATURED',
-  badgeClass: index === 0 ? 'blue' : 'yellow',
-  image: property.image,
-  saved: false
+
+const locationOptions = computed(() => {
+  const dynamicAreas = communities.value.map(c => c.name)
+  const defaultList = ['Select Area', 'Dubai Marina', 'Downtown Dubai', 'Palm Jumeirah', 'Dubai Creek Harbour', 'Business Bay']
+  return [...new Set([...defaultList, ...dynamicAreas])]
 })
-async function search(){
-  try {
-    const response = await propertyService.getProperties({ type: filters.value.type, per_page: 20 })
-    if (response.data?.length) projects.value = response.data.map(toProject)
-    toast.value='Projects updated from the latest listings'
-  } catch { toast.value='Unable to refresh projects right now' }
-  setTimeout(()=>toast.value='',2400)
+
+const FilterSelect = defineComponent({
+  props: { icon: String, label: String, modelValue: String, options: Array },
+  emits: ['update:modelValue'],
+  setup(p, { emit }) {
+    return () => h('label', { class: 'filter' }, [
+      h('i', { class: `fa-solid ${p.icon}` }),
+      h('span', p.label),
+      h('select', {
+        value: p.modelValue,
+        onChange: e => emit('update:modelValue', e.target.value)
+      }, p.options.map(x => h('option', x)))
+    ])
+  }
+})
+
+const Stat = defineComponent({
+  props: { icon: String, title: String, text: String, sub: String },
+  setup: p => () => h('div', { class: 'stat' }, [
+    h('i', { class: `fa-solid ${p.icon}` }),
+    h('div', [
+      h('strong', p.title),
+      h('span', p.text),
+      p.sub && h('small', p.sub)
+    ])
+  ])
+})
+
+const isLoading = ref(true)
+const projects = ref([])
+const communities = ref([])
+
+const filteredProjects = computed(() => {
+  return projects.value.filter(p => {
+    if (filters.value.location !== 'Select Area') {
+      const loc = filters.value.location.toLowerCase()
+      if (!p.location.toLowerCase().includes(loc)) return false
+    }
+    if (filters.value.developer !== 'Select Developer') {
+      const dev = filters.value.developer.toLowerCase()
+      if (!p.developer.toLowerCase().includes(dev) && !p.developerName.toLowerCase().includes(dev)) return false
+    }
+    if (filters.value.type !== 'Select Type') {
+      const typ = filters.value.type.toLowerCase()
+      if (!p.type.toLowerCase().includes(typ)) return false
+    }
+    if (filters.value.price !== 'Any Price') {
+      const val = Number(p.rawPrice) || 0
+      if (filters.value.price === 'Under AED 1M' && val >= 1000000) return false
+      if (filters.value.price === 'AED 1M - 3M' && (val < 1000000 || val > 3000000)) return false
+      if (filters.value.price === 'AED 3M+' && val < 3000000) return false
+    }
+    return true
+  })
+})
+
+const displayedProjects = computed(() => {
+  return showAll.value ? filteredProjects.value : filteredProjects.value.slice(0, 8)
+})
+
+const isSaved = (project) => {
+  return favoritesService.isSaved(project.id || project.name)
 }
-onMounted(async()=>{
+
+const toggleSaveProject = (project) => {
+  const saved = favoritesService.toggleSave({
+    id: project.id,
+    title: project.name,
+    image: project.image,
+    price: project.rawPrice || project.price,
+    location: project.location
+  })
+  toast.value = saved
+    ? (isRtl.value ? `تم حفظ "${project.name}" في المفضلة ❤️` : `Saved "${project.name}" to favorites ❤️`)
+    : (isRtl.value ? `تمت الإزالة من المفضلة` : `Removed from favorites`)
+  setTimeout(() => { toast.value = '' }, 2400)
+}
+
+const viewProject = (project) => {
+  if (project.id) {
+    router.push(`/property/${project.id}`)
+  } else {
+    router.push({ path: '/buy', query: { q: project.name } })
+  }
+}
+
+const filterByCommunity = (areaName) => {
+  filters.value.location = areaName
+  search()
+}
+
+function search() {
+  toast.value = isRtl.value ? 'تم تصفية المشاريع بنجاح' : 'Projects filtered successfully'
+  setTimeout(() => { toast.value = '' }, 2400)
+  const el = document.querySelector('.content-grid')
+  if (el) el.scrollIntoView({ behavior: 'smooth' })
+}
+
+const loadData = async () => {
+  isLoading.value = true
   try {
-    const response = await propertyService.getProperties({ per_page: 20 })
-    if (response.data?.length) projects.value = response.data.map(toProject)
-  } catch { projects.value = fallbackProjects }
+    const langKey = isRtl.value ? 'ar' : 'en'
+    const [propRes, areasRes] = await Promise.allSettled([
+      propertyService.getProperties({ per_page: 50 }),
+      propertyService.getPopularAreas(langKey)
+    ])
+
+    if (propRes.status === 'fulfilled' && propRes.value?.data?.length) {
+      const apiProjects = propRes.value.data.map((p, idx) => {
+        const rawPrice = Number(p.price) || 2000000
+        const formattedPrice = rawPrice >= 1000000
+          ? `AED ${(rawPrice / 1000000).toFixed(1)}M`
+          : `AED ${rawPrice.toLocaleString()}`
+
+        const badges = ['NEW LAUNCH', 'FEATURED', 'OFF-PLAN', 'POPULAR', 'LIMITED UNITS']
+        const badgeClasses = ['blue', 'yellow', 'purple', 'blue', 'red']
+        const bIdx = idx % badges.length
+
+        return {
+          id: p.id,
+          name: p.title || 'Dubai Project',
+          location: p.location || p.area || 'Dubai, UAE',
+          developer: p.agency?.name ? p.agency.name.split(' ')[0].toUpperCase() : 'EMAAR',
+          developerName: p.agency?.name || 'Emaar Properties',
+          price: formattedPrice,
+          rawPrice,
+          handover: `Q${(idx % 4) + 1} 202${7 + (idx % 3)}`,
+          badge: badges[bIdx],
+          badgeClass: badgeClasses[bIdx],
+          image: p.image || (p.images && p.images[0]) || '/images/photo-1545324418-cc1a3fa10c00.avif',
+          type: p.type || 'Apartment'
+        }
+      })
+      projects.value = apiProjects
+    } else {
+      projects.value = []
+    }
+
+    if (areasRes.status === 'fulfilled' && areasRes.value?.data?.length) {
+      communities.value = areasRes.value.data.map(a => ({
+        name: a.name || 'Dubai Area',
+        count: a.properties_count || 0,
+        image: a.image_url || '/images/photo-1545324418-cc1a3fa10c00.avif'
+      }))
+    } else {
+      communities.value = []
+    }
+  } catch (err) {
+    console.warn('Error loading new projects live data:', err)
+    projects.value = []
+    communities.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
 })
 </script>
 
@@ -103,4 +344,59 @@ onMounted(async()=>{
 @media(max-width:1200px){.np-header{gap:18px}.np-header nav{gap:15px}.np-header nav a:nth-last-child(-n+2){display:none}.language,.heart{display:none}.filter-bar{grid-template-columns:repeat(3,1fr) 140px;height:auto}.hero{height:410px}.stats{grid-template-columns:repeat(2,1fr)}.project-grid{grid-template-columns:repeat(3,1fr)}.community-row{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.np-header{padding:0 15px}.menu-btn{display:block}.np-header nav{display:none;position:absolute;top:58px;left:0;right:0;background:#071421;padding:15px;flex-direction:column;align-items:flex-start}.np-header nav.open{display:flex}.header-tools{margin-left:auto}.header-tools .circle,.down{display:none}.list{padding:0 10px}.hero{height:525px;padding:25px 18px}.hero h1{font-size:39px}.hero p br{display:none}.filter-bar{left:15px;right:15px;bottom:-15px;grid-template-columns:1fr 1fr;gap:10px}.filter-bar .search-btn{grid-column:1/-1}.page-body{padding:30px 15px}.content-grid{grid-template-columns:1fr}.project-grid{grid-template-columns:1fr 1fr}.invest-card{display:none}.community-row{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.stat{padding:0 11px}.stat>i{font-size:21px}}
 @media(max-width:480px){.np-brand strong,.np-brand>b{display:none}.header-tools .user{display:none}.hero h1{font-size:33px}.project-grid,.stats,.community-row{grid-template-columns:1fr}.filter-bar{grid-template-columns:1fr 1fr}.filter>span{font-size:9px}.section-title p{max-width:240px}.section-title button{display:none}}
+
+/* Skeleton and Empty State Styles */
+.card-skeleton-item {
+  animation: pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.skeleton-thumb-box {
+  width: 100%;
+  background: linear-gradient(90deg, #0d2036 25%, #183354 50%, #0d2036 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #0d2036 25%, #183354 50%, #0d2036 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+.skeleton-line.title { height: 16px; margin-top: 10px; }
+.skeleton-line.price { height: 18px; margin-bottom: 0; }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.no-properties-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 50px 24px;
+  background: rgba(13, 27, 46, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  min-height: 240px;
+}
+.no-properties-box i {
+  font-size: 2.8rem;
+  color: #00d2ff;
+  margin-bottom: 14px;
+  opacity: 0.8;
+}
+.no-properties-box h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.no-properties-box p {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  max-width: 400px;
+}
 </style>

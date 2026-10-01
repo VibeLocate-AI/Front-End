@@ -25,6 +25,7 @@
       :is-open="savedModalOpen"
       @close="savedModalOpen = false"
     />
+    <button v-if="isMainPage && route.name !== 'AgentContact'" class="global-chat-fab" @click="router.push('/contact-agent')" aria-label="Contact an agent"><i class="fa-solid fa-comments"></i></button>
   </div>
 </template>
 
@@ -50,7 +51,7 @@ const savedModalOpen = ref(false)
 const authPageNames = ['Login', 'Register', 'Verify', 'ForgotPassword', 'ResetPassword', 'ResetSuccess']
 
 // Pages with the shared navbar (all main app pages)
-const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'MyProperties', 'NewProjects', 'About', 'Favorites', 'Notifications', 'Payment', 'PropertyBooking']
+const mainPageNames = ['Home', 'HomeAlias', 'Buy', 'Rent', 'Map', 'Profile', 'ProfileTab', 'AddProperty', 'PropertyDetails', 'NewProjects', 'About', 'Favorites', 'Notifications', 'Payment', 'PropertyBooking', 'AgentContact', 'Search']
 
 const isAuthPage = computed(() => authPageNames.includes(route.name))
 const isMainPage = computed(() => mainPageNames.includes(route.name))
@@ -97,6 +98,7 @@ watch(() => route.name, async () => {
   padding-top: 76px;
   min-height: calc(100vh - 76px);
 }
+.global-chat-fab{position:fixed;inset-inline-end:24px;bottom:24px;z-index:120;width:54px;height:54px;border:0;border-radius:50%;background:linear-gradient(135deg,#087ff5,#00bfe5);color:#fff;font-size:21px;cursor:pointer;box-shadow:0 10px 24px rgba(8,127,245,.35)}.global-chat-fab:hover{transform:translateY(-2px)}
 
 .bg-video {
   position: absolute;

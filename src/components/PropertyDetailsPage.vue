@@ -66,6 +66,42 @@
             </article>
           </div>
 
+          <!-- Nearby Dubai Amenities & POIs -->
+          <article class="panel nearby-pois-panel">
+            <div class="panel-head">
+              <h2><i class="fa-solid fa-map-location-dot"></i> {{ tx('Nearby Landmarks & Key Amenities', 'أبرز المرافق والخدمات القريبة') }}</h2>
+              <button class="map-link" @click="openFullMap">{{ tx('Explore on Map', 'استكشف على الخريطة') }} <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+            <div v-if="loadingPois" class="poi-loading-box">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span>{{ tx('Scanning nearest metro, schools, hospitals & markets...', 'جارٍ مسح أقرب محطات المترو والمدارس والمستشفيات والأسواق...') }}</span>
+            </div>
+            <div v-else-if="nearbyPois.length" class="nearby-pois-grid">
+              <div 
+                v-for="poi in nearbyPois" 
+                :key="poi.osm_id" 
+                class="poi-item-card" 
+                @click="focusPoiOnMiniMap(poi)"
+                :title="tx('Click to preview on map', 'اضغط للمعاينة على الخريطة')"
+              >
+                <div class="poi-icon-circle" :style="{ background: poi.meta.color + '18', color: poi.meta.color, borderColor: poi.meta.color + '40' }">
+                  <span class="poi-icon-symbol">{{ poi.icon || poi.meta.icon }}</span>
+                </div>
+                <div class="poi-meta-wrap">
+                  <div class="poi-name" :title="poi.name">{{ poi.name }}</div>
+                  <span class="poi-cat-tag" :style="{ color: poi.meta.color }">{{ tx(poi.meta.labelEn, poi.meta.labelAr) }}</span>
+                </div>
+                <div class="poi-dist-wrap">
+                  <span class="poi-dist-val">{{ poi.distanceKm < 1 ? Math.round(poi.distanceKm * 1000) + ' ' + tx('m', 'م') : poi.distanceKm + ' ' + tx('km', 'كم') }}</span>
+                  <span class="poi-walk-est"><i class="fa-solid fa-person-walking"></i> ~{{ poi.walkingMinutes }} {{ tx('min', 'د') }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="poi-empty-state">
+              <span>{{ tx('No landmarks indexed in immediate range', 'لا توجد معالم أو خدمات مسجلة في النطاق المباشر') }}</span>
+            </div>
+          </article>
+
           <article class="panel similar">
             <div class="panel-head"><h2><i class="fa-solid fa-house-chimney"></i> {{ tx('Similar Properties', 'عقارات مشابهة') }}</h2><button class="map-link" @click="router.push('/buy')">{{ tx('See More Properties', 'عرض مزيد من العقارات') }}</button></div>
             <div class="similar-grid">
@@ -95,6 +131,7 @@
           <article class="panel insights">
             <div class="panel-head"><h2><i class="fa-solid fa-wand-magic-sparkles"></i> AI Property Insights</h2><span>VibeLocate <b>AI</b></span></div>
             <div class="scores"><div v-for="score in scores" :key="score.label"><div class="ring" :style="{ '--score': score.value, '--color': score.color }">{{ score.value }}%</div><span>{{ score.label }}</span></div></div>
+            <button class="primary vibe-btn" @click="generateVibe" :disabled="generatingVibe" style="width: 100%; margin-top: 15px; padding: 10px; border-radius: 8px;"><i :class="generatingVibe ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-file-pdf'"></i> {{ generatingVibe ? tx('Generating...', 'جارٍ التحضير...') : tx('Generate Vibe Report', 'استخراج تقرير فايب') }}</button>
           </article>
           <article class="panel love"><div class="panel-head"><h2><i class="fa-solid fa-heart"></i> Why You'll Love This Property</h2></div><p v-for="reason in loveReasons" :key="reason"><i class="fa-solid fa-heart"></i>{{ reason }}</p></article>
         </aside>
@@ -113,6 +150,7 @@ import { useRoute, useRouter } from 'vue-router'
 import propertyService from '../services/propertyService'
 import { favoritesService } from '../services/favoritesService'
 import propertyRatingService from '../services/propertyRatingService'
+import poiService from '../services/poiService'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const route = useRoute()
@@ -136,6 +174,8 @@ const ratingComment = ref('')
 const ratingAverage = ref(4.7)
 const ratingCount = ref(18)
 const ratingSubmitting = ref(false)
+const hasUserReviewed = ref(false)
+const generatingVibe = ref(false)
 const toast = ref('')
 const propertyMap = ref(null)
 let mapInstance = null
@@ -183,9 +223,10 @@ const nextImage = () => { activeIndex.value = (activeIndex.value + 1) % gallery.
 const notify = message => { toast.value = message; setTimeout(() => { toast.value = '' }, 2600) }
 const toggleFavorite = () => { favoritesService.toggleSave(property.value); notify(isSaved.value ? 'Property saved' : 'Property removed from saved list') }
 const ratingStorageKey = computed(() => `vibelocate:property-rating:${property.value?.id || route.params.id}`)
-const applyRating = summary => { if (summary.average) ratingAverage.value = summary.average; if (Number.isFinite(summary.count) && summary.count >= 0) ratingCount.value = summary.count; if (summary.userRating) selectedRating.value = summary.userRating; if (summary.userComment) ratingComment.value = summary.userComment }
-const loadRating = async () => { try { const saved = JSON.parse(localStorage.getItem(ratingStorageKey.value) || 'null'); if (saved) applyRating(saved) } catch {} if (!property.value?.id) return; try { applyRating(await propertyRatingService.getSummary(property.value.id)) } catch (error) { console.warn('Could not load property ratings from API.', error?.message) } }
-const submitRating = async () => { if (!selectedRating.value || ratingSubmitting.value) return; ratingSubmitting.value = true; try { let summary; if (property.value?.id) summary = await propertyRatingService.submit(property.value.id, { rating: selectedRating.value, comment: ratingComment.value.trim() }); if (summary) applyRating(summary); else throw new Error('Missing property id'); localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value })); notify(tx('Thank you for rating this property!', 'شكراً لتقييمك هذا العقار!')) } catch (error) { const average = Number(((ratingAverage.value * ratingCount.value + selectedRating.value) / (ratingCount.value + 1)).toFixed(1)); ratingAverage.value = average; ratingCount.value += 1; localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average, count: ratingCount.value })); notify(tx('Your rating was saved locally until the server is available.', 'تم حفظ تقييمك محلياً حتى تتوفر الخدمة.')) } finally { ratingSubmitting.value = false } }
+const applyRating = summary => { if (summary.average) ratingAverage.value = summary.average; if (Number.isFinite(summary.count) && summary.count >= 0) ratingCount.value = summary.count; if (summary.userRating) { selectedRating.value = summary.userRating; hasUserReviewed.value = true; } if (summary.userComment) ratingComment.value = summary.userComment }
+const loadRating = async () => { try { const saved = JSON.parse(localStorage.getItem(ratingStorageKey.value) || 'null'); if (saved) applyRating(saved) } catch {} if (!property.value?.id) return; try { applyRating(await propertyRatingService.getReview(property.value.id)) } catch (error) { console.warn('Could not load property ratings from API.', error?.message) } }
+const submitRating = async () => { if (!selectedRating.value || ratingSubmitting.value) return; ratingSubmitting.value = true; try { let summary; if (property.value?.id) { if (hasUserReviewed.value) { summary = await propertyRatingService.updateReview(property.value.id, { rating: selectedRating.value, review: ratingComment.value.trim() }); } else { summary = await propertyRatingService.submitReview(property.value.id, { rating: selectedRating.value, review: ratingComment.value.trim() }); hasUserReviewed.value = true; } } if (summary) applyRating(summary); else throw new Error('Missing property id'); localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value, userRating: selectedRating.value, userComment: ratingComment.value })); notify(tx('Thank you for rating this property!', 'شكراً لتقييمك هذا العقار!')) } catch (error) { if (!hasUserReviewed.value) { ratingAverage.value = Number(((ratingAverage.value * ratingCount.value + selectedRating.value) / (ratingCount.value + 1)).toFixed(1)); ratingCount.value += 1; hasUserReviewed.value = true; } localStorage.setItem(ratingStorageKey.value, JSON.stringify({ rating: selectedRating.value, comment: ratingComment.value, average: ratingAverage.value, count: ratingCount.value, userRating: selectedRating.value, userComment: ratingComment.value })); notify(tx('Your rating was saved locally until the server is available.', 'تم حفظ تقييمك محلياً حتى تتوفر الخدمة.')) } finally { ratingSubmitting.value = false } }
+const generateVibe = async () => { if (!property.value || generatingVibe.value) return; generatingVibe.value = true; try { const coords = coordinates.value; await propertyService.generateVibeReport(coords[0], coords[1]); notify(tx('Vibe Report generated and sent to your email!', 'تم استخراج التقرير وإرساله إلى بريدك الإلكتروني!')) } catch (error) { notify(tx('Failed to generate report, please try again.', 'حدث خطأ أثناء إعداد التقرير، يرجى المحاولة مرة أخرى.')) } finally { generatingVibe.value = false } }
 const bookViewing = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push(`/property/${property.value?.id || route.params.id}/booking`) }
 const contactAgent = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push('/contact-agent') }
 const callAgent = () => { sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(property.value)); router.push({ path: '/contact-agent', query: { mode: 'call' } }) }
@@ -205,6 +246,51 @@ const loadLeaflet = () => {
   })
   return leafletLoader
 }
+const nearbyPois = ref([])
+const loadingPois = ref(false)
+let miniMapPoiMarkers = []
+
+const renderMiniMapPois = (L, pois) => {
+  if (!mapInstance || !L || !pois || !pois.length) return
+  miniMapPoiMarkers.forEach(m => m.remove())
+  miniMapPoiMarkers = []
+
+  pois.forEach(poi => {
+    const meta = poi.meta
+    const poiIcon = L.divIcon({
+      className: 'mini-poi-marker',
+      html: `<div class="mini-poi-pin" style="--pin-color: ${meta.color};" title="${poi.name}"><span>${poi.icon || meta.icon}</span></div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    })
+    const marker = L.marker([poi.latitude, poi.longitude], { icon: poiIcon }).addTo(mapInstance)
+    marker.bindPopup(`<div class="details-map-popup"><strong>${poi.name}</strong><span>${isRtl.value ? meta.labelAr : meta.labelEn} • ${poi.distanceKm} km</span></div>`)
+    miniMapPoiMarkers.push(marker)
+  })
+}
+
+const loadNearbyPois = async () => {
+  if (!property.value) return
+  loadingPois.value = true
+  try {
+    const [lat, lng] = coordinates.value
+    const pois = await poiService.getNearbyPois(lat, lng, { maxDistanceKm: 4, limit: 6 })
+    nearbyPois.value = pois
+    if (mapInstance && window.L) {
+      renderMiniMapPois(window.L, pois)
+    }
+  } catch (err) {
+    console.warn('Failed to load nearby POIs:', err)
+  } finally {
+    loadingPois.value = false
+  }
+}
+
+const focusPoiOnMiniMap = (poi) => {
+  if (!mapInstance || !poi) return
+  mapInstance.flyTo([poi.latitude, poi.longitude], 15, { duration: 0.8 })
+}
+
 const initializeMap = async () => {
   await nextTick()
   if (!propertyMap.value || mapInstance) return
@@ -215,6 +301,10 @@ const initializeMap = async () => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(mapInstance)
     const icon = L.divIcon({ className: 'property-location-marker', html: '<div class="marker-pulse"></div><div class="marker-pin"><i class="fa-solid fa-house"></i></div>', iconSize: [48, 48], iconAnchor: [24, 44] })
     L.marker([lat, lng], { icon }).addTo(mapInstance).bindPopup(`<div class="details-map-popup"><strong>${property.value.title}</strong><span>${property.value.location || property.value.area}</span></div>`).openPopup()
+    
+    if (nearbyPois.value.length > 0) {
+      renderMiniMapPois(L, nearbyPois.value)
+    }
     setTimeout(() => mapInstance?.invalidateSize(), 100)
   } catch (error) { console.warn('Unable to initialize interactive map.', error) }
 }
@@ -226,11 +316,27 @@ onMounted(async () => {
   try {
     if (/^\d+$/.test(String(route.params.id))) { const response = await propertyService.getPropertyById(route.params.id); if (response?.data) property.value = response.data }
   } catch (error) { console.warn('Using cached property details.', error) }
-  try { const response = await propertyService.getProperties(); similarProperties.value = (response.data || []).filter(item => String(item.id) !== String(property.value?.id)).slice(0, 3) } catch {}
+  try {
+    const response = await propertyService.getNearbyProperties(property.value?.id || route.params.id, 5)
+    similarProperties.value = (response.data || []).slice(0, 3)
+    if (similarProperties.value.length === 0) {
+      const fallbackResponse = await propertyService.getProperties();
+      similarProperties.value = (fallbackResponse.data || []).filter(item => String(item.id) !== String(property.value?.id)).slice(0, 3)
+    }
+  } catch {}
   loading.value = false
-  if (property.value) { loadRating(); initializeMap() }
+  if (property.value) { 
+    loadRating()
+    initializeMap()
+    loadNearbyPois()
+  }
 })
-onBeforeUnmount(() => { mapInstance?.remove(); mapInstance = null })
+onBeforeUnmount(() => { 
+  miniMapPoiMarkers.forEach(m => m.remove())
+  miniMapPoiMarkers = []
+  mapInstance?.remove()
+  mapInstance = null 
+})
 </script>
 
 <style scoped>
@@ -243,11 +349,29 @@ onBeforeUnmount(() => { mapInstance?.remove(); mapInstance = null })
 /* Shared page design: light theme by default, with a matching dark palette. */
 .property-page{--page-bg:#f4f8fc;--surface:#fff;--surface-alt:#f8fbff;--text:#10253f;--muted:#62758b;--border:#d7e4ef;--accent:#087ff5;--cyan:#00bfe5;background:var(--page-bg);color:var(--text)}
 .page-shell{max-width:1440px;padding:24px}.crumbs{color:var(--muted)}.crumbs button{color:var(--accent);margin-inline-end:auto;margin-right:0}.crumbs strong{color:var(--text)}.hero-grid{grid-template-columns:minmax(0,1.05fr) 128px minmax(0,1fr)}.gallery-main,.thumbs button{border-color:var(--border);background:var(--surface)}.featured,.counter{border:0;background:rgba(8,35,62,.88);color:#fff}.featured{inset-inline-start:14px;left:auto}.counter{inset-inline-start:14px;left:auto}.arrow{border:0;background:rgba(8,35,62,.82)}.arrow.left{inset-inline-start:14px;left:auto}.arrow.right{inset-inline-end:14px;right:auto}.thumbs{grid-template-rows:repeat(3,1fr)}.thumbs button.selected{border-color:var(--cyan)}.hero-info{padding:4px 0}.pills{flex-wrap:wrap}.pills span{background:#ecfbf8;border-color:#bde7e6;color:#008c80}.pills span:nth-child(2){background:#f5faea;border-color:#dbe9bb;color:#66881a}.pills span:last-child{background:var(--surface-alt);border-color:var(--border);color:var(--muted)}.hero-info h1{font-size:clamp(1.7rem,2.4vw,2.45rem);color:var(--text)}.location,.price small{color:var(--muted)}.price{color:var(--accent)}.specs div,.panel{background:var(--surface);border-color:var(--border);box-shadow:0 8px 22px rgba(20,61,92,.06)}.specs i,.feature-grid i,.panel-head h2 i{color:var(--accent)}.specs span{color:var(--muted)}.hero-actions button,.agent-actions button{background:var(--surface);border-color:#bfd3e4;color:var(--text)}.hero-actions .primary,.agent-actions .primary{background:linear-gradient(135deg,#087ff5,#0868ed)!important;border-color:transparent!important}.content-grid{grid-template-columns:minmax(0,2.1fr) minmax(285px,.8fr)}.overview p,.agent span,.agent small,.payment p,.love p{color:var(--muted)}.tabs{border-color:var(--border)}.tabs button{color:var(--muted)}.tabs .active{color:var(--accent);border-color:var(--accent)}.feature-grid div{background:var(--surface-alt);border-color:var(--border)}.similar-grid button{background:var(--surface);border-color:var(--border);color:var(--text)}.love p{border-color:var(--border)}.property-map{filter:none}.map-link,.panel-head>span{color:var(--accent)}
-.property-page[data-theme="dark"]{--page-bg:#061321;--surface:#092238;--surface-alt:#0c2943;--text:#eaf5ff;--muted:#9cb4ca;--border:#1b4968;--accent:#18a8ff;--cyan:#12d8ee;background:radial-gradient(circle at 72% 5%,#0b3558,transparent 27%),#061321}.property-page[data-theme="dark"] .panel,.property-page[data-theme="dark"] .specs div,.property-page[data-theme="dark"] .gallery-main,.property-page[data-theme="dark"] .thumbs button,.property-page[data-theme="dark"] .similar-grid button{background:#092238;border-color:#1b4968}.property-page[data-theme="dark"] .feature-grid div{background:#0c2943;border-color:#1b4968}.property-page[data-theme="dark"] .hero-actions button,.property-page[data-theme="dark"] .agent-actions button{background:#071c30;border-color:#2a5977;color:#eaf5ff}.property-page[data-theme="dark"] .pills span:last-child{background:#102a43;border-color:#315773;color:#c7d7e6}
+.property-page[data-theme="dark"]{--page-bg:#0f172a;--surface:#1e293b;--surface-alt:#24344d;--text:#f8fafc;--muted:#94a3b8;--border:#334155;--accent:#38bdf8;--cyan:#00d2ff;background:radial-gradient(circle at 72% 5%,#1e3a5f,transparent 35%),#0f172a}.property-page[data-theme="dark"] .panel,.property-page[data-theme="dark"] .specs div,.property-page[data-theme="dark"] .gallery-main,.property-page[data-theme="dark"] .thumbs button,.property-page[data-theme="dark"] .similar-grid button{background:#1e293b;border-color:#334155}.property-page[data-theme="dark"] .feature-grid div{background:#24344d;border-color:#334155}.property-page[data-theme="dark"] .hero-actions button,.property-page[data-theme="dark"] .agent-actions button{background:#1e293b;border-color:#334155;color:#f8fafc}.property-page[data-theme="dark"] .pills span:last-child{background:#1e293b;border-color:#334155;color:#cbd5e1}
 [dir="rtl"] .crumbs button{margin-inline-end:0;margin-inline-start:auto}[dir="rtl"] .hero-grid{direction:rtl}[dir="rtl"] .hero-info,[dir="rtl"] .panel,[dir="rtl"] .similar-grid button{text-align:right}[dir="rtl"] .featured,[dir="rtl"] .counter{left:auto;right:14px}[dir="rtl"] .arrow.left{left:auto;right:14px}[dir="rtl"] .arrow.right{right:auto;left:14px}[dir="rtl"] .panel-head h2 i{margin-right:0;margin-left:7px}[dir="rtl"] .agent,[dir="rtl"] .love p{direction:rtl}
 [dir="rtl"] .feature-grid div,[dir="rtl"] .specs div,[dir="rtl"] .scores{text-align:center}[dir="rtl"] .hero-actions i,[dir="rtl"] .agent-actions i{margin-left:6px;margin-right:0}[dir="rtl"] .property-page{font-family:'Tajawal','Outfit',sans-serif}
 
 /* Light-mode refinements for the floor plan and AI insight cards. */
 .property-page[data-theme="light"] .floor-art{background:repeating-linear-gradient(90deg,#edf5fc 0,#edf5fc 30px,#d6e6f2 31px),repeating-linear-gradient(0deg,transparent 0,transparent 30px,#d6e6f2 31px);border-color:#cbddea;color:#5d88a8}.property-page[data-theme="light"] .floor-body ul{color:#7a9ab4}.property-page[data-theme="light"] .floor-body li:first-child{color:#6b90af}.property-page[data-theme="light"] .floor-body li i{color:#00bfe5}.property-page[data-theme="light"] .insights{background:linear-gradient(135deg,#fff 0%,#f5fbff 100%);border-color:#cfe2f0}.property-page[data-theme="light"] .ring{color:#123b5d;background:radial-gradient(circle,#f8fcff 56%,transparent 58%),conic-gradient(var(--color) calc(var(--score)*1%),#dcebf5 0);box-shadow:0 6px 16px color-mix(in srgb,var(--color),transparent 78%)}.property-page[data-theme="light"] .scores span{color:#466983;font-weight:600}.property-page[data-theme="light"] .insights .panel-head h2{color:#0f2d4b}.property-page[data-theme="light"] .property-map{border:1px solid #d3e4ef}.property-page[data-theme="light"] .payment>strong{color:#087ff5}
-.property-rating{grid-column:1/-1}.rating-body{display:grid;grid-template-columns:auto minmax(180px,1fr) auto;gap:12px;align-items:center}.rating-stars{display:flex;gap:4px}.rating-stars button{border:0;background:none;padding:3px;color:#b9c8d5;font-size:23px;cursor:pointer}.rating-stars button.active{color:#f9ba22}.rating-body textarea{min-height:48px;padding:10px 12px;resize:vertical;border:1px solid var(--border,#d7e4ef);border-radius:10px;background:var(--surface-alt,#f8fbff);color:var(--text,#10253f);font:inherit;font-size:12px;outline-color:var(--accent,#087ff5)}.submit-rating{height:42px;border:0;white-space:nowrap;padding:0 14px!important}.submit-rating:disabled{opacity:.5;cursor:not-allowed}.property-page[data-theme="dark"] .rating-body textarea{background:#0c2943;border-color:#1b4968;color:#eaf5ff}@media(max-width:700px){.rating-body{grid-template-columns:1fr}.submit-rating{width:100%}}
+.property-rating{grid-column:1/-1}.rating-body{display:grid;grid-template-columns:auto minmax(180px,1fr) auto;gap:12px;align-items:center}.rating-stars{display:flex;gap:4px}.rating-stars button{border:0;background:none;padding:3px;color:#b9c8d5;font-size:23px;cursor:pointer}.rating-stars button.active{color:#f9ba22}.rating-body textarea{min-height:48px;padding:10px 12px;resize:vertical;border:1px solid var(--border,#d7e4ef);border-radius:10px;background:var(--surface-alt,#f8fbff);color:var(--text,#10253f);font:inherit;font-size:12px;outline-color:var(--accent,#087ff5)}.submit-rating{height:42px;border:0;white-space:nowrap;padding:0 14px!important}.submit-rating:disabled{opacity:.5;cursor:not-allowed}.property-page[data-theme="dark"] .rating-body textarea{background:#1e293b;border-color:#334155;color:#f8fafc}@media(max-width:700px){.rating-body{grid-template-columns:1fr}.submit-rating{width:100%}}
+
+/* Nearby Amenities & POIs Cards */
+.nearby-pois-panel { grid-column: 1 / -1; }
+.poi-loading-box, .poi-empty-state { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px; color: var(--muted); font-size: 0.85rem; }
+.nearby-pois-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 6px; }
+.poi-item-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-alt); cursor: pointer; transition: all 0.22s ease; }
+.poi-item-card:hover { transform: translateY(-2px); border-color: var(--cyan); box-shadow: 0 6px 18px rgba(0, 210, 255, 0.12); }
+.poi-icon-circle { width: 40px; height: 40px; border-radius: 10px; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+.poi-meta-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.poi-name { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.poi-cat-tag { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.poi-dist-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+[dir="rtl"] .poi-dist-wrap { align-items: flex-start; }
+.poi-dist-val { font-size: 0.84rem; font-weight: 800; color: var(--accent); }
+.poi-walk-est { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+:deep(.mini-poi-marker) { background: transparent; border: none; }
+:deep(.mini-poi-pin) { width: 26px; height: 26px; border-radius: 50%; background: #ffffff; border: 2px solid var(--pin-color, #0284c7); box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; transform: translate(-50%, -50%); transition: transform 0.2s ease; cursor: pointer; }
+:deep(.mini-poi-pin:hover) { transform: translate(-50%, -50%) scale(1.25); z-index: 999; }
 </style>
