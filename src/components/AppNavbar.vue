@@ -64,9 +64,9 @@
                 <div class="dropdown-user-info">
                   <strong class="dropdown-user-name">{{ displayName }}</strong>
                   <span class="dropdown-user-email">{{ displayEmail }}</span>
-                  <span class="dropdown-user-badge" :style="isAgent ? 'background: rgba(2, 132, 199, 0.15); color: #0284c7; border-color: rgba(2, 132, 199, 0.3);' : ''">
-                    <i class="fa-solid" :class="isAgent ? 'fa-briefcase' : 'fa-circle-check'"></i>
-                    {{ isAgent ? (isRtl ? 'وكيل عقاري معتمد' : 'Certified Agent') : (isLoggedIn ? (isRtl ? 'عضو موثق' : 'Verified Member') : (isRtl ? 'حساب زائر' : 'Guest Account')) }}
+                  <span class="dropdown-user-badge" :style="isAdmin ? 'background: rgba(6, 182, 212, 0.15); color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);' : (isAgent ? 'background: rgba(2, 132, 199, 0.15); color: #0284c7; border-color: rgba(2, 132, 199, 0.3);' : '')">
+                    <i class="fa-solid" :class="isAdmin ? 'fa-shield-halved' : (isAgent ? 'fa-briefcase' : 'fa-circle-check')"></i>
+                    {{ isAdmin ? (isRtl ? 'مدير النظام' : 'System Admin') : (isAgent ? (isRtl ? 'وكيل عقاري معتمد' : 'Certified Agent') : (isLoggedIn ? (isRtl ? 'عضو موثق' : 'Verified Member') : (isRtl ? 'حساب زائر' : 'Guest Account'))) }}
                   </span>
                 </div>
               </div>
@@ -74,6 +74,11 @@
               <div class="dropdown-divider"></div>
 
               <div class="dropdown-menu-list">
+                <!-- Direct Admin Dashboard Shortcut -->
+                <button v-if="isLoggedIn && isAdmin" class="dropdown-menu-item" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;" @click="goto('/admin')">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <span><strong>{{ isRtl ? 'لوحة تحكم الإدارة' : 'Admin Dashboard' }}</strong></span>
+                </button>
                 <!-- Direct Agent Dashboard Shortcut -->
                 <button v-if="isLoggedIn && isAgent" class="dropdown-menu-item" style="background: rgba(2, 132, 199, 0.08); color: #0284c7;" @click="goto('/profile/agent-dashboard')">
                   <i class="fa-solid fa-briefcase"></i>
@@ -264,6 +269,10 @@
                 </router-link>
 
                 <template v-if="isLoggedIn">
+                  <router-link v-if="isAdmin" to="/admin" class="drawer-nav-item" style="color: #06b6d4; font-weight: 600;" active-class="active" @click="mobileMenuOpen = false">
+                    <div class="drawer-nav-icon" style="color: #06b6d4;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="drawer-nav-label">{{ isRtl ? 'لوحة تحكم الإدارة' : 'Admin Dashboard' }}</span>
+                  </router-link>
                   <router-link v-if="isAgent" to="/profile/agent-dashboard" class="drawer-nav-item" style="color: #0284c7; font-weight: 600;" active-class="active" @click="mobileMenuOpen = false">
                     <div class="drawer-nav-icon" style="color: #0284c7;"><i class="fa-solid fa-briefcase"></i></div>
                     <span class="drawer-nav-label">{{ isRtl ? 'لوحة تحكم الوكيل' : 'Agent Dashboard' }}</span>
@@ -346,15 +355,30 @@ const parseUserData = (raw) => {
   return null
 }
 
+const isAdmin = computed(() => {
+  const role = currentUser.value?.role || ''
+  const roles = currentUser.value?.roles || []
+  const email = currentUser.value?.email || ''
+  return (
+    role === 'admin' ||
+    role === 'super-admin' ||
+    (Array.isArray(roles) && roles.some(r => r === 'admin' || r === 'super-admin' || r?.slug === 'admin')) ||
+    localStorage.getItem('vibe_user_role') === 'admin' ||
+    email === 'admin@vibelocate.ai'
+  )
+})
+
 const isAgent = computed(() => {
   const role = currentUser.value?.role || ''
   const accountType = currentUser.value?.accountType || ''
   const roles = currentUser.value?.roles || []
   return (
-    role === 'agent' ||
-    accountType === 'agent' ||
-    (Array.isArray(roles) && roles.some(r => r === 'agent' || r?.slug === 'agent')) ||
-    localStorage.getItem('vibe_user_role') === 'agent'
+    !isAdmin.value && (
+      role === 'agent' ||
+      accountType === 'agent' ||
+      (Array.isArray(roles) && roles.some(r => r === 'agent' || r?.slug === 'agent')) ||
+      localStorage.getItem('vibe_user_role') === 'agent'
+    )
   )
 })
 

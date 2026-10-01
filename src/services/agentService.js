@@ -36,24 +36,50 @@ export const agentService = {
             titleAr: norm.titleAr || item.title_ar || norm.title,
             location: norm.location || item.address_line_1 || 'Dubai, UAE',
             locationAr: norm.locationAr || item.address_line_1 || 'دبي، الإمارات',
-            price: norm.price || (item.price ? `AED ${Number(item.price).toLocaleString()}` : 'AED 1,500,000'),
-            priceAr: norm.priceAr || (item.price ? `${Number(item.price).toLocaleString()} درهم` : '1,500,000 درهم'),
+            price: norm.price || (item.price ? `AED ${Number(item.price).toLocaleString()}` : 'AED 0'),
+            priceAr: norm.priceAr || (item.price ? `${Number(item.price).toLocaleString()} درهم` : '0 درهم'),
             rawPrice: Number(item.price) || norm.rawPrice || 0,
             image: norm.image || '/images/photo-1512917774080-9991f1c4c750.jfif',
-            status: (item.status === 'published' || item.status === 'approved' || item.status === 'active') ? 'published' : 'review',
-            views: Number(item.views || item.views_count || Math.floor(Math.random() * 200 + 50)),
-            favorites: Number(item.favorites || item.saves || item.favorites_count || Math.floor(Math.random() * 25 + 5)),
+            status: (item.status === 'published' || item.status === 'approved' || item.status === 'active') ? 'published' : (item.status || 'review'),
+            views: Number(item.views || item.views_count || 0),
+            favorites: Number(item.favorites || item.saves || item.favorites_count || 0),
             vibeScore: item.vibe_score || norm.vibeScore || (norm.score ? String(norm.score) : null),
             leads: Number(item.leads || item.inquiries_count || 0),
-            bedrooms: item.bedrooms || norm.bedrooms || 2,
-            bathrooms: item.bathrooms || norm.bathrooms || 2,
-            areaSqft: item.area_sqft || norm.areaSqft || 1200
+            bedrooms: item.bedrooms || norm.bedrooms || 0,
+            bathrooms: item.bathrooms || norm.bathrooms || 0,
+            areaSqft: item.area_sqft || norm.areaSqft || 0
           }
         })
       }
     } catch (err) {
       console.warn('[agentService] /my-properties error:', err?.response?.data || err?.message)
       return { success: false, data: [], error: err }
+    }
+  },
+
+  /**
+   * Update agent property
+   * PUT /api/my-properties/{id}
+   */
+  async updateMyProperty(id, payload) {
+    try {
+      const response = await apiClient.put(`/my-properties/${id}`, payload)
+      return { success: true, data: response.data }
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err?.message }
+    }
+  },
+
+  /**
+   * Delete agent property
+   * DELETE /api/my-properties/{id}
+   */
+  async deleteMyProperty(id) {
+    try {
+      const response = await apiClient.delete(`/my-properties/${id}`)
+      return { success: true, data: response.data }
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err?.message }
     }
   },
 
@@ -152,7 +178,7 @@ export const agentService = {
   async getProfile() {
     try {
       const response = await apiClient.get('/profile')
-      const profile = response?.data?.user || response?.data?.profile || response?.data || {}
+      const profile = response?.data?.profile || response?.data?.user || response?.data || response?.profile || {}
       return { success: true, data: profile }
     } catch (err) {
       console.warn('[agentService] /profile error:', err?.message)
@@ -174,20 +200,54 @@ export const agentService = {
   },
 
   /**
-   * Fetch public properties catalog as rich fallback/comparison
-   * GET /api/properties
+   * Get Agent POIs
+   * GET /api/agent/pois
    */
-  async getCatalogProperties(params = {}) {
+  async getAgentPois() {
     try {
-      const response = await apiClient.get('/properties', { params })
-      const rawData = response?.data?.data || response?.data?.properties || response?.data || []
-      const list = Array.isArray(rawData) ? rawData : (rawData.data || [])
-      return {
-        success: true,
-        data: list.map(normalizeProperty)
-      }
+      const response = await apiClient.get('/agent/pois')
+      return { success: true, data: response.data }
     } catch (err) {
-      return { success: false, data: [] }
+      return { success: false, error: err?.response?.data?.message || err?.message }
+    }
+  },
+
+  /**
+   * Create Agent POI
+   * POST /api/agent/pois
+   */
+  async createAgentPoi(payload) {
+    try {
+      const response = await apiClient.post('/agent/pois', payload)
+      return { success: true, data: response.data }
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err?.message }
+    }
+  },
+
+  /**
+   * Update Agent POI
+   * PUT /api/agent/pois/{id}
+   */
+  async updateAgentPoi(id, payload) {
+    try {
+      const response = await apiClient.put(`/agent/pois/${id}`, payload)
+      return { success: true, data: response.data }
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err?.message }
+    }
+  },
+
+  /**
+   * Delete Agent POI
+   * DELETE /api/agent/pois/{id}
+   */
+  async deleteAgentPoi(id) {
+    try {
+      const response = await apiClient.delete(`/agent/pois/${id}`)
+      return { success: true, data: response.data }
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err?.message }
     }
   }
 }

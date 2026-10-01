@@ -72,24 +72,30 @@ export const authService = {
       const u = data?.user || data?.data?.user
       if (u) {
         const fullName = u.name || u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || email.split('@')[0]
-        const role = u.role || (Array.isArray(u.roles) && u.roles.includes('agent') ? 'agent' : 'tenant')
-        const isAgent = role === 'agent' || (Array.isArray(u.roles) && u.roles.includes('agent'))
+        const roles = Array.isArray(u.roles) ? u.roles : (u.role ? [u.role] : [])
+        const isAdmin = roles.includes('admin') || roles.includes('super-admin') || u.role === 'admin' || u.role === 'super-admin' || u.email === 'admin@vibelocate.ai'
+        const isAgent = !isAdmin && (roles.includes('agent') || u.role === 'agent')
+        const role = isAdmin ? (u.role || 'super-admin') : (isAgent ? 'agent' : (u.role || 'tenant'))
         const userObj = {
           id: u.id,
           name: fullName,
           email: u.email || email,
           phone: u.phone || '',
           avatar: u.avatar || u.avatar_url || '',
-          role: isAgent ? 'agent' : role,
-          accountType: isAgent ? 'agent' : (u.account_type || 'Free Member'),
-          roles: u.roles || [role]
+          role,
+          accountType: isAdmin ? 'Admin' : (isAgent ? 'agent' : (u.account_type || 'Free Member')),
+          roles
         }
         localStorage.setItem('auth_user', JSON.stringify(userObj))
         sessionStorage.setItem('auth_user', JSON.stringify(userObj))
         localStorage.setItem('vibe_user_name', fullName)
         localStorage.setItem('vibe_user_email', u.email || email)
-        if (isAgent) {
+        if (isAdmin) {
+          localStorage.setItem('vibe_user_role', 'admin')
+        } else if (isAgent) {
           localStorage.setItem('vibe_user_role', 'agent')
+        } else {
+          localStorage.setItem('vibe_user_role', role)
         }
       }
     }
