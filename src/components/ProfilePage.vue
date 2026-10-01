@@ -401,6 +401,23 @@
             <!-- ==================== TAB 1: OVERVIEW ==================== -->
             <div v-else-if="activeTab === 'overview'" class="tab-view-container fade-in">
               
+              <!-- Agent Direct Shortcut Card (Only for Certified Agents) -->
+              <div v-if="isAgent" class="agent-welcome-banner-card" @click="switchTab('agent-dashboard')">
+                <div class="awb-left">
+                  <div class="awb-icon-wrap">
+                    <i class="fa-solid fa-briefcase"></i>
+                  </div>
+                  <div class="awb-info">
+                    <h3 class="awb-title">{{ isRtl ? 'لوحة تحكم الوكيل العقاري المعتمد' : 'Certified Real Estate Agent Workspace' }}</h3>
+                    <p class="awb-desc">{{ isRtl ? 'إدارة العقارات المعروضة، مواعيد وطلبات المعاينة، واستفسارات العملاء المباشرة' : 'Manage your listed properties, viewing requests, and direct client leads' }}</p>
+                  </div>
+                </div>
+                <button type="button" class="awb-action-btn" @click.stop="switchTab('agent-dashboard')">
+                  <span>{{ isRtl ? 'فتح لوحة الوكيل' : 'Open Agent Hub' }}</span>
+                  <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+                </button>
+              </div>
+
               <!-- 4 Quick Stat Summary Cards Grid -->
               <div class="stats-grid">
                 <div class="stat-card" @click="switchTab('saved')">
@@ -1210,14 +1227,31 @@ const checkAgentRole = () => {
     const raw = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
     if (raw) {
       const u = JSON.parse(raw)
-      if (u.role === 'agent' || u.role_slug === 'agent' || u.accountType === 'agent' || u.account_type === 'agent') {
+      const isAg =
+        u.role === 'agent' ||
+        u.role_slug === 'agent' ||
+        u.accountType === 'agent' ||
+        u.account_type === 'agent' ||
+        (Array.isArray(u.roles) && (u.roles.includes('agent') || u.roles.some(r => r === 'agent' || r?.slug === 'agent')))
+      if (isAg) {
         isAgent.value = true
+        user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
+        user.value.accountType = 'agent'
+        agentSectionOpen.value = true
         return
       }
     }
   } catch {}
-  if (user.value.role === 'Real Estate Agent' || user.value.role === 'agent' || user.value.accountType === 'agent') {
+  if (
+    localStorage.getItem('vibe_user_role') === 'agent' ||
+    user.value.role === 'Real Estate Agent' ||
+    user.value.role === 'agent' ||
+    user.value.accountType === 'agent'
+  ) {
     isAgent.value = true
+    user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
+    user.value.accountType = 'agent'
+    agentSectionOpen.value = true
   }
 }
 
@@ -1628,9 +1662,11 @@ const applyProfileData = (rawResponse) => {
 
   // Try every possible nesting the Laravel backend might use
   const p =
-    (rawResponse?.user && typeof rawResponse.user === 'object' ? rawResponse.user : null) ||
-    (rawResponse?.data && typeof rawResponse.data === 'object' ? rawResponse.data : null) ||
+    (rawResponse?.data?.profile && typeof rawResponse.data.profile === 'object' ? rawResponse.data.profile : null) ||
     (rawResponse?.profile && typeof rawResponse.profile === 'object' ? rawResponse.profile : null) ||
+    (rawResponse?.user && typeof rawResponse.user === 'object' ? rawResponse.user : null) ||
+    (rawResponse?.data?.user && typeof rawResponse.data.user === 'object' ? rawResponse.data.user : null) ||
+    (rawResponse?.data && typeof rawResponse.data === 'object' && !rawResponse.data.profile ? rawResponse.data : null) ||
     rawResponse ||
     {}
 
@@ -1691,27 +1727,43 @@ const applyProfileData = (rawResponse) => {
 
   // Profile photo / avatar: prioritize user's explicitly selected photo if available
   const localAvatar = localStorage.getItem('vibe_user_avatar') || ''
-  const serverAvatar =
+  let serverAvatar =
     p.profile_photo_url ||
+    p.avatar_url ||
     p.avatar ||
     p.photo ||
-    p.avatar_url ||
     p.image ||
     p.picture ||
     ''
+  if (serverAvatar && !serverAvatar.startsWith('http') && !serverAvatar.startsWith('data:') && !serverAvatar.startsWith('/')) {
+    serverAvatar = `https://vibelocate-laravel.onrender.com/${serverAvatar}`
+  }
   const avatar = localAvatar || serverAvatar
   if (avatar) {
     user.value.avatarUrl = avatar
   }
 
-  // Account / role type
-  const accountType = p.account_type || p.plan || p.subscription || p.role || ''
-  if (accountType) {
+  // Account / role type & Agent detection
+  const isAgentUser =
+    p.account_type === 'agent' ||
+    p.role === 'agent' ||
+    p.role_slug === 'agent' ||
+    (Array.isArray(p.roles) && p.roles.some(r => r === 'agent' || r?.slug === 'agent' || r?.name?.toLowerCase() === 'agent')) ||
+    (Array.isArray(rawResponse?.data?.roles) && rawResponse.data.roles.some(r => r === 'agent' || r?.slug === 'agent')) ||
+    (Array.isArray(rawResponse?.user?.roles) && rawResponse.user.roles.includes('agent')) ||
+    rawResponse?.user?.role === 'agent' ||
+    localStorage.getItem('vibe_user_role') === 'agent'
+
+  if (isAgentUser) {
+    isAgent.value = true
+    agentSectionOpen.value = true
+    user.value.accountType = 'agent'
+    user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
+    localStorage.setItem('vibe_user_role', 'agent')
+  } else {
+    const accountType = p.account_type || p.plan || p.subscription || p.role || 'Free Member'
     user.value.accountType = accountType
-    if (accountType.toLowerCase().includes('agent') || p.role_slug === 'agent') {
-      isAgent.value = true
-      user.value.role = isRtl.value ? 'وكيل عقاري معتمد' : 'Certified Real Estate Agent'
-    }
+    user.value.role = isRtl.value ? 'مستكشف عقارات' : 'Property Explorer'
   }
 
   // Member since (created_at)
@@ -2183,6 +2235,78 @@ const handleDeleteAccount = async () => {
   --profile-panel-muted: #a8c8de;
   --profile-accent: #0d6efd;
   --profile-cyan: #00bde3;
+}
+
+/* ==================== AGENT WELCOME BANNER CARD ==================== */
+.agent-welcome-banner-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(59, 130, 246, 0.16) 100%);
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  border-radius: 16px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.agent-welcome-banner-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);
+  border-color: rgba(2, 132, 199, 0.6);
+}
+.awb-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.awb-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #0284c7;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.awb-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--profile-heading, #0f2744);
+}
+.is-dark .awb-title {
+  color: #f1f5f9;
+}
+.awb-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--profile-muted, #64748b);
+}
+.is-dark .awb-desc {
+  color: #94a3b8;
+}
+.awb-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+.awb-action-btn:hover {
+  background: #0369a1;
 }
 
 /* ==================== SITE HEADER / NAVBAR ==================== */

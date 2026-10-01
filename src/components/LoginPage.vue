@@ -251,9 +251,15 @@ const handleLogin = async () => {
     try {
       isLoading.value = true
       const response = await authService.login({ email: email.value.trim(), password: password.value, rememberMe: rememberMe.value })
+      const userObj = response?.user || response?.data?.user || {}
+      const role = userObj.role || (Array.isArray(userObj.roles) && userObj.roles.includes('agent') ? 'agent' : 'tenant')
+      const isAgent = role === 'agent' || (Array.isArray(userObj.roles) && userObj.roles.includes('agent'))
+
       storeAuthenticatedUser(response, { email: email.value.trim(), name: email.value.trim().split('@')[0] })
       showToast(response?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
-      setTimeout(() => router.push('/home'), 700)
+
+      const targetRoute = isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home')
+      setTimeout(() => router.push(targetRoute), 700)
     } catch (err) {
       showToast(err.message || 'Unable to log in. Please try again.', 'error')
     } finally {
@@ -274,8 +280,13 @@ const handleGoogleLogin = async () => {
     const response = await authService.loginWithGoogle(googleUser.token, rememberMe.value)
     storeAuthenticatedUser(response, googleUser)
 
+    const userObj = response?.user || response?.data?.user || {}
+    const role = userObj.role || (Array.isArray(userObj.roles) && userObj.roles.includes('agent') ? 'agent' : 'tenant')
+    const isAgent = role === 'agent' || (Array.isArray(userObj.roles) && userObj.roles.includes('agent'))
+
     showToast(response?.message || 'Google sign-in successful!', 'success')
-    setTimeout(() => router.push('/home'), 700)
+    const targetRoute = isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home')
+    setTimeout(() => router.push(targetRoute), 700)
   } catch (err) {
     showToast(err.message || 'Google sign-in was cancelled or failed.', 'error')
   } finally {
@@ -299,11 +310,19 @@ const storeAuthenticatedUser = (response, fallback = {}) => {
   const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || fallback.name || ''
   const emailVal = profile.email || fallback.email || ''
   const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || fallback.picture || fallback.avatar || ''
+  const role = profile.role || (Array.isArray(profile.roles) && profile.roles.includes('agent') ? 'agent' : 'tenant')
+  const isAgent = role === 'agent' || (Array.isArray(profile.roles) && profile.roles.includes('agent'))
+  const accountType = isAgent ? 'agent' : (profile.account_type || 'Free Member')
+  const roles = profile.roles || [role]
 
   if (name || emailVal) {
-    const userPayload = JSON.stringify({ name, email: emailVal, avatar })
+    const userPayload = JSON.stringify({ name, email: emailVal, avatar, role: isAgent ? 'agent' : role, accountType, roles })
     localStorage.setItem('auth_user', userPayload)
     sessionStorage.setItem('auth_user', userPayload)
+    localStorage.setItem('vibe_user_name', name)
+    localStorage.setItem('vibe_user_email', emailVal)
+    if (avatar) localStorage.setItem('vibe_user_avatar', avatar)
+    if (isAgent) localStorage.setItem('vibe_user_role', 'agent')
   }
 }
 </script>

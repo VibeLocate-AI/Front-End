@@ -43,34 +43,59 @@ export const authService = {
    * @returns {Promise<Object>} response data (access_token, refresh_token, user info)
    */
   async login({ email, password, rememberMe = true }) {
-  const data = await apiClient.post('/login', {
-    email,
-    password,
-    rememberMe
-  })
-
-  const accessToken =
-    data?.access_token ||
-    data?.token ||
-    data?.data?.access_token ||
-    data?.data?.token
-
-  const refreshToken =
-    data?.refresh_token ||
-    data?.data?.refresh_token
-
-  if (accessToken) {
-    this.clearUserCache()
-
-    this.setTokens(
-      accessToken,
-      refreshToken,
+    const data = await apiClient.post('/login', {
+      email,
+      password,
       rememberMe
-    )
-  }
+    })
 
-  return data
-},
+    const accessToken =
+      data?.access_token ||
+      data?.token ||
+      data?.data?.access_token ||
+      data?.data?.token
+
+    const refreshToken =
+      data?.refresh_token ||
+      data?.data?.refresh_token
+
+    if (accessToken) {
+      this.clearUserCache()
+
+      this.setTokens(
+        accessToken,
+        refreshToken,
+        rememberMe
+      )
+
+      // Automatically store authenticated user profile & roles
+      const u = data?.user || data?.data?.user
+      if (u) {
+        const fullName = u.name || u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || email.split('@')[0]
+        const role = u.role || (Array.isArray(u.roles) && u.roles.includes('agent') ? 'agent' : 'tenant')
+        const isAgent = role === 'agent' || (Array.isArray(u.roles) && u.roles.includes('agent'))
+        const userObj = {
+          id: u.id,
+          name: fullName,
+          email: u.email || email,
+          phone: u.phone || '',
+          avatar: u.avatar || u.avatar_url || '',
+          role: isAgent ? 'agent' : role,
+          accountType: isAgent ? 'agent' : (u.account_type || 'Free Member'),
+          roles: u.roles || [role]
+        }
+        localStorage.setItem('auth_user', JSON.stringify(userObj))
+        sessionStorage.setItem('auth_user', JSON.stringify(userObj))
+        localStorage.setItem('vibe_user_name', fullName)
+        localStorage.setItem('vibe_user_email', u.email || email)
+        if (isAgent) {
+          localStorage.setItem('vibe_user_role', 'agent')
+        }
+      }
+    }
+
+    return data
+  },
 
   /**
    * Exchange a Google ID token for an application session token
@@ -351,11 +376,36 @@ export const authService = {
   async getProfile() {
     try {
       const data = await apiClient.get('/profile')
-      const profile = data?.profile || data?.user || data?.data || data
+      const profile = data?.data?.profile || data?.profile || data?.user || data?.data?.user || data?.data || data
       if (profile) {
-        if (profile.full_name || profile.name) localStorage.setItem('vibe_user_name', profile.full_name || profile.name)
+        const fullName = profile.full_name || profile.name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || ''
+        if (fullName) localStorage.setItem('vibe_user_name', fullName)
         if (profile.email) localStorage.setItem('vibe_user_email', profile.email)
-        if (profile.avatar || profile.avatar_url) localStorage.setItem('vibe_user_avatar', profile.avatar || profile.avatar_url)
+        const avatar = profile.avatar || profile.avatar_url || ''
+        if (avatar) localStorage.setItem('vibe_user_avatar', avatar)
+
+        const role = profile.role || (Array.isArray(profile.roles) && profile.roles.some(r => r === 'agent' || r?.slug === 'agent') ? 'agent' : 'tenant')
+        const isAgent = role === 'agent' || profile.account_type === 'agent' || (Array.isArray(profile.roles) && profile.roles.some(r => r === 'agent' || r?.slug === 'agent'))
+
+        if (isAgent) {
+          localStorage.setItem('vibe_user_role', 'agent')
+        }
+
+        try {
+          const rawAuth = localStorage.getItem('auth_user')
+          const currentAuth = rawAuth ? JSON.parse(rawAuth) : {}
+          const updatedAuth = {
+            ...currentAuth,
+            name: fullName || currentAuth.name || '',
+            email: profile.email || currentAuth.email || '',
+            avatar: avatar || currentAuth.avatar || '',
+            role: isAgent ? 'agent' : (currentAuth.role || 'tenant'),
+            accountType: isAgent ? 'agent' : (currentAuth.accountType || profile.account_type || 'Free Member'),
+            roles: profile.roles || currentAuth.roles || [role]
+          }
+          localStorage.setItem('auth_user', JSON.stringify(updatedAuth))
+          sessionStorage.setItem('auth_user', JSON.stringify(updatedAuth))
+        } catch { /* ignore */ }
       }
       return data
     } catch (err) {
@@ -366,6 +416,14 @@ export const authService = {
         throw err
       }
     }
+  },
+
+  /**
+   * Fetch user profile data (alias to getProfile)
+   * @returns {Promise<Object>}
+   */
+  async getProfileData() {
+    return await this.getProfile()
   },
 
   /**
