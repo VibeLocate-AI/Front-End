@@ -21,6 +21,7 @@ import PropertyBookingPage from '../components/PropertyBookingPage.vue'
 import NotificationsPage from '../components/NotificationsPage.vue'
 import AgentContactPage from '../components/AgentContactPage.vue'
 import SearchPage from '../components/SearchPage.vue'
+import AdminDashboardPage from '../components/AdminDashboardPage.vue'
 
 const routes = [
   {
@@ -161,6 +162,20 @@ const routes = [
     path: '/reset-success',
     name: 'ResetSuccess',
     component: ResetSuccessPage
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboardPage,
+    alias: [
+      '/admin/dashboard',
+      '/admin/users',
+      '/admin/properties',
+      '/admin/ai-health',
+      '/admin/coverage',
+      '/admin/reports',
+      '/admin/settings'
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
