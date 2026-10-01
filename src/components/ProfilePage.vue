@@ -273,6 +273,16 @@
                     <i class="fa-solid fa-user-check nav-icon"></i>
                     <span>{{ isRtl ? 'الملف الشخصي والتحقق' : 'Profile & Verification' }}</span>
                   </button>
+
+                  <!-- 7. نقاط الاهتمام والمرافق (Agency POIs) -->
+                  <button
+                    class="nav-tab-btn agent-sub-btn"
+                    :class="{ active: activeTab === 'agent-pois' }"
+                    @click="switchTab('agent-pois')"
+                  >
+                    <i class="fa-solid fa-map-pin nav-icon"></i>
+                    <span>{{ isRtl ? 'نقاط الاهتمام (POIs)' : 'Agency POIs' }}</span>
+                  </button>
                 </div>
               </div>
 

@@ -3,17 +3,17 @@
     <section class="contact-shell">
       <aside class="agent-summary">
         <button class="back" @click="router.back()"><i class="fa-solid fa-arrow-left"></i> {{ t('Back', 'رجوع') }}</button>
-        <div class="agent-avatar"><img src="/images/photo-1507003211169-0a1dd7228f2d.jfif" alt="Daniel Matthews"></div>
-        <h1>{{ t('Daniel Matthews', 'دانيال ماثيوز') }}</h1>
-        <p>{{ t('Premium Property Specialist', 'أخصائي عقارات مميزة') }}</p>
+        <div class="agent-avatar"><img :src="agentAvatar" :alt="agentName"></div>
+        <h1>{{ agentName }}</h1>
+        <p>{{ agentAgency || t('Premium Property Specialist', 'أخصائي عقارات مميزة') }}</p>
         <span class="online"><i></i>{{ t('Online now', 'متصل الآن') }}</span>
         <div v-if="property" class="property-context"><img :src="property.image"><div><small>{{ t('Regarding property', 'بخصوص العقار') }}</small><b>{{ title }}</b></div></div>
         <button class="call" @click="startCall"><i class="fa-solid fa-phone"></i>{{ t('Start a call', 'بدء مكالمة') }}</button>
       </aside>
       <section class="chat-panel">
-        <header><div><b>{{ t('Chat with Daniel', 'محادثة مع دانيال') }}</b><span>{{ t('Usually replies within minutes', 'يرد عادة خلال دقائق') }}</span></div><button @click="startCall" :aria-label="t('Call', 'اتصال')"><i class="fa-solid fa-phone"></i></button></header>
+        <header><div><b>{{ t('Chat with Agent', 'محادثة مع الوكيل') }} - {{ agentName }}</b><span>{{ t('Usually replies within minutes', 'يرد عادة خلال دقائق') }}</span></div><button @click="startCall" :aria-label="t('Call', 'اتصال')"><i class="fa-solid fa-phone"></i></button></header>
         <div ref="messagesEl" class="messages"><div v-for="message in messages" :key="message.id" class="message" :class="message.from"><p>{{ message.text }}</p><time>{{ message.time }}</time></div></div>
-        <div v-if="callActive" class="call-banner"><i class="fa-solid fa-phone-volume"></i><span>{{ t('Call in progress with Daniel Matthews', 'مكالمة جارية مع دانيال ماثيوز') }}</span><button @click="callActive=false"><i class="fa-solid fa-phone-slash"></i>{{ t('End call', 'إنهاء المكالمة') }}</button></div>
+        <div v-if="callActive" class="call-banner"><i class="fa-solid fa-phone-volume"></i><span>{{ t('Call in progress with', 'مكالمة جارية مع') }} {{ agentName }}</span><button @click="callActive=false"><i class="fa-solid fa-phone-slash"></i>{{ t('End call', 'إنهاء المكالمة') }}</button></div>
         <form class="composer" @submit.prevent="sendMessage"><input v-model="draft" :placeholder="t('Write a message…', 'اكتب رسالتك…')"><button type="button" @click="attachFile"><i class="fa-solid fa-paperclip"></i></button><button class="send" :disabled="!draft.trim()"><i class="fa-solid fa-paper-plane"></i></button></form>
       </section>
     </section>
@@ -28,6 +28,9 @@ import propertyService from '../services/propertyService'
 const router = useRouter(); const route = useRoute(); const { isRtl, theme } = useThemeAndLanguage(); const t = (en, ar) => isRtl.value ? ar : en
 const property = ref(null); try { property.value = JSON.parse(sessionStorage.getItem('vibelocate:selected-property') || 'null') } catch {}
 const title = computed(() => isRtl.value ? property.value?.title_ar || property.value?.title : property.value?.title)
+const agentName = computed(() => property.value?.agent?.name || property.value?.agent_name || route.query.agent || (isRtl.value ? 'وكيل VibeLocate المعتمد' : 'Certified VibeLocate Agent'))
+const agentAgency = computed(() => property.value?.agent?.agency_name || property.value?.agency_name || '')
+const agentAvatar = computed(() => property.value?.agent?.avatar || '/images/photo-1507003211169-0a1dd7228f2d.jfif')
 const messagesEl = ref(null), draft = ref(''), callActive = ref(false)
 callActive.value = route.query.mode === 'call'
 const messages = ref([{ id: 1, from: 'agent', text: t('Hello! How can I help you with this property?', 'مرحباً! كيف يمكنني مساعدتك بخصوص هذا العقار؟'), time: '10:24' }])

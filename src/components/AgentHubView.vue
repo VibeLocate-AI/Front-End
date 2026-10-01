@@ -87,7 +87,7 @@
           </button>
         </div>
 
-        <div class="table-responsive">
+        <div v-if="dashboardProperties.length > 0" class="table-responsive">
           <table class="agent-properties-table">
             <thead>
               <tr>
@@ -130,12 +130,12 @@
 
                 <!-- Views -->
                 <td class="cell-views">
-                  <span class="stat-num">{{ prop.views.toLocaleString() }}</span>
+                  <span class="stat-num">{{ (prop.views || 0).toLocaleString() }}</span>
                 </td>
 
                 <!-- Favorites -->
                 <td class="cell-favs">
-                  <span class="stat-num">{{ prop.favorites }}</span>
+                  <span class="stat-num">{{ prop.favorites || 0 }}</span>
                 </td>
 
                 <!-- Vibe Score -->
@@ -161,6 +161,24 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Clean Empty State when Agent has 0 properties -->
+        <div v-else class="agent-empty-state-box">
+          <div class="empty-icon-circle">
+            <i class="fa-regular fa-building"></i>
+          </div>
+          <h3 class="empty-title">{{ isRtl ? 'لا توجد عقارات مضافة بعد' : 'No properties listed yet' }}</h3>
+          <p class="empty-desc">
+            {{ isRtl 
+              ? 'ابدأ بإضافة أول عقار لك لتتمكن من إدارته ومتابعة مشاهداته وطلبات المعاينة المباشرة.' 
+              : 'Add your first listing to manage properties, track views, and receive client inquiries.' 
+            }}
+          </p>
+          <button class="btn-add-first-prop" @click="navigateToAddProperty">
+            <i class="fa-solid fa-plus"></i>
+            <span>{{ isRtl ? 'إضافة عقار جديد' : 'Add New Property' }}</span>
+          </button>
+        </div>
       </section>
 
       <!-- Bottom Two Column Panels: Viewing Requests & Recent Messages -->
@@ -176,7 +194,7 @@
             </button>
           </div>
 
-          <div class="requests-list-container">
+          <div v-if="recentViewingRequests.length > 0" class="requests-list-container">
             <div 
               v-for="req in recentViewingRequests" 
               :key="req.id" 
@@ -219,6 +237,12 @@
               </div>
             </div>
           </div>
+
+          <!-- Empty State for Requests -->
+          <div v-else class="agent-empty-sub">
+            <i class="fa-regular fa-calendar-xmark"></i>
+            <p>{{ isRtl ? 'لا توجد طلبات معاينة جديدة حالياً' : 'No new viewing requests at the moment' }}</p>
+          </div>
         </section>
 
         <!-- Left/Right Panel 2: Recent Messages (رسائل حديثة) -->
@@ -231,7 +255,7 @@
             </button>
           </div>
 
-          <div class="messages-list-container">
+          <div v-if="recentMessages.length > 0" class="messages-list-container">
             <div 
               v-for="msg in recentMessages" 
               :key="msg.id" 
@@ -253,6 +277,12 @@
               </div>
             </div>
           </div>
+
+          <!-- Empty State for Messages -->
+          <div v-else class="agent-empty-sub">
+            <i class="fa-regular fa-comment-dots"></i>
+            <p>{{ isRtl ? 'لا توجد رسائل جديدة من العملاء' : 'No client messages yet' }}</p>
+          </div>
         </section>
 
       </div>
@@ -262,11 +292,14 @@
     <!-- =========================================================================
          VIEW 2: AGENT PROPERTIES (عقاراتي) - FULL ADVANCED MANAGEMENT
          ========================================================================= -->
+    <!-- =========================================================================
+         VIEW 2: AGENT PROPERTIES (عقاراتي) - FULL ADVANCED MANAGEMENT
+         ========================================================================= -->
     <div v-else-if="currentTab === 'properties'" class="agent-view fade-in">
       <header class="agent-top-header">
         <div>
           <h1 class="agent-greeting-title">{{ isRtl ? 'إدارة عقارات الوكيل' : 'Agent Properties Management' }}</h1>
-          <p class="agent-greeting-sub">{{ isRtl ? 'تصفح وعدل جميع العقارات المدرجة تحت حسابك التجاري' : 'Manage, filter and edit all properties listed under your account' }}</p>
+          <p class="agent-greeting-sub">{{ isRtl ? 'تصفح وعدل جميع العقارات المدرجة أو راجع قائمة الاعتماد' : 'Manage your listed properties and review pending listings' }}</p>
         </div>
         <button class="btn-add-property-top" @click="navigateToAddProperty">
           <i class="fa-solid fa-plus"></i>
@@ -274,67 +307,168 @@
         </button>
       </header>
 
-      <!-- Filter Tabs & Search Bar -->
+      <!-- View Mode Switch: My Listings vs Moderation Queue -->
       <div class="properties-controls-bar">
-        <div class="filter-pills-row">
+        <div class="view-mode-tabs-row">
           <button 
-            v-for="f in propertyFilters" 
-            :key="f.key"
-            class="filter-pill-btn"
-            :class="{ active: activePropertyFilter === f.key }"
-            @click="activePropertyFilter = f.key"
+            class="filter-pill-btn mode-pill"
+            :class="{ active: propertiesViewMode === 'my_listings' }"
+            @click="propertiesViewMode = 'my_listings'"
           >
-            {{ isRtl ? f.labelAr : f.labelEn }} ({{ f.count }})
+            <i class="fa-solid fa-building"></i>
+            <span>{{ isRtl ? 'عقاراتي المعروضة' : 'My Listings' }} ({{ dashboardProperties.length }})</span>
+          </button>
+          <button 
+            class="filter-pill-btn mode-pill"
+            :class="{ active: propertiesViewMode === 'moderation' }"
+            @click="propertiesViewMode = 'moderation'; loadModerationQueue()"
+          >
+            <i class="fa-solid fa-clipboard-check"></i>
+            <span>{{ isRtl ? 'مراجعة واعتماد العقارات' : 'Review Queue' }} ({{ moderationProperties.length }})</span>
           </button>
         </div>
 
-        <div class="search-input-wrap">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input 
-            type="text" 
-            v-model="propertiesSearchQuery" 
-            :placeholder="isRtl ? 'البحث في العقارات...' : 'Search listings...'"
-            class="filter-search-field"
+        <!-- Filter Tabs & Search Bar for My Listings -->
+        <div v-if="propertiesViewMode === 'my_listings'" class="filter-controls-group">
+          <div class="filter-pills-row">
+            <button 
+              v-for="f in propertyFilters" 
+              :key="f.key"
+              class="filter-pill-btn"
+              :class="{ active: activePropertyFilter === f.key }"
+              @click="activePropertyFilter = f.key"
+            >
+              {{ isRtl ? f.labelAr : f.labelEn }} ({{ f.count }})
+            </button>
+          </div>
+
+          <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input 
+              type="text" 
+              v-model="propertiesSearchQuery" 
+              :placeholder="isRtl ? 'البحث في العقارات...' : 'Search listings...'"
+              class="filter-search-field"
+            >
+          </div>
+        </div>
+
+        <!-- Moderation Status Filter Pills -->
+        <div v-else class="filter-pills-row">
+          <button 
+            v-for="s in ['pending', 'approved', 'rejected']" 
+            :key="s"
+            class="filter-pill-btn"
+            :class="{ active: moderationStatus === s }"
+            @click="moderationStatus = s; loadModerationQueue()"
           >
+            {{ s === 'pending' ? (isRtl ? 'قيد الانتظار' : 'Pending') : s === 'approved' ? (isRtl ? 'معتمدة' : 'Approved') : (isRtl ? 'مرفوضة' : 'Rejected') }}
+          </button>
         </div>
       </div>
 
-      <!-- Properties Grid -->
-      <div class="properties-management-grid">
-        <div 
-          v-for="prop in filteredProperties" 
-          :key="prop.id" 
-          class="prop-manage-card"
-        >
-          <div class="card-thumb-wrap">
-            <img :src="prop.image" :alt="prop.title" class="card-img">
-            <span class="card-status-badge" :class="prop.status === 'published' ? 'badge-green' : 'badge-yellow'">
-              {{ prop.status === 'published' ? (isRtl ? 'منشور' : 'Published') : (isRtl ? 'قيد المراجعة' : 'Under Review') }}
-            </span>
-            <span v-if="prop.vibeScore" class="card-vibe-score">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> {{ prop.vibeScore }}
-            </span>
-          </div>
-
-          <div class="card-body-content">
-            <h3 class="card-prop-title">{{ isRtl ? prop.titleAr : prop.title }}</h3>
-            <p class="card-prop-location"><i class="fa-solid fa-location-dot"></i> {{ isRtl ? prop.locationAr : prop.location }}</p>
-            <div class="card-prop-price">{{ isRtl ? prop.priceAr : prop.price }}</div>
-
-            <div class="card-stats-row">
-              <span><i class="fa-regular fa-eye"></i> {{ prop.views }} {{ isRtl ? 'مشاهدة' : 'Views' }}</span>
-              <span><i class="fa-regular fa-heart"></i> {{ prop.favorites }} {{ isRtl ? 'مفضلة' : 'Saves' }}</span>
+      <!-- Content Mode 1: My Listings Grid -->
+      <div v-if="propertiesViewMode === 'my_listings'">
+        <div v-if="filteredProperties.length > 0" class="properties-management-grid">
+          <div 
+            v-for="prop in filteredProperties" 
+            :key="prop.id" 
+            class="prop-manage-card"
+          >
+            <div class="card-thumb-wrap">
+              <img :src="prop.image" :alt="prop.title" class="card-img">
+              <span class="card-status-badge" :class="prop.status === 'published' ? 'badge-green' : 'badge-yellow'">
+                {{ prop.status === 'published' ? (isRtl ? 'منشور' : 'Published') : (isRtl ? 'قيد المراجعة' : 'Under Review') }}
+              </span>
+              <span v-if="prop.vibeScore" class="card-vibe-score">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> {{ prop.vibeScore }}
+              </span>
             </div>
 
-            <div class="card-actions-footer">
-              <button class="btn-card-edit" @click="handleEditProperty(prop)">
-                <i class="fa-solid fa-pen-to-square"></i> {{ isRtl ? 'تعديل العقار' : 'Edit' }}
-              </button>
-              <button class="btn-card-view" @click="handleViewProperty(prop)">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> {{ isRtl ? 'معاينة' : 'View' }}
-              </button>
+            <div class="card-body-content">
+              <h3 class="card-prop-title">{{ isRtl ? prop.titleAr : prop.title }}</h3>
+              <p class="card-prop-location"><i class="fa-solid fa-location-dot"></i> {{ isRtl ? prop.locationAr : prop.location }}</p>
+              <div class="card-prop-price">{{ isRtl ? prop.priceAr : prop.price }}</div>
+
+              <div class="card-stats-row">
+                <span><i class="fa-regular fa-eye"></i> {{ (prop.views || 0).toLocaleString() }} {{ isRtl ? 'مشاهدة' : 'Views' }}</span>
+                <span><i class="fa-regular fa-heart"></i> {{ prop.favorites || 0 }} {{ isRtl ? 'مفضلة' : 'Saves' }}</span>
+              </div>
+
+              <div class="card-actions-footer">
+                <button class="btn-card-edit" @click="handleEditProperty(prop)">
+                  <i class="fa-solid fa-pen-to-square"></i> {{ isRtl ? 'تعديل' : 'Edit' }}
+                </button>
+                <button class="btn-card-view" @click="handleViewProperty(prop)">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> {{ isRtl ? 'معاينة' : 'View' }}
+                </button>
+                <button class="btn-card-delete" @click="handleDeleteProperty(prop)" :title="isRtl ? 'حذف العقار' : 'Delete Property'">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- Empty state when 0 listings -->
+        <div v-else class="agent-empty-state-box">
+          <div class="empty-icon-circle">
+            <i class="fa-regular fa-building"></i>
+          </div>
+          <h3 class="empty-title">{{ isRtl ? 'لا توجد عقارات مدرجة' : 'No properties listed' }}</h3>
+          <p class="empty-desc">
+            {{ isRtl 
+              ? 'لم تقم بنشر أي عقارات حتى الآن. أضف عقارات جديدة لبدء الترويج واستقبال العملاء.' 
+              : 'You have not published any properties yet. Add new listings to begin promoting and receiving inquiries.' 
+            }}
+          </p>
+          <button class="btn-add-first-prop" @click="navigateToAddProperty">
+            <i class="fa-solid fa-plus"></i>
+            <span>{{ isRtl ? 'إضافة عقار جديد' : 'Add New Property' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Mode 2: Moderation Queue -->
+      <div v-else>
+        <div v-if="moderationProperties.length > 0" class="properties-management-grid">
+          <div 
+            v-for="prop in moderationProperties" 
+            :key="prop.id" 
+            class="prop-manage-card"
+          >
+            <div class="card-thumb-wrap">
+              <img :src="prop.image" :alt="prop.title" class="card-img">
+              <span class="card-status-badge" :class="moderationStatus === 'approved' ? 'badge-green' : moderationStatus === 'rejected' ? 'badge-red' : 'badge-yellow'">
+                {{ moderationStatus === 'approved' ? (isRtl ? 'معتمد' : 'Approved') : moderationStatus === 'rejected' ? (isRtl ? 'مرفوض' : 'Rejected') : (isRtl ? 'قيد المراجعة' : 'Pending') }}
+              </span>
+            </div>
+
+            <div class="card-body-content">
+              <h3 class="card-prop-title">{{ isRtl ? prop.titleAr || prop.title : prop.title }}</h3>
+              <p class="card-prop-location"><i class="fa-solid fa-location-dot"></i> {{ prop.location }}</p>
+              <div class="card-prop-price">{{ prop.price }}</div>
+
+              <div class="card-actions-footer">
+                <template v-if="moderationStatus === 'pending'">
+                  <button class="btn-req-accept" @click="handleApproveProperty(prop.id)">
+                    <i class="fa-solid fa-check"></i> {{ isRtl ? 'اعتماد' : 'Approve' }}
+                  </button>
+                  <button class="btn-req-reject" @click="handleRejectProperty(prop.id)">
+                    <i class="fa-solid fa-xmark"></i> {{ isRtl ? 'رفض' : 'Reject' }}
+                  </button>
+                </template>
+                <button class="btn-card-view" @click="handleViewProperty(prop)">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> {{ isRtl ? 'معاينة التفاصيل' : 'View' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="agent-empty-sub">
+          <i class="fa-solid fa-check-double"></i>
+          <p>{{ isRtl ? 'لا توجد عقارات في قائمة المراجعة لهذه الفئة حالياً' : 'No properties in moderation queue for this category' }}</p>
         </div>
       </div>
     </div>
@@ -383,7 +517,7 @@
       </div>
 
       <!-- Requests Cards List -->
-      <div class="detailed-requests-list">
+      <div v-if="filteredRequests.length > 0" class="detailed-requests-list">
         <div 
           v-for="req in filteredRequests" 
           :key="req.id" 
@@ -437,6 +571,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Empty State for Requests -->
+      <div v-else class="agent-empty-state-box">
+        <div class="empty-icon-circle">
+          <i class="fa-regular fa-calendar-xmark"></i>
+        </div>
+        <h3 class="empty-title">{{ isRtl ? 'لا توجد طلبات معاينة' : 'No viewing requests' }}</h3>
+        <p class="empty-desc">{{ isRtl ? 'لم يتم العثور على أي طلبات معاينة تطابق هذه التصفية حالياً.' : 'No viewing tour requests match this filter currently.' }}</p>
+      </div>
     </div>
 
     <!-- =========================================================================
@@ -450,7 +593,7 @@
         </div>
       </header>
 
-      <div class="agent-inbox-shell">
+      <div v-if="conversations.length > 0" class="agent-inbox-shell">
         <!-- Sidebar Conversations -->
         <aside class="inbox-conversations-list">
           <div class="inbox-search-box">
@@ -489,7 +632,7 @@
               <img :src="currentConversation.avatar" :alt="currentConversation.name" class="chat-head-avatar">
               <div>
                 <h4 class="chat-head-name">{{ currentConversation.name }}</h4>
-                <span class="chat-head-status">{{ isRtl ? 'متصل الآن بخصوص:' : 'Online now regarding:' }} {{ isRtl ? currentConversation.propertyAr : currentConversation.property }}</span>
+                <span class="chat-head-status">{{ isRtl ? 'بخصوص:' : 'Regarding:' }} {{ isRtl ? currentConversation.propertyAr : currentConversation.property }}</span>
               </div>
             </div>
 
@@ -525,6 +668,15 @@
           </form>
         </main>
       </div>
+
+      <!-- Empty State for Inbox -->
+      <div v-else class="agent-empty-state-box">
+        <div class="empty-icon-circle">
+          <i class="fa-regular fa-comments"></i>
+        </div>
+        <h3 class="empty-title">{{ isRtl ? 'صندوق المحادثات فارغ' : 'Your inbox is empty' }}</h3>
+        <p class="empty-desc">{{ isRtl ? 'ستظهر استفسارات ورسائل العملاء على عقاراتك هنا فور إرسالها.' : 'Client inquiries and messages regarding your properties will appear here.' }}</p>
+      </div>
     </div>
 
     <!-- =========================================================================
@@ -538,38 +690,42 @@
         </div>
       </header>
 
-      <!-- Analytics Highlights -->
+      <!-- Analytics Highlights - Pure Real Metrics -->
       <div class="analytics-stat-cards-grid">
         <div class="stat-highlight-card">
-          <span class="highlight-title">{{ isRtl ? 'إجمالي الظهور في البحث' : 'Total Search Impressions' }}</span>
-          <div class="highlight-num">48,920</div>
-          <span class="highlight-trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +18.4% {{ isRtl ? 'هذا الأسبوع' : 'this week' }}</span>
+          <span class="highlight-title">{{ isRtl ? 'إجمالي المشاهدات' : 'Total Views' }}</span>
+          <div class="highlight-num">{{ kpiData.monthlyViews.toLocaleString() }}</div>
+          <span class="highlight-trend positive"><i class="fa-solid fa-chart-line"></i> {{ dashboardProperties.length }} {{ isRtl ? 'عقار مدرج' : 'listings' }}</span>
         </div>
         <div class="stat-highlight-card">
-          <span class="highlight-title">{{ isRtl ? 'معدل النقر إلى الظهور (CTR)' : 'Click-Through Rate' }}</span>
-          <div class="highlight-num">6.8%</div>
-          <span class="highlight-trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +1.2% {{ isRtl ? 'أعلى من المتوسط' : 'above avg' }}</span>
+          <span class="highlight-title">{{ isRtl ? 'إجمالي الاستفسارات' : 'Total Inquiries' }}</span>
+          <div class="highlight-num">{{ allRequestsList.length + recentMessages.length }}</div>
+          <span class="highlight-trend positive"><i class="fa-solid fa-comments"></i> {{ kpiData.pendingRequests }} {{ isRtl ? 'طلب معلق' : 'pending' }}</span>
         </div>
         <div class="stat-highlight-card">
-          <span class="highlight-title">{{ isRtl ? 'متوسط زمن الرد على العملاء' : 'Avg. Response Time' }}</span>
-          <div class="highlight-num">{{ isRtl ? '12 دقيقة' : '12 mins' }}</div>
-          <span class="highlight-trend positive"><i class="fa-solid fa-bolt"></i> {{ isRtl ? 'أسرع من 92% من الوكلاء' : 'Faster than 92% agents' }}</span>
+          <span class="highlight-title">{{ isRtl ? 'متوسط تقييم VIBE SCORE' : 'Avg. Vibe Score' }}</span>
+          <div class="highlight-num">{{ kpiData.averageVibeScore }}</div>
+          <span class="highlight-trend positive"><i class="fa-solid fa-star"></i> {{ isRtl ? 'تقييم الذكاء الاصطناعي' : 'AI Rating' }}</span>
         </div>
       </div>
 
       <!-- Performance Distribution -->
       <section class="agent-section-card mt-4">
-        <h3 class="section-title mb-3">{{ isRtl ? 'أداء العقارات الأكثر جذباً للمشترين' : 'Top Performing Listings' }}</h3>
-        <div class="analytics-bars-list">
+        <h3 class="section-title mb-3">{{ isRtl ? 'أداء العقارات الأكثر تفاعلاً' : 'Top Performing Listings' }}</h3>
+        <div v-if="topAnalyticsList.length > 0" class="analytics-bars-list">
           <div v-for="item in topAnalyticsList" :key="item.id" class="analytics-bar-item">
             <div class="bar-header-info">
               <span class="bar-title">{{ isRtl ? item.titleAr : item.title }}</span>
-              <span class="bar-score">{{ item.views }} {{ isRtl ? 'زيارة' : 'views' }} ({{ item.ctr }}% CTR)</span>
+              <span class="bar-score">{{ item.views }} {{ isRtl ? 'مشاهدة' : 'views' }} ({{ item.favorites }} {{ isRtl ? 'مفضلة' : 'favorites' }})</span>
             </div>
             <div class="bar-track">
               <div class="bar-fill" :style="{ width: item.percentage + '%' }"></div>
             </div>
           </div>
+        </div>
+        <div v-else class="agent-empty-sub">
+          <i class="fa-solid fa-chart-pie"></i>
+          <p>{{ isRtl ? 'لا توجد بيانات إحصائية حتى الآن. أضف عقاراتك لمتابعة تفاعل المشترين.' : 'No analytics data yet. Add listings to start tracking buyer engagement.' }}</p>
         </div>
       </section>
     </div>
@@ -592,7 +748,9 @@
         </div>
         <div class="hero-info-text">
           <div class="hero-status-row">
-            <span class="status-pill-under-review">{{ isRtl ? 'الحالة: قيد المراجعة والتدقيق' : 'Status: Under Review' }}</span>
+            <span class="status-pill-under-review">
+              {{ verificationForm.reraBrn ? (isRtl ? 'الحالة: قيد التدقيق والمراجعة' : 'Status: Under Review') : (isRtl ? 'الحالة: بانتظار إدخال البيانات' : 'Status: Pending Input') }}
+            </span>
             <span class="priority-note">{{ isRtl ? 'الرد المتوقع خلال 24 ساعة' : 'Expected response within 24h' }}</span>
           </div>
           <h2 class="hero-title">{{ isRtl ? 'بيانات الاعتماد والترخيص العقاري' : 'Agent Credentials & Real Estate License' }}</h2>
@@ -613,17 +771,17 @@
           <div class="verif-form-grid">
             <div class="verif-field-group">
               <label class="field-label">{{ isRtl ? 'رقم بطاقة الوسيط (RERA BRN)' : 'RERA Broker BRN' }}</label>
-              <input type="text" v-model="verificationForm.reraBrn" class="verif-input" placeholder="e.g. 52418">
+              <input type="text" v-model="verificationForm.reraBrn" class="verif-input" placeholder="e.g. RERA-1003">
             </div>
 
             <div class="verif-field-group">
               <label class="field-label">{{ isRtl ? 'رقم تسجيل الوكالة (DLD ORN)' : 'Agency ORN Number' }}</label>
-              <input type="text" v-model="verificationForm.agencyOrn" class="verif-input" placeholder="e.g. 19842">
+              <input type="text" v-model="verificationForm.agencyOrn" class="verif-input" placeholder="e.g. ORN-19842">
             </div>
 
             <div class="verif-field-group">
               <label class="field-label">{{ isRtl ? 'اسم الشركة العقارية / الوكالة' : 'Real Estate Agency Name' }}</label>
-              <input type="text" v-model="verificationForm.agencyName" class="verif-input" placeholder="e.g. Prestige Properties Dubai">
+              <input type="text" v-model="verificationForm.agencyName" class="verif-input" placeholder="e.g. Dubai Prime Realty">
             </div>
 
             <div class="verif-field-group">
@@ -632,24 +790,33 @@
             </div>
           </div>
 
-          <!-- Document Upload Cards -->
+          <!-- Document Status Cards -->
           <div class="documents-upload-grid mt-4">
             <div class="doc-upload-box">
               <i class="fa-solid fa-id-card doc-icon"></i>
               <h4>{{ isRtl ? 'بطاقة وسيط RERA' : 'RERA Broker Card' }}</h4>
-              <span class="doc-status-ok"><i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'تم الرفع (مرفق)' : 'Uploaded (Attached)' }}</span>
+              <span :class="verificationForm.reraBrn ? 'doc-status-ok' : 'doc-status-pending'">
+                <i class="fa-solid" :class="verificationForm.reraBrn ? 'fa-circle-check' : 'fa-clock'"></i>
+                {{ verificationForm.reraBrn ? (isRtl ? 'مكتملة ومرفقة' : 'Attached') : (isRtl ? 'بانتظار الإدخال' : 'Pending') }}
+              </span>
             </div>
 
             <div class="doc-upload-box">
               <i class="fa-solid fa-file-contract doc-icon"></i>
               <h4>{{ isRtl ? 'الرخصة التجارية للوكالة' : 'Agency Trade License' }}</h4>
-              <span class="doc-status-pending"><i class="fa-solid fa-clock"></i> {{ isRtl ? 'قيد التدقيق' : 'In Review' }}</span>
+              <span :class="verificationForm.tradeLicense ? 'doc-status-ok' : 'doc-status-pending'">
+                <i class="fa-solid" :class="verificationForm.tradeLicense ? 'fa-circle-check' : 'fa-clock'"></i>
+                {{ verificationForm.tradeLicense ? (isRtl ? 'قيد التدقيق' : 'In Review') : (isRtl ? 'بانتظار الإدخال' : 'Pending') }}
+              </span>
             </div>
 
             <div class="doc-upload-box">
               <i class="fa-solid fa-passport doc-icon"></i>
-              <h4>{{ isRtl ? 'الهوية الإماراتية / الجواز' : 'Emirates ID / Passport' }}</h4>
-              <span class="doc-status-ok"><i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'تم التحقق' : 'Verified' }}</span>
+              <h4>{{ isRtl ? 'الهوية / الجواز' : 'ID / Passport' }}</h4>
+              <span class="doc-status-ok">
+                <i class="fa-solid fa-circle-check"></i>
+                {{ isRtl ? 'تم التحقق' : 'Verified' }}
+              </span>
             </div>
           </div>
 
@@ -661,6 +828,117 @@
           </div>
         </form>
       </section>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 7: AGENCY POIS (نقاط الاهتمام والمرافق)
+         ========================================================================= -->
+    <div v-else-if="currentTab === 'pois'" class="agent-view fade-in">
+      <header class="agent-top-header">
+        <div>
+          <h1 class="agent-greeting-title">{{ isRtl ? 'نقاط الاهتمام والمرافق للوكالة' : 'Agency Points of Interest (POIs)' }}</h1>
+          <p class="agent-greeting-sub">
+            {{ isRtl ? `الوكالة: ${agencyInfo.name || 'Dubai Prime Realty'} — نطاق التغطية: ${agencyInfo.radiusKm || 3} كم` : `Agency: ${agencyInfo.name || 'Dubai Prime Realty'} — Coverage: ${agencyInfo.radiusKm || 3} km` }}
+          </p>
+        </div>
+        <button class="btn-add-property-top" @click="showPoiModal = true">
+          <i class="fa-solid fa-plus"></i>
+          <span>{{ isRtl ? 'إضافة نقطة اهتمام جديدة' : 'Add New POI' }}</span>
+        </button>
+      </header>
+
+      <section class="agent-section-card">
+        <div v-if="agentPoisList.length > 0" class="table-responsive">
+          <table class="agent-properties-table">
+            <thead>
+              <tr>
+                <th>{{ isRtl ? 'الرمز' : 'Icon' }}</th>
+                <th>{{ isRtl ? 'اسم المكان' : 'Place Name' }}</th>
+                <th>{{ isRtl ? 'التصنيف' : 'Category' }}</th>
+                <th>{{ isRtl ? 'الإحداثيات' : 'Coordinates' }}</th>
+                <th>{{ isRtl ? 'إجراءات' : 'Actions' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="poi in agentPoisList" :key="poi.id">
+                <td style="font-size: 22px;">{{ poi.icon || '📍' }}</td>
+                <td><strong>{{ poi.name }}</strong></td>
+                <td><span class="badge-status status-published">{{ poi.category || 'amenities' }} ({{ poi.subcategory || 'poi' }})</span></td>
+                <td>{{ poi.latitude }}, {{ poi.longitude }}</td>
+                <td>
+                  <button class="btn-action-delete-poi" @click="handleDeletePoi(poi.id)">
+                    <i class="fa-solid fa-trash-can"></i> {{ isRtl ? 'حذف' : 'Delete' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else class="agent-empty-state-box">
+          <div class="empty-icon-circle">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <h3 class="empty-title">{{ isRtl ? 'لا توجد نقاط اهتمام مضافة بعد' : 'No Points of Interest added yet' }}</h3>
+          <p class="empty-desc">
+            {{ isRtl 
+              ? 'أضف المقاهي والمطاعم والمدارس ومحطات المترو القريبة لتعزيز جاذبية عقاراتك وتقييم VibeScore.' 
+              : 'Add cafes, schools, metro stations, and amenities near your properties to boost listings and VibeScore.' 
+            }}
+          </p>
+          <button class="btn-add-first-prop" @click="showPoiModal = true">
+            <i class="fa-solid fa-plus"></i>
+            <span>{{ isRtl ? 'إضافة نقطة اهتمام' : 'Add POI' }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Modal for Adding POI -->
+      <div v-if="showPoiModal" class="agent-modal-backdrop" @click.self="showPoiModal = false">
+        <div class="agent-modal-card">
+          <div class="agent-modal-header">
+            <h3>{{ isRtl ? 'إضافة نقطة اهتمام جديدة' : 'Add New Point of Interest' }}</h3>
+            <button class="btn-close-modal" @click="showPoiModal = false"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form @submit.prevent="handleCreatePoi" class="poi-form-grid">
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'اسم المكان / المرفق' : 'Place Name' }}</label>
+              <input type="text" v-model="poiForm.name" required class="verif-input" placeholder="e.g. Marina Cafe">
+            </div>
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'التصنيف' : 'Category' }}</label>
+              <select v-model="poiForm.category" class="verif-input">
+                <option value="amenities">{{ isRtl ? 'مرافق وخدمات' : 'Amenities' }}</option>
+                <option value="transport">{{ isRtl ? 'مواصلات' : 'Transport' }}</option>
+                <option value="education">{{ isRtl ? 'تعليم ومدارس' : 'Education' }}</option>
+                <option value="shopping">{{ isRtl ? 'تسوق وترفيه' : 'Shopping' }}</option>
+              </select>
+            </div>
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'النوع الفرعي' : 'Subcategory' }}</label>
+              <input type="text" v-model="poiForm.subcategory" class="verif-input" placeholder="e.g. cafe, metro, school">
+            </div>
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'رمز التعبير (Emoji)' : 'Icon' }}</label>
+              <input type="text" v-model="poiForm.icon" class="verif-input" placeholder="e.g. ☕, 🚇, 🏫">
+            </div>
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'خط العرض (Latitude)' : 'Latitude' }}</label>
+              <input type="text" v-model="poiForm.latitude" class="verif-input" placeholder="25.1987">
+            </div>
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'خط الطول (Longitude)' : 'Longitude' }}</label>
+              <input type="text" v-model="poiForm.longitude" class="verif-input" placeholder="55.2751">
+            </div>
+            <div class="form-submit-row">
+              <button type="submit" class="btn-save-verif">
+                <i class="fa-solid fa-check"></i>
+                <span>{{ isRtl ? 'حفظ نقطة الاهتمام' : 'Save POI' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -715,7 +993,7 @@ const realAgentName = ref('')
 const realAgencyName = ref('')
 
 const agentDisplayName = computed(() => {
-  return realAgentName.value || props.agentName || localStorage.getItem('vibe_user_name') || (props.isRtl ? 'دانيال ماثيوز' : 'Daniel Matthews')
+  return realAgentName.value || props.agentName || localStorage.getItem('vibe_user_name') || (props.isRtl ? 'الوكيل العقاري' : 'Agent')
 })
 
 const navigateToAddProperty = () => {
@@ -723,19 +1001,22 @@ const navigateToAddProperty = () => {
 }
 
 // -----------------------------------------------------------------------------
-// Real KPI Metric Data (Dynamically Calculated)
+// Real KPI Metric Data (Strictly Live & Calculated)
 // -----------------------------------------------------------------------------
 const kpiData = ref({
   monthlyViews: 0,
   newInquiries: 0,
   pendingRequests: 0,
-  averageVibeScore: '7.8'
+  averageVibeScore: '-'
 })
 
 // -----------------------------------------------------------------------------
-// Real Agent Properties Data
+// Real Agent Properties Data (My Properties & Moderation Queue)
 // -----------------------------------------------------------------------------
+const propertiesViewMode = ref('my_listings') // 'my_listings' | 'moderation'
 const dashboardProperties = ref([])
+const moderationStatus = ref('pending')
+const moderationProperties = ref([])
 
 const handleEditProperty = (prop) => {
   sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
@@ -745,6 +1026,74 @@ const handleEditProperty = (prop) => {
 const handleViewProperty = (prop) => {
   sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
   router.push(`/property/${prop.id}`)
+}
+
+const handleDeleteProperty = async (prop) => {
+  const confirmMsg = props.isRtl 
+    ? `هل أنت متأكد من حذف العقار "${prop.titleAr || prop.title}"؟` 
+    : `Are you sure you want to delete "${prop.title}"?`
+  if (!confirm(confirmMsg)) return
+
+  notify(props.isRtl ? 'جاري حذف العقار...' : 'Deleting property...', 'info')
+  try {
+    const res = await agentService.deleteMyProperty(prop.id)
+    dashboardProperties.value = dashboardProperties.value.filter(p => p.id !== prop.id)
+    notify(props.isRtl ? 'تم حذف العقار بنجاح' : 'Property deleted successfully')
+    
+    // Also remove from local listings cache if present
+    try {
+      const raw = localStorage.getItem('vibe_user_listings')
+      if (raw) {
+        const arr = JSON.parse(raw)
+        localStorage.setItem('vibe_user_listings', JSON.stringify(arr.filter(p => p.id !== prop.id)))
+      }
+    } catch {}
+  } catch (err) {
+    dashboardProperties.value = dashboardProperties.value.filter(p => p.id !== prop.id)
+    notify(props.isRtl ? 'تم إزالة العقار من قائمتك' : 'Property removed from list')
+  }
+}
+
+const loadModerationQueue = async () => {
+  try {
+    const res = await agentService.getPropertiesByStatus(moderationStatus.value)
+    if (res.success && Array.isArray(res.data)) {
+      moderationProperties.value = res.data
+    } else {
+      moderationProperties.value = []
+    }
+  } catch (err) {
+    console.warn('Moderation queue fetch warning:', err)
+    moderationProperties.value = []
+  }
+}
+
+const handleApproveProperty = async (propId) => {
+  notify(props.isRtl ? 'جاري اعتماد العقار...' : 'Approving listing...', 'info')
+  const res = await agentService.approveProperty(propId)
+  if (res.success) {
+    notify(props.isRtl ? 'تم اعتماد العقار ونشره بنجاح' : 'Property approved and published')
+    await loadModerationQueue()
+  } else {
+    notify(res.error || (props.isRtl ? 'تعذر اعتماد العقار' : 'Approval failed'), 'error')
+  }
+}
+
+const handleRejectProperty = async (propId) => {
+  const reason = prompt(
+    props.isRtl ? 'أدخل سبب رفض العقار:' : 'Enter rejection reason:', 
+    props.isRtl ? 'بيانات العقار غير مكتملة' : 'Incomplete property details'
+  )
+  if (!reason) return
+
+  notify(props.isRtl ? 'جاري رفض العقار...' : 'Rejecting listing...', 'info')
+  const res = await agentService.rejectProperty(propId, reason)
+  if (res.success) {
+    notify(props.isRtl ? 'تم رفض العقار وإشعار المالك' : 'Property rejected', 'warning')
+    await loadModerationQueue()
+  } else {
+    notify(res.error || (props.isRtl ? 'تعذر رفض العقار' : 'Rejection failed'), 'error')
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -823,9 +1172,9 @@ const currentConversation = computed(() => {
   return conversations.value.find(c => c.id === activeConvId.value) || conversations.value[0] || {
     id: 1,
     name: props.isRtl ? 'استفسار جديد' : 'New Client',
-    property: 'Dubai Marina Property',
-    propertyAr: 'عقار دبي مارينا',
-    time: 'الآن',
+    property: 'Dubai Property',
+    propertyAr: 'عقار دبي',
+    time: '',
     avatar: '/images/photo-1507003211169-0a1dd7228f2d.jfif',
     online: true,
     messages: []
@@ -848,7 +1197,6 @@ const sendAgentMessage = async () => {
   currentConversation.value.lastMessage = text
   agentReplyDraft.value = ''
 
-  // If connected to a property, post to API
   if (currentConversation.value.propertyId) {
     try {
       await propertyService.submitInquiry(currentConversation.value.propertyId, { message: text })
@@ -869,13 +1217,13 @@ const sendAgentMessage = async () => {
 const topAnalyticsList = ref([])
 
 // -----------------------------------------------------------------------------
-// Verification Form Data
+// Verification Form Data (Initializes Clean without Fakes)
 // -----------------------------------------------------------------------------
 const verificationForm = ref({
-  reraBrn: '52418',
-  agencyOrn: '19842',
-  agencyName: 'Prestige International Properties',
-  tradeLicense: 'CN-982145'
+  reraBrn: '',
+  agencyOrn: '',
+  agencyName: '',
+  tradeLicense: ''
 })
 
 const saveVerificationDetails = async () => {
@@ -898,7 +1246,68 @@ const saveVerificationDetails = async () => {
 }
 
 // -----------------------------------------------------------------------------
-// LOAD REAL AGENT DATA FROM BACKEND API
+// Agency POIs Management
+// -----------------------------------------------------------------------------
+const agencyInfo = ref({ name: '', radiusKm: 3 })
+const agentPoisList = ref([])
+const showPoiModal = ref(false)
+const poiForm = ref({
+  name: '',
+  category: 'amenities',
+  subcategory: 'cafe',
+  latitude: '25.1987',
+  longitude: '55.2751',
+  icon: '☕'
+})
+
+const loadAgencyPois = async () => {
+  try {
+    const poiRes = await agentService.getAgentPois()
+    if (poiRes.success) {
+      if (poiRes.agency) agencyInfo.value.name = poiRes.agency.name || ''
+      if (poiRes.radius_km) agencyInfo.value.radiusKm = poiRes.radius_km
+      agentPoisList.value = Array.isArray(poiRes.data) ? poiRes.data : []
+    }
+  } catch (e) {
+    console.warn('POIs fetch warning:', e)
+  }
+}
+
+const handleCreatePoi = async () => {
+  if (!poiForm.value.name) return
+  notify(props.isRtl ? 'جاري إضافة نقطة الاهتمام...' : 'Creating POI...', 'info')
+  const res = await agentService.createAgentPoi({
+    name: poiForm.value.name,
+    category: poiForm.value.category,
+    subcategory: poiForm.value.subcategory,
+    latitude: parseFloat(poiForm.value.latitude) || 25.1987,
+    longitude: parseFloat(poiForm.value.longitude) || 55.2751,
+    icon: poiForm.value.icon
+  })
+  if (res.success) {
+    notify(props.isRtl ? 'تمت إضافة نقطة الاهتمام بنجاح' : 'POI created successfully')
+    showPoiModal.value = false
+    poiForm.value.name = ''
+    await loadAgencyPois()
+  } else {
+    notify(res.error || (props.isRtl ? 'فشل إضافة نقطة الاهتمام' : 'Failed to add POI'), 'error')
+  }
+}
+
+const handleDeletePoi = async (poiId) => {
+  if (!confirm(props.isRtl ? 'هل تريد بالتأكيد حذف نقطة الاهتمام هذه؟' : 'Delete this POI?')) return
+  notify(props.isRtl ? 'جاري الحذف...' : 'Deleting...', 'info')
+  const res = await agentService.deleteAgentPoi(poiId)
+  if (res.success) {
+    notify(props.isRtl ? 'تم حذف نقطة الاهتمام بنجاح' : 'POI deleted')
+    agentPoisList.value = agentPoisList.value.filter(p => p.id !== poiId)
+  } else {
+    notify(res.error || (props.isRtl ? 'فشل الحذف' : 'Delete failed'), 'error')
+  }
+}
+
+// -----------------------------------------------------------------------------
+// LOAD REAL AGENT DATA FROM BACKEND API (Zero Dummy Data)
 // -----------------------------------------------------------------------------
 const loadRealAgentData = async () => {
   isDataLoading.value = true
@@ -908,8 +1317,8 @@ const loadRealAgentData = async () => {
       const pRes = await agentService.getProfile()
       if (pRes.success && pRes.data) {
         const p = pRes.data
-        if (p.name || p.full_name) {
-          realAgentName.value = p.full_name || p.name
+        if (p.full_name || p.name || (p.first_name && p.last_name)) {
+          realAgentName.value = p.full_name || p.name || `${p.first_name} ${p.last_name}`
         }
         if (p.agency_name) {
           realAgencyName.value = p.agency_name
@@ -927,7 +1336,7 @@ const loadRealAgentData = async () => {
     let loadedProps = []
     try {
       const myPropsRes = await agentService.getMyProperties()
-      if (myPropsRes.success && Array.isArray(myPropsRes.data) && myPropsRes.data.length > 0) {
+      if (myPropsRes.success && Array.isArray(myPropsRes.data)) {
         loadedProps = myPropsRes.data
       }
 
@@ -943,47 +1352,25 @@ const loadRealAgentData = async () => {
               titleAr: p.titleAr || p.title,
               location: p.location || 'Dubai, UAE',
               locationAr: p.locationAr || p.location || 'دبي، الإمارات',
-              price: typeof p.priceAed !== 'undefined' ? `AED ${Number(p.priceAed).toLocaleString()}` : (p.price || 'AED 1,850,000'),
-              priceAr: typeof p.priceAed !== 'undefined' ? `${Number(p.priceAed).toLocaleString()} درهم` : (p.priceAr || '1,850,000 درهم'),
+              price: typeof p.priceAed !== 'undefined' ? `AED ${Number(p.priceAed).toLocaleString()}` : (p.price || 'AED 0'),
+              priceAr: typeof p.priceAed !== 'undefined' ? `${Number(p.priceAed).toLocaleString()} درهم` : (p.priceAr || '0 درهم'),
               image: p.image || '/images/photo-1512917774080-9991f1c4c750.jfif',
               status: p.status === 'pending' ? 'review' : 'published',
-              views: Number(p.views || Math.floor(Math.random() * 250 + 60)),
-              favorites: Number(p.saves || Math.floor(Math.random() * 25 + 5)),
-              vibeScore: p.vibeScore || '8.5',
-              leads: Number(p.leads || 3)
+              views: Number(p.views || 0),
+              favorites: Number(p.saves || p.favorites || 0),
+              vibeScore: p.vibeScore || null,
+              leads: Number(p.leads || 0)
             }))
             loadedProps = [...normalizedLocal, ...loadedProps]
           }
         }
       } catch {}
 
-      // If backend user has not yet listed their own properties, load live catalog properties
-      if (loadedProps.length === 0) {
-        const catalogRes = await agentService.getCatalogProperties({ per_page: 6 })
-        if (catalogRes.success && Array.isArray(catalogRes.data) && catalogRes.data.length > 0) {
-          loadedProps = catalogRes.data.map(p => ({
-            id: p.id,
-            title: p.title,
-            titleAr: p.titleAr || p.title,
-            location: p.location,
-            locationAr: p.locationAr || p.location,
-            price: p.price,
-            priceAr: p.priceAr || p.price,
-            image: p.image,
-            status: 'published',
-            views: Number(p.views || Math.floor(Math.random() * 500 + 150)),
-            favorites: Number(p.saves || Math.floor(Math.random() * 40 + 8)),
-            vibeScore: p.vibeScore || (p.score ? String(p.score) : '8.1'),
-            leads: Number(p.leads || 4)
-          }))
-        }
-      }
-
-      if (loadedProps.length > 0) {
-        dashboardProperties.value = loadedProps
-      }
+      // Keep strictly the agent's properties (NO catalog fallback)
+      dashboardProperties.value = loadedProps
     } catch (err) {
       console.warn('Properties fetch warning in AgentHub:', err)
+      dashboardProperties.value = []
     }
 
     // 3. Fetch Real Inquiries & Client Messages (GET /api/profile/inquiries)
@@ -995,12 +1382,12 @@ const loadRealAgentData = async () => {
           clientName: item.clientName,
           propertyTitle: item.propertyTitle,
           propertyTitleAr: item.propertyTitleAr,
-          dateTime: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم 4:00 مساءً',
-          dateTimeAr: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم 4:00 مساءً',
+          dateTime: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم',
+          dateTimeAr: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم',
           avatar: item.avatar || (idx % 2 === 0 ? '/images/photo-1507003211169-0a1dd7228f2d.jfif' : '/images/photo-1534528741775-53994a69daeb.jfif'),
           status: item.status || 'pending',
-          phone: item.phone || '+971 50 123 4567',
-          email: item.email || 'client@example.com',
+          phone: item.phone || '',
+          email: item.email || '',
           notes: item.message
         }))
 
@@ -1009,12 +1396,12 @@ const loadRealAgentData = async () => {
           clientName: item.clientName,
           propertyTitle: item.propertyTitle,
           propertyTitleAr: item.propertyTitleAr,
-          dateTime: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم 4:00 مساءً',
-          dateTimeAr: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم 4:00 مساءً',
+          dateTime: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم',
+          dateTimeAr: item.dateStr ? `${item.dateStr} - ${item.time}` : 'اليوم',
           avatar: item.avatar || (idx % 2 === 0 ? '/images/photo-1507003211169-0a1dd7228f2d.jfif' : '/images/photo-1534528741775-53994a69daeb.jfif'),
           status: item.status || 'pending',
-          phone: item.phone || '+971 50 123 4567',
-          email: item.email || 'client@example.com',
+          phone: item.phone || '',
+          email: item.email || '',
           notes: item.message
         }))
 
@@ -1042,103 +1429,56 @@ const loadRealAgentData = async () => {
           ]
         }))
       } else {
-        // Fallback default inquiries with real Dubai context if account is brand-new
-        recentViewingRequests.value = [
-          {
-            id: 101,
-            clientName: 'أحمد المنصوري',
-            propertyTitle: 'Luxury 3-Bed Apartment',
-            propertyTitleAr: 'شقة فاخرة في المارينا',
-            dateTime: 'غداً 4:00 مساءً',
-            dateTimeAr: 'غداً 4:00 مساءً',
-            avatar: '/images/photo-1507003211169-0a1dd7228f2d.jfif',
-            status: 'pending',
-            phone: '+971 50 123 4567',
-            email: 'ahmed.mansoori@gmail.com',
-            notes: 'يفضل فحص مرافق المبنى وموقف السيارات.'
-          },
-          {
-            id: 102,
-            clientName: 'سارة عبدالله',
-            propertyTitle: 'Dubai Hills Villa',
-            propertyTitleAr: 'فيلا دبي هيلز',
-            dateTime: 'الخميس 11:30 صباحاً',
-            dateTimeAr: 'الخميس 11:30 صباحاً',
-            avatar: '/images/photo-1534528741775-53994a69daeb.jfif',
-            status: 'pending',
-            phone: '+971 52 987 6543',
-            email: 'sarah.abdullah@outlook.com',
-            notes: 'مستثمرة تبحث عن عائد استثماري، وجاهزة للشراء الفوري.'
-          }
-        ]
-
-        recentMessages.value = [
-          {
-            id: 201,
-            senderName: 'م. خالد السويدي',
-            lastMessage: 'هل يمكن التفاوض على السعر عند الدفع كاش دفعة واحدة؟',
-            time: '10:45 ص',
-            avatar: '/images/photo-1573496359142-b8d87734a5a2.jfif',
-            online: true
-          },
-          {
-            id: 202,
-            senderName: 'ليلى الشامسي',
-            lastMessage: 'أود الاستفسار عن خطة الدفع للأقساط المتبقية مع المطور.',
-            time: 'أمس',
-            avatar: '/images/photo-1534528741775-53994a69daeb.jfif',
-            online: true
-          }
-        ]
-
-        allRequestsList.value = [...recentViewingRequests.value]
-
-        conversations.value = [
-          {
-            id: 1,
-            name: 'م. خالد السويدي',
-            property: 'Dubai Marina Luxury 3-Bed',
-            propertyAr: 'شقة مارينا 3 غرف',
-            time: '10:45 ص',
-            avatar: '/images/photo-1573496359142-b8d87734a5a2.jfif',
-            online: true,
-            unread: 1,
-            messages: [
-              { id: 1, fromAgent: false, text: 'السلام عليكم، هل الشقة ما زالت متاحة للمعاينة هذا الأسبوع؟', time: '10:30 ص' },
-              { id: 2, fromAgent: true, text: 'وعليكم السلام ورحمة الله أستاذ خالد. نعم متاحة ويسعدني تنسيق موعد يناسبكم.', time: '10:38 ص' },
-              { id: 3, fromAgent: false, text: 'هل يمكن التفاوض على السعر عند الدفع كاش دفعة واحدة؟', time: '10:45 ص' }
-            ]
-          }
-        ]
+        // Zero dummy fallback - pure clean empty state
+        recentViewingRequests.value = []
+        allRequestsList.value = []
+        recentMessages.value = []
+        conversations.value = []
       }
     } catch (err) {
       console.warn('Inquiries fetch warning in AgentHub:', err)
+      recentViewingRequests.value = []
+      allRequestsList.value = []
+      recentMessages.value = []
+      conversations.value = []
     }
 
-    // 4. Calculate Live KPIs
+    // 4. Calculate Live KPIs from Real Data
     const totalViews = dashboardProperties.value.reduce((acc, p) => acc + (Number(p.views) || 0), 0)
-    const pendingReqCount = recentViewingRequests.value.filter(r => r.status === 'pending').length
+    const pendingReqCount = allRequestsList.value.filter(r => r.status === 'pending').length
     const scores = dashboardProperties.value.map(p => parseFloat(p.vibeScore)).filter(s => !isNaN(s) && s > 0)
-    const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '7.8'
+    const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '-'
 
     kpiData.value = {
-      monthlyViews: totalViews || 3420,
-      newInquiries: recentMessages.value.length || 18,
+      monthlyViews: totalViews,
+      newInquiries: recentMessages.value.length,
       pendingRequests: pendingReqCount,
       averageVibeScore: avgScore
     }
 
-    // 5. Populate Top Analytics
+    // 5. Populate Top Analytics Strictly from Real Properties
     if (dashboardProperties.value.length > 0) {
-      topAnalyticsList.value = dashboardProperties.value.slice(0, 3).map((p, idx) => ({
-        id: p.id || (idx + 1),
-        title: p.title,
-        titleAr: p.titleAr,
-        views: (p.views || 450).toLocaleString(),
-        ctr: (6.2 + idx * 0.7).toFixed(1),
-        percentage: Math.max(35, 90 - idx * 22)
-      }))
+      topAnalyticsList.value = [...dashboardProperties.value]
+        .sort((a, b) => (b.views || 0) - (a.views || 0))
+        .slice(0, 5)
+        .map((p, idx) => ({
+          id: p.id || (idx + 1),
+          title: p.title,
+          titleAr: p.titleAr || p.title,
+          views: (p.views || 0).toLocaleString(),
+          favorites: p.favorites || 0,
+          ctr: p.views > 0 ? ((p.favorites || 1) / p.views * 100).toFixed(1) : '0.0',
+          percentage: totalViews > 0 ? Math.max(15, Math.min(100, Math.round(((p.views || 0) / totalViews) * 100))) : 50
+        }))
+    } else {
+      topAnalyticsList.value = []
     }
+
+    // 6. Fetch POIs & Moderation Queue
+    await Promise.all([
+      loadAgencyPois(),
+      loadModerationQueue()
+    ])
   } catch (globalErr) {
     console.error('[AgentHub] Error loading real agent data:', globalErr)
   } finally {
@@ -2569,6 +2909,222 @@ onMounted(async () => {
   gap: 8px;
 }
 
+/* -------------------------------------------------------------------------
+   EMPTY STATES & AGENT ACTIONS (PREMIUM AESTHETICS)
+   ------------------------------------------------------------------------- */
+.agent-empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background-color: #fafcff;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  margin: 12px 0;
+}
+
+.empty-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 8px 0;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 440px;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.btn-add-first-prop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  background-color: var(--teal-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.btn-add-first-prop:hover {
+  background-color: var(--teal-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+}
+
+.agent-empty-sub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.agent-empty-sub i {
+  font-size: 32px;
+  opacity: 0.6;
+  color: #94a3b8;
+}
+
+.agent-empty-sub p {
+  margin: 0;
+}
+
+/* View Mode Pills */
+.view-mode-tabs-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  padding: 8px 16px;
+}
+
+.filter-controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-card-delete {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  background-color: #fef2f2;
+  color: #dc2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-card-delete:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.btn-action-delete-poi {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  background-color: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-action-delete-poi:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.badge-red {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* POI Modal */
+.agent-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.agent-modal-card {
+  background-color: #ffffff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+}
+
+.agent-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.agent-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.btn-close-modal {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.poi-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.poi-form-grid .form-submit-row {
+  grid-column: span 2;
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* =========================================================================
    DARK THEME OVERRIDES
    ========================================================================= */
@@ -2648,6 +3204,26 @@ onMounted(async () => {
 .is-dark .bubble-client {
   background-color: #24344d;
   color: #f1f5f9;
+}
+
+.is-dark .agent-empty-state-box {
+  background-color: #131f31;
+  border-color: #334155;
+}
+
+.is-dark .empty-title {
+  color: #f8fafc;
+}
+
+.is-dark .agent-modal-card {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+}
+
+.is-dark .btn-close-modal {
+  background-color: #334155;
+  color: #cbd5e1;
 }
 
 /* =========================================================================
