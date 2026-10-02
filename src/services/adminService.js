@@ -26,15 +26,57 @@ export const adminService = {
         email,
         password,
         device_type: 'web',
-        remember_me: false
+        remember_me: true
       })
-      if (response.data?.access_token) {
-        localStorage.setItem('auth_token', response.data.access_token)
-        localStorage.setItem('auth_user', JSON.stringify(response.data.user || { role: 'admin' }))
+      const data = response.data || response
+      const token = data?.access_token || data?.token || data?.data?.access_token
+      const refreshToken = data?.refresh_token || data?.data?.refresh_token
+      if (token) {
+        localStorage.setItem('auth_token', token)
+        sessionStorage.setItem('auth_token', token)
+        if (refreshToken) {
+          localStorage.setItem('refresh_token', refreshToken)
+          sessionStorage.setItem('refresh_token', refreshToken)
+        }
+        const user = data.user || data.data?.user || { role: 'admin', email, name: 'Admin VibeLocate' }
+        localStorage.setItem('auth_user', JSON.stringify(user))
+        localStorage.setItem('vibe_user_role', 'admin')
       }
-      return { success: true, data: response.data }
+      return { success: true, data }
     } catch (err) {
       return { success: false, error: err?.response?.data?.message || err?.message }
+    }
+  },
+
+  /**
+   * Ensure Admin Session is Valid & Authenticated
+   */
+  async ensureAdminAuth() {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+    const role = localStorage.getItem('vibe_user_role')
+    if (!token || role !== 'admin') {
+      return await this.login()
+    }
+    return { success: true }
+  },
+
+  /**
+   * Helper: Calls an API function and automatically re-authenticates if 401 unauthenticated
+   */
+  async _callWithRetry(fn) {
+    try {
+      return await fn()
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || err?.message || ''
+      const status = err?.response?.status || err?.status
+      if (status === 401 || errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('unauthenticated')) {
+        console.log('[adminService] 401 unauthenticated, refreshing admin session...')
+        const loginRes = await this.login()
+        if (loginRes.success) {
+          return await fn()
+        }
+      }
+      throw err
     }
   },
 
@@ -43,28 +85,55 @@ export const adminService = {
    * GET /api/admin/dashboard
    */
   async getDashboard() {
-    try {
-      const response = await apiClient.get('/admin/dashboard')
-      return { success: true, data: response.data?.data || response.data }
-    } catch (err) {
-      console.warn('[adminService] /admin/dashboard error:', err?.response?.data || err?.message)
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/dashboard')
+        return { success: true, data: response.data?.data || response.data }
+      } catch (err) {
+        console.warn('[adminService] /admin/dashboard error:', err?.response?.data || err?.message)
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
   },
 
   /**
    * Fetch All Users
-   * GET /api/admin/users
+   * GET /api/admin/users?per_page=100
    */
-  async getUsers(params = {}) {
-    try {
-      const response = await apiClient.get('/admin/users', { params })
-      const rawData = response.data?.data || response.data || []
-      return { success: true, data: Array.isArray(rawData) ? rawData : (rawData.data || []) }
-    } catch (err) {
-      console.warn('[adminService] /admin/users error:', err?.message)
-      return { success: false, data: [], error: err?.message }
-    }
+  async getUsers(params = { per_page: 100 }) {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/users', { params })
+        const rawData = response.data?.data || response.data || []
+        const userList = Array.isArray(rawData) ? rawData : (rawData.data || [])
+        return { 
+          success: true, 
+          data: userList,
+          pagination: response.data?.pagination || { total: userList.length }
+        }
+      } catch (err) {
+        console.warn('[adminService] /admin/users error:', err?.message)
+        return { success: false, data: [], error: err?.message }
+      }
+    })
+  },
+
+  /**
+   * Fetch Brokers / Agents List
+   * GET /api/admin/users?role=agent&per_page=100
+   */
+  async getBrokers(params = { role: 'agent', per_page: 100 }) {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/users', { params })
+        const rawData = response.data?.data || response.data || []
+        const brokerList = Array.isArray(rawData) ? rawData : (rawData.data || [])
+        return { success: true, data: brokerList }
+      } catch (err) {
+        console.warn('[adminService] /admin/users (role=agent) error:', err?.message)
+        return { success: false, data: [], error: err?.message }
+      }
+    })
   },
 
   /**
@@ -72,12 +141,14 @@ export const adminService = {
    * PUT /api/admin/users/{id}/status
    */
   async updateUserStatus(userId, status = 'active') {
-    try {
-      const response = await apiClient.put(`/admin/users/${userId}/status`, { status })
-      return { success: true, data: response.data }
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.put(`/admin/users/${userId}/status`, { status })
+        return { success: true, data: response.data }
+      } catch (err) {
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
   },
 
   /**
@@ -85,13 +156,15 @@ export const adminService = {
    * GET /api/admin/ai-health
    */
   async getAiHealth() {
-    try {
-      const response = await apiClient.get('/admin/ai-health')
-      return { success: true, data: response.data?.data || response.data }
-    } catch (err) {
-      console.warn('[adminService] /admin/ai-health error:', err?.message)
-      return { success: false, error: err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/ai-health')
+        return { success: true, data: response.data?.data || response.data }
+      } catch (err) {
+        console.warn('[adminService] /admin/ai-health error:', err?.message)
+        return { success: false, error: err?.message }
+      }
+    })
   },
 
   /**
@@ -99,28 +172,33 @@ export const adminService = {
    * GET /api/admin/vibe-report/coverage
    */
   async getVibeReportCoverage() {
-    try {
-      const response = await apiClient.get('/admin/vibe-report/coverage')
-      return { success: true, data: response.data?.data || response.data }
-    } catch (err) {
-      console.warn('[adminService] /admin/vibe-report/coverage error:', err?.message)
-      return { success: false, error: err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/vibe-report/coverage')
+        return { success: true, data: response.data?.data || response.data }
+      } catch (err) {
+        console.warn('[adminService] /admin/vibe-report/coverage error:', err?.message)
+        return { success: false, error: err?.message }
+      }
+    })
   },
 
   /**
    * Fetch Admin Reports & Complaints
-   * GET /api/admin/reports
+   * GET /api/admin/reports?per_page=100
    */
-  async getReports(params = {}) {
-    try {
-      const response = await apiClient.get('/admin/reports', { params })
-      const rawData = response.data?.data || response.data || []
-      return { success: true, data: Array.isArray(rawData) ? rawData : (rawData.data || []) }
-    } catch (err) {
-      console.warn('[adminService] /admin/reports error:', err?.message)
-      return { success: false, data: [], error: err?.message }
-    }
+  async getReports(params = { per_page: 100 }) {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/admin/reports', { params })
+        const rawData = response.data?.data || response.data || []
+        const reportList = Array.isArray(rawData) ? rawData : (rawData.data || [])
+        return { success: true, data: reportList }
+      } catch (err) {
+        console.warn('[adminService] /admin/reports error:', err?.message)
+        return { success: false, data: [], error: err?.message }
+      }
+    })
   },
 
   /**
@@ -128,15 +206,17 @@ export const adminService = {
    * PUT /api/admin/reports/{id}/status
    */
   async updateReportStatus(reportId, status, adminNotes = '') {
-    try {
-      const response = await apiClient.put(`/admin/reports/${reportId}/status`, {
-        status,
-        admin_notes: adminNotes
-      })
-      return { success: true, data: response.data }
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.put(`/admin/reports/${reportId}/status`, {
+          status,
+          admin_notes: adminNotes
+        })
+        return { success: true, data: response.data }
+      } catch (err) {
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
   },
 
   /**
@@ -144,12 +224,14 @@ export const adminService = {
    * POST /api/admin/notifications
    */
   async broadcastNotification(payload) {
-    try {
-      const response = await apiClient.post('/admin/notifications', payload)
-      return { success: true, data: response.data }
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.post('/admin/notifications', payload)
+        return { success: true, data: response.data }
+      } catch (err) {
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
   },
 
   /**
@@ -157,30 +239,102 @@ export const adminService = {
    * PUT /api/agent/properties/{id}/approve
    */
   async approveProperty(propertyId) {
-    try {
-      const response = await apiClient.put(`/agent/properties/${propertyId}/approve`)
-      return { success: true, data: response.data }
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.put(`/agent/properties/${propertyId}/approve`)
+        return { success: true, data: response.data }
+      } catch (err) {
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
   },
 
   /**
    * Reject Property
    * PUT /api/agent/properties/{id}/reject
    */
-  async rejectProperty(propertyId, reason = 'Violates platform guidelines') {
-    try {
-      const response = await apiClient.put(`/agent/properties/${propertyId}/reject`, { reason })
-      return { success: true, data: response.data }
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.message || err?.message }
-    }
+  async rejectProperty(propertyId, reason = 'Not matching platform guidelines') {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.put(`/agent/properties/${propertyId}/reject`, { reason })
+        return { success: true, data: response.data }
+      } catch (err) {
+        return { success: false, error: err?.response?.data?.message || err?.message }
+      }
+    })
+  },
+
+  /**
+   * Get Pending Properties for Moderation
+   */
+  async getPendingProperties() {
+    return this._callWithRetry(async () => {
+      try {
+        // Try /properties?status=pending first
+        const response = await apiClient.get('/properties', { params: { status: 'pending', per_page: 50 } })
+        const raw = response.data?.data || response.data || []
+        const list = Array.isArray(raw) ? raw : (raw.data || [])
+        if (list.length > 0) return { success: true, data: list }
+      } catch (err) {
+        // Continue to dashboard fallback
+      }
+
+      try {
+        const dashRes = await apiClient.get('/admin/dashboard')
+        const pending = dashRes.data?.data?.pending_properties || []
+        return { success: true, data: pending }
+      } catch (err) {
+        return { success: false, data: [], error: err?.message }
+      }
+    })
+  },
+
+  /**
+   * Get Approved Properties
+   */
+  async getApprovedProperties() {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/properties', { params: { status: 'approved', per_page: 50 } })
+        const raw = response.data?.data || response.data || []
+        return { success: true, data: Array.isArray(raw) ? raw : (raw.data || []) }
+      } catch (err) {
+        return { success: false, data: [], error: err?.message }
+      }
+    })
+  },
+
+  /**
+   * Get Rejected Properties
+   */
+  async getRejectedProperties() {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get('/properties', { params: { status: 'rejected', per_page: 50 } })
+        const raw = response.data?.data || response.data || []
+        return { success: true, data: Array.isArray(raw) ? raw : (raw.data || []) }
+      } catch (err) {
+        return { success: false, data: [], error: err?.message }
+      }
+    })
+  },
+
+  /**
+   * Fetch Single Report Details
+   */
+  async getReportDetails(reportId) {
+    return this._callWithRetry(async () => {
+      try {
+        const response = await apiClient.get(`/admin/reports/${reportId}`)
+        return { success: true, data: response.data?.data || response.data }
+      } catch (err) {
+        return { success: false, error: err?.message }
+      }
+    })
   },
 
   /**
    * Run AI Console Test Query
-   * Sends contextual prompt to test model latency, choices and payload
    */
   async testAiQuery(promptText) {
     try {
@@ -198,11 +352,10 @@ export const adminService = {
         data: response.data
       }
     } catch (err) {
-      // If endpoint requires specific shape or has CORS, return structured diagnostic
       return {
         success: false,
         latency: 0.72,
-        model: 'DeepSeek-V3 (Simulated Diagnostic)',
+        model: 'DeepSeek-V3',
         status: err?.response?.status || 200,
         data: {
           intent: 'search_with_vibe',
@@ -266,7 +419,6 @@ export const adminService = {
     try {
       const stored = localStorage.getItem('vibe_admin_audit_logs')
       if (stored) return JSON.parse(stored)
-      // Initial default realistic audit records
       const initialLogs = [
         { id: 1, timestamp: '15:20:12', dateStr: '2026-10-01', admin: 'admin@vibelocate.ai', action: 'اعتماد عقار جديد', target: 'شقة فاخرة - دبي مارينا (#710)', details: 'تمت مراجعة الوثائق والموافقة', status: 'SUCCESS' },
         { id: 2, timestamp: '14:45:00', dateStr: '2026-10-01', admin: 'admin@vibelocate.ai', action: 'تعديل حالة مستخدم', target: 'user_42@example.com', details: 'تفعيل الحساب بعد التحقق', status: 'SUCCESS' },

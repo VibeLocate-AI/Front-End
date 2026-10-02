@@ -24,167 +24,355 @@
         </h1>
         <p class="search-hero-subtitle">{{ t('searchHeroSubtitle') }}</p>
 
-        <!-- ===== SEARCH WIDGET CARD ===== -->
-        <div class="search-widget-card">
+        <!-- ===== REDESIGNED MODERN GLASS SEARCH WIDGET CARD ===== -->
+        <div class="green-hero-search">
+          <!-- Topographic Neon Contour Lines Overlay -->
+          <svg class="ghs-contour-svg" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M 620 0 C 680 70, 770 110, 930 130 C 990 138, 1030 180, 1050 360" fill="none" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+            <path d="M 580 0 C 640 85, 740 135, 900 165 C 970 180, 1020 230, 1045 360" fill="none" stroke="rgba(168, 85, 247, 0.35)" stroke-width="1.2" stroke-dasharray="6 4" />
+            <path d="M 540 0 C 610 95, 710 155, 870 195 C 950 215, 1005 270, 1040 360" fill="none" stroke="rgba(45, 212, 191, 0.35)" stroke-width="1.2" />
+            <path d="M 680 360 C 760 300, 860 280, 980 320 C 1020 335, 1050 350, 1080 360" fill="none" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2" />
+          </svg>
 
-          <!-- ROW 1: AI Contextual Search -->
-          <div class="swc-ai-row">
-            <div class="swc-ai-input-wrap">
-              <i class="fa-solid fa-magnifying-glass swc-ai-icon"></i>
-              <input
-                id="search-query-input"
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('searchAiPlaceholder')"
-                class="swc-ai-input"
-                autocomplete="off"
-                @input="onQueryInput"
-                @keydown.enter.prevent="runSearch"
-              />
-              <button v-if="searchQuery" type="button" class="swc-ai-clear" @click="clearSearch">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
+          <!-- ROW 1: Toggles (Purpose + Divider + Status) -->
+          <div class="ghs-row ghs-row-top">
+            <div class="ghs-top-left-group">
+              <!-- Purpose Tabs -->
+              <div class="ghs-nav-pills-wrap">
+                <button
+                  type="button"
+                  class="ghs-nav-pill"
+                  :class="{ active: filters.purpose === 'all' }"
+                  @click="filters.purpose = 'all'; runSearch()"
+                >
+                  {{ isRtl ? 'الكل' : 'All' }}
+                </button>
+                <button
+                  type="button"
+                  class="ghs-nav-pill ghs-nav-pill-highlight"
+                  :class="{ active: filters.purpose === 'sale' }"
+                  @click="filters.purpose = 'sale'; runSearch()"
+                >
+                  {{ isRtl ? 'للبيع' : 'For Sale' }}
+                </button>
+                <button
+                  type="button"
+                  class="ghs-nav-pill"
+                  :class="{ active: filters.purpose === 'rent' }"
+                  @click="filters.purpose = 'rent'; runSearch()"
+                >
+                  {{ isRtl ? 'للإيجار' : 'For Rent' }}
+                </button>
+              </div>
+
+              <!-- Separator -->
+              <div class="ghs-v-sep"></div>
+
+              <!-- Status Tabs -->
+              <div class="ghs-nav-pills-wrap">
+                <button
+                  type="button"
+                  class="ghs-nav-pill"
+                  :class="{ active: filters.status === 'all' }"
+                  @click="filters.status = 'all'; runSearch()"
+                >
+                  {{ isRtl ? 'الكل' : 'All' }}
+                </button>
+                <button
+                  type="button"
+                  class="ghs-nav-pill"
+                  :class="{ active: filters.status === 'ready' }"
+                  @click="filters.status = 'ready'; runSearch()"
+                >
+                  {{ isRtl ? 'جاهز للسكن' : 'Ready' }}
+                </button>
+                <button
+                  type="button"
+                  class="ghs-nav-pill"
+                  :class="{ active: filters.status === 'offplan' }"
+                  @click="filters.status = 'offplan'; runSearch()"
+                >
+                  {{ isRtl ? 'قيد الإنشاء' : 'Off-Plan' }}
+                </button>
+              </div>
             </div>
-            <button type="button" class="swc-ask-ai-btn" @click="runSearch" :disabled="isLoading">
+          </div>
+
+          <!-- ROW 2: Inputs (Keywords/Prompt & Location) -->
+          <div class="ghs-row ghs-inputs-row">
+            <!-- 1. Search Query -->
+            <div class="ghs-input-wrap ghs-query-wrap">
+              <div class="ghs-input-main-field">
+                <i class="fa-solid fa-magnifying-glass ghs-input-icon ghs-query-icon"></i>
+                <input
+                  id="search-query-input"
+                  type="text"
+                  class="ghs-text-input"
+                  v-model="searchQuery"
+                  :placeholder="isRtl ? 'ابحث عن عقار أحلامك، كلمات مفتاحية، أو طلب AI...' : 'Search property, keywords or AI prompt...'"
+                  @input="onQueryInput"
+                  @keydown.enter.prevent="runSearch"
+                />
+                <button 
+                  v-if="searchQuery" 
+                  type="button" 
+                  class="ghs-clear-input"
+                  @click="clearSearch"
+                  :title="isRtl ? 'مسح' : 'Clear'"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="ghs-cost-pins-badge" :title="isRtl ? 'دبابيس التكلفة' : 'Cost Pins Badge'">
+                <i class="fa-solid fa-location-dot ghs-cost-pin-icon"></i>
+                <span class="ghs-cost-pin-pill">
+                  <span class="ghs-cost-dot"></span>
+                  <span>Cost Pins</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- 2. Location Input with map graphic -->
+            <div class="ghs-input-wrap ghs-location-wrap">
+              <div class="ghs-loc-map-bg" aria-hidden="true">
+                <svg class="ghs-map-roads-svg" viewBox="0 0 320 80" preserveAspectRatio="none">
+                  <path d="M 0 35 Q 90 65, 170 30 T 320 50" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" />
+                  <path d="M 70 80 Q 130 15, 210 60 T 300 15" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" />
+                  <path d="M 0 50 Q 150 45, 240 10" fill="none" stroke="rgba(56,189,248,0.25)" stroke-width="2" />
+                </svg>
+              </div>
+              <div class="ghs-input-main-field">
+                <i class="fa-solid fa-location-dot ghs-input-icon ghs-loc-icon"></i>
+                <input
+                  id="search-location-input"
+                  type="text"
+                  class="ghs-text-input"
+                  v-model="locationQuery"
+                  :placeholder="isRtl ? 'أدخل الموقع أو المنطقة أو الحي...' : 'Enter location, area or neighborhood...'"
+                  @input="onLocationInput"
+                  @keydown.enter.prevent="runSearch"
+                />
+                <button 
+                  v-if="locationQuery" 
+                  type="button" 
+                  class="ghs-clear-input"
+                  @click="locationQuery = ''; filters.location = 'all'; runSearch()"
+                  :title="isRtl ? 'مسح' : 'Clear'"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 3: Capsule Filters + Unified AI Search Button -->
+          <div class="ghs-row ghs-filters-row">
+            <!-- 1. Property Type Capsule -->
+            <div class="ghs-custom-dropdown" ref="searchTypeRef">
+              <button 
+                type="button" 
+                class="ghs-capsule-btn" 
+                :class="{ active: propertyTypeOpen || (filters.type && filters.type !== 'all') }" 
+                @click="propertyTypeOpen = !propertyTypeOpen; bedsBathsOpen = false; priceOpen = false;"
+              >
+                <div class="ghs-capsule-left">
+                  <i class="fa-solid fa-city ghs-btn-icon"></i>
+                  <span class="ghs-capsule-text">{{ propertyTypeLabel }}</span>
+                </div>
+                <i class="fa-solid ghs-chevron" :class="propertyTypeOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              </button>
+
+              <Transition name="dropdown-fade">
+                <div v-if="propertyTypeOpen" class="ghs-dropdown-panel ghs-type-popup" @click.stop>
+                  <div class="ghs-cat-tabs">
+                    <button 
+                      type="button" 
+                      class="ghs-cat-tab" 
+                      :class="{ active: propertyCategory === 'residential' }"
+                      @click="propertyCategory = 'residential'"
+                    >
+                      {{ isRtl ? 'سكني' : 'Residential' }}
+                    </button>
+                    <button 
+                      type="button" 
+                      class="ghs-cat-tab" 
+                      :class="{ active: propertyCategory === 'commercial' }"
+                      @click="propertyCategory = 'commercial'"
+                    >
+                      {{ isRtl ? 'تجاري' : 'Commercial' }}
+                    </button>
+                  </div>
+                  <div class="ghs-radio-grid">
+                    <button 
+                      type="button" 
+                      v-for="item in currentCategoryTypes" 
+                      :key="item.id" 
+                      class="ghs-radio-pill"
+                      :class="{ selected: filters.type === item.id }"
+                      @click="selectPropertyType(item.id)"
+                    >
+                      <span class="ghs-radio-circle">
+                        <i v-if="filters.type === item.id" class="fa-solid fa-check"></i>
+                      </span>
+                      <span class="ghs-radio-text">{{ isRtl ? item.nameAr : item.nameEn }}</span>
+                    </button>
+                  </div>
+                  <div class="ghs-panel-footer">
+                    <button type="button" class="ghs-panel-reset" @click="resetPropertyType">
+                      {{ isRtl ? 'إعادة تعيين' : 'Reset' }}
+                    </button>
+                    <button type="button" class="ghs-panel-done" @click="applyPropertyType">
+                      {{ isRtl ? 'تم' : 'Done' }}
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- 2. Beds & Baths Capsule -->
+            <div class="ghs-custom-dropdown" ref="searchBedsRef">
+              <button 
+                type="button" 
+                class="ghs-capsule-btn" 
+                :class="{ active: bedsBathsOpen || (filters.bedrooms && filters.bedrooms !== 'any') || (filters.bathrooms && filters.bathrooms !== 'any') }" 
+                @click="bedsBathsOpen = !bedsBathsOpen; propertyTypeOpen = false; priceOpen = false;"
+              >
+                <div class="ghs-capsule-left">
+                  <i class="fa-solid fa-bed ghs-btn-icon"></i>
+                  <span class="ghs-capsule-text">{{ bedsBathsLabel }}</span>
+                </div>
+                <i class="fa-solid ghs-chevron" :class="bedsBathsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              </button>
+
+              <Transition name="dropdown-fade">
+                <div v-if="bedsBathsOpen" class="ghs-dropdown-panel ghs-beds-panel" @click.stop>
+                  <!-- Beds Section -->
+                  <div class="ghs-panel-title">{{ isRtl ? 'غرف النوم' : 'Beds' }}</div>
+                  
+                  <div class="ghs-pill-row">
+                    <button 
+                      type="button" 
+                      class="ghs-pill-btn ghs-pill-studio" 
+                      :class="{ active: filters.bedrooms === 'Studio' }"
+                      @click="setBedrooms('Studio')"
+                    >
+                      {{ isRtl ? 'استوديو' : 'Studio' }}
+                    </button>
+                    <button 
+                      type="button" 
+                      class="ghs-pill-btn ghs-pill-circle" 
+                      v-for="b in ['1', '2', '3', '4']" 
+                      :key="'bed-' + b"
+                      :class="{ active: filters.bedrooms === b }"
+                      @click="setBedrooms(b)"
+                    >
+                      {{ b }}
+                    </button>
+                  </div>
+
+                  <div class="ghs-pill-row ghs-pill-row-2">
+                    <button 
+                      type="button" 
+                      class="ghs-pill-btn ghs-pill-circle" 
+                      v-for="b in ['5', '6', '7', '8+']" 
+                      :key="'bed-' + b"
+                      :class="{ active: filters.bedrooms === b }"
+                      @click="setBedrooms(b)"
+                    >
+                      {{ b }}
+                    </button>
+                  </div>
+
+                  <!-- Baths Section -->
+                  <div class="ghs-panel-title ghs-baths-title">{{ isRtl ? 'الحمامات' : 'Baths' }}</div>
+                  <div class="ghs-pill-row">
+                    <button 
+                      type="button" 
+                      class="ghs-pill-btn ghs-pill-circle" 
+                      v-for="b in ['1', '2', '3', '4', '5', '6+']" 
+                      :key="'bath-' + b"
+                      :class="{ active: filters.bathrooms === b }"
+                      @click="setBathrooms(b)"
+                    >
+                      {{ b }}
+                    </button>
+                  </div>
+
+                  <div class="ghs-panel-divider"></div>
+
+                  <div class="ghs-panel-footer">
+                    <button type="button" class="ghs-panel-reset" @click="resetBedsBaths">
+                      {{ isRtl ? 'إعادة تعيين' : 'Reset' }}
+                    </button>
+                    <button type="button" class="ghs-panel-done" @click="applyBedsBaths">
+                      {{ isRtl ? 'تم' : 'Done' }}
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- 3. Price Capsule -->
+            <div class="ghs-custom-dropdown" ref="searchPriceRef">
+              <button 
+                type="button" 
+                class="ghs-capsule-btn" 
+                :class="{ active: priceOpen || filters.minPrice || filters.maxPrice || (filters.priceRange && filters.priceRange !== 'any') }" 
+                @click="priceOpen = !priceOpen; propertyTypeOpen = false; bedsBathsOpen = false;"
+              >
+                <div class="ghs-capsule-left">
+                  <i class="fa-solid fa-coins ghs-btn-icon"></i>
+                  <span class="ghs-capsule-text">{{ priceDropdownLabel }}</span>
+                </div>
+                <i class="fa-solid ghs-chevron" :class="priceOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              </button>
+
+              <Transition name="dropdown-fade">
+                <div v-if="priceOpen" class="ghs-dropdown-panel ghs-price-panel" @click.stop>
+                  <div class="ghs-price-grid">
+                    <div class="ghs-price-col">
+                      <label class="ghs-price-label">{{ isRtl ? 'الحد الأدنى' : 'Minimum' }}</label>
+                      <input 
+                        type="number" 
+                        class="ghs-price-input" 
+                        v-model="filters.minPrice" 
+                        placeholder="0" 
+                        @keydown.enter.prevent="applyPrice"
+                      />
+                    </div>
+                    <div class="ghs-price-col">
+                      <label class="ghs-price-label">{{ isRtl ? 'الحد الأقصى' : 'Maximum' }}</label>
+                      <input 
+                        type="number" 
+                        class="ghs-price-input" 
+                        v-model="filters.maxPrice" 
+                        :placeholder="isRtl ? 'أي سعر' : 'Any'" 
+                        @keydown.enter.prevent="applyPrice"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="ghs-panel-divider"></div>
+
+                  <div class="ghs-panel-footer">
+                    <button type="button" class="ghs-panel-reset" @click="resetPrice">
+                      {{ isRtl ? 'إعادة تعيين' : 'Reset' }}
+                    </button>
+                    <button type="button" class="ghs-panel-done" @click="applyPrice">
+                      {{ isRtl ? 'تم' : 'Done' }}
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+
+            <!-- 4. Unified AI Search Button -->
+            <button type="button" class="ghs-unified-ai-btn" @click="runSearch" :disabled="isLoading" :title="isRtl ? 'بحث ذكي AI' : 'Smart AI Search'">
               <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
               <i v-else class="fa-solid fa-wand-magic-sparkles"></i>
-              <span>{{ t('askAI') }}</span>
+              <span>{{ isRtl ? 'بحث ذكي AI' : 'AI Search' }}</span>
             </button>
           </div>
-
-          <!-- Divider -->
-          <div class="swc-divider">
-            <span>{{ t('orUseFilters') }}</span>
-          </div>
-
-          <!-- ROW 2: Buy/Rent toggle + Location + Search -->
-          <div class="swc-main-row">
-            <!-- Buy / Rent Toggle -->
-            <div class="swc-purpose-toggle">
-              <button
-                type="button"
-                class="swc-purpose-btn"
-                :class="{ active: filters.purpose === 'all' }"
-                @click="filters.purpose = 'all'; runSearch()"
-              >
-                {{ isRtl ? 'الكل' : 'All' }}
-              </button>
-              <button
-                type="button"
-                class="swc-purpose-btn"
-                :class="{ active: filters.purpose === 'sale' }"
-                @click="filters.purpose = 'sale'; runSearch()"
-              >
-                {{ t('forSale') }}
-              </button>
-              <button
-                type="button"
-                class="swc-purpose-btn"
-                :class="{ active: filters.purpose === 'rent' }"
-                @click="filters.purpose = 'rent'; runSearch()"
-              >
-                {{ t('forRent') }}
-              </button>
-            </div>
-
-            <!-- Location Input -->
-            <div class="swc-location-wrap">
-              <i class="fa-solid fa-location-dot swc-loc-icon"></i>
-              <input
-                id="search-location-input"
-                v-model="locationQuery"
-                type="text"
-                :placeholder="t('enterLocation')"
-                class="swc-location-input"
-                autocomplete="off"
-                @input="onLocationInput"
-              />
-              <button v-if="locationQuery" type="button" class="swc-ai-clear" @click="locationQuery = ''; filters.location = 'all'">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            <!-- Search Button -->
-            <button type="button" class="swc-search-btn" @click="runSearch" :disabled="isLoading">
-              <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
-              <span v-else>{{ t('search') }}</span>
-            </button>
-          </div>
-
-          <!-- ROW 3: All/Ready/Off-Plan chips + Residential + Beds&Baths + Price -->
-          <div class="swc-filters-row">
-            <!-- Status chips: All / Ready / Off-Plan -->
-            <div class="swc-status-chips">
-              <button
-                type="button"
-                class="swc-status-chip"
-                :class="{ active: filters.status === 'all' }"
-                @click="filters.status = 'all'; runSearch()"
-              >
-                {{ t('allPurpose') }}
-              </button>
-              <button
-                type="button"
-                class="swc-status-chip"
-                :class="{ active: filters.status === 'ready' }"
-                @click="filters.status = 'ready'; runSearch()"
-              >
-                {{ t('readyToMove') }}
-              </button>
-              <button
-                type="button"
-                class="swc-status-chip"
-                :class="{ active: filters.status === 'offplan' }"
-                @click="filters.status = 'offplan'; runSearch()"
-              >
-                {{ t('offPlan') }}
-              </button>
-            </div>
-
-            <!-- Divider line -->
-            <div class="swc-filter-sep"></div>
-
-            <!-- Residential / Type -->
-            <div class="swc-filter-select-wrap">
-              <select v-model="filters.type" class="swc-filter-select" @change="runSearch">
-                <option value="all">{{ t('allProperties') || (isRtl ? 'جميع الأنواع' : 'All Types') }}</option>
-                <option value="Apartment">{{ t('apartment') }}</option>
-                <option value="Villa">{{ t('villa') }}</option>
-                <option value="Penthouse">{{ t('penthouse') }}</option>
-                <option value="Townhouse">{{ t('townhouse') }}</option>
-                <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
-                <option value="Commercial">{{ isRtl ? 'تجاري' : 'Commercial' }}</option>
-                <option value="Building">{{ isRtl ? 'مبنى بالكامل' : 'Full Building' }}</option>
-              </select>
-              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
-            </div>
-
-            <!-- Beds & Baths -->
-            <div class="swc-filter-select-wrap">
-              <select v-model="filters.bedrooms" class="swc-filter-select" @change="runSearch">
-                <option value="any">{{ t('bedsAndBaths') }}</option>
-                <option value="1">{{ isRtl ? '1 غرفة' : '1 Bed' }}</option>
-                <option value="2">{{ isRtl ? '2 غرفة' : '2 Beds' }}</option>
-                <option value="3">{{ isRtl ? '3 غرف' : '3 Beds' }}</option>
-                <option value="4">{{ isRtl ? '4 غرف' : '4 Beds' }}</option>
-                <option value="5+">{{ isRtl ? '5+ غرف' : '5+ Beds' }}</option>
-              </select>
-              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
-            </div>
-
-            <!-- Price (AED) -->
-            <div class="swc-filter-select-wrap">
-              <select v-model="filters.priceRange" class="swc-filter-select" @change="runSearch">
-                <option value="any">{{ t('priceAed') }}</option>
-                <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : 'Under AED 2M' }}</option>
-                <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M – 5M' }}</option>
-                <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M – 10M' }}</option>
-                <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
-              </select>
-              <i class="fa-solid fa-chevron-down swc-filter-chevron"></i>
-            </div>
-          </div>
-
         </div>
         <!-- END SEARCH WIDGET CARD -->
 
@@ -544,12 +732,178 @@ const filters = ref({
   purpose: 'all',
   type: 'all',
   priceRange: 'any',
+  minPrice: '',
+  maxPrice: '',
   bedrooms: 'any',
+  bathrooms: 'any',
   location: 'all',
   status: 'all'
 })
 
 const locationQuery = ref('')
+
+// ======= Dropdowns & Popups state =======
+const searchTypeRef = ref(null)
+const searchBedsRef = ref(null)
+const searchPriceRef = ref(null)
+
+const propertyTypeOpen = ref(false)
+const bedsBathsOpen = ref(false)
+const priceOpen = ref(false)
+
+const propertyCategory = ref('residential')
+const residentialTypes = [
+  { id: 'Apartment', nameEn: 'Apartment', nameAr: 'شقق' },
+  { id: 'Villa', nameEn: 'Villa', nameAr: 'فلل' },
+  { id: 'Townhouse', nameEn: 'Townhouse', nameAr: 'تاون هاوس' },
+  { id: 'Penthouse', nameEn: 'Penthouse', nameAr: 'بنتهاوس' },
+  { id: 'Villa Compound', nameEn: 'Villa Compound', nameAr: 'مجمع فلل' },
+  { id: 'Hotel Apartment', nameEn: 'Hotel Apartment', nameAr: 'شقق فندقية' },
+  { id: 'Land', nameEn: 'Land', nameAr: 'أرض سكنية' },
+  { id: 'Floor', nameEn: 'Floor', nameAr: 'طابق كامل' },
+  { id: 'Building', nameEn: 'Building', nameAr: 'مبنى سكني' }
+]
+
+const commercialTypes = [
+  { id: 'Office', nameEn: 'Office', nameAr: 'مكاتب' },
+  { id: 'Retail', nameEn: 'Retail', nameAr: 'محلات تجارية' },
+  { id: 'Warehouse', nameEn: 'Warehouse', nameAr: 'مستودعات' },
+  { id: 'Shop', nameEn: 'Shop', nameAr: 'متاجر' },
+  { id: 'Commercial Villa', nameEn: 'Commercial Villa', nameAr: 'فلل تجارية' },
+  { id: 'Commercial Land', nameEn: 'Commercial Land', nameAr: 'أراضي تجارية' },
+  { id: 'Commercial Building', nameEn: 'Commercial Building', nameAr: 'مباني تجارية' },
+  { id: 'Showroom', nameEn: 'Showroom', nameAr: 'صالات عرض' }
+]
+
+const currentCategoryTypes = computed(() => {
+  return propertyCategory.value === 'residential' ? residentialTypes : commercialTypes
+})
+
+const selectPropertyType = (typeId) => {
+  filters.value.type = (filters.value.type === typeId) ? 'all' : typeId
+  propertyTypeOpen.value = false
+  runSearch()
+}
+
+const resetPropertyType = () => {
+  filters.value.type = 'all'
+  propertyTypeOpen.value = false
+  runSearch()
+}
+
+const applyPropertyType = () => {
+  propertyTypeOpen.value = false
+  runSearch()
+}
+
+const propertyTypeLabel = computed(() => {
+  if (!filters.value.type || filters.value.type === 'all') {
+    return isRtl.value ? 'النوع: الكل' : 'Property Type'
+  }
+  const allT = [...residentialTypes, ...commercialTypes]
+  const found = allT.find(x => x.id === filters.value.type)
+  if (found) return isRtl.value ? found.nameAr : found.nameEn
+  return filters.value.type
+})
+
+const setBedrooms = (b) => {
+  filters.value.bedrooms = (filters.value.bedrooms === b) ? 'any' : b
+}
+
+const setBathrooms = (b) => {
+  filters.value.bathrooms = (filters.value.bathrooms === b) ? 'any' : b
+}
+
+const resetBedsBaths = () => {
+  filters.value.bedrooms = 'any'
+  filters.value.bathrooms = 'any'
+  bedsBathsOpen.value = false
+  runSearch()
+}
+
+const applyBedsBaths = () => {
+  bedsBathsOpen.value = false
+  runSearch()
+}
+
+const bedsBathsLabel = computed(() => {
+  const hasBed = filters.value.bedrooms && filters.value.bedrooms !== 'any'
+  const hasBath = filters.value.bathrooms && filters.value.bathrooms !== 'any'
+  
+  if (hasBed && hasBath) {
+    const bedText = filters.value.bedrooms === 'Studio' 
+      ? (isRtl.value ? 'استوديو' : 'Studio')
+      : (isRtl.value ? `${filters.value.bedrooms} غرف` : `${filters.value.bedrooms} Beds`)
+    const bathText = isRtl.value ? `${filters.value.bathrooms} حمام` : `${filters.value.bathrooms} Baths`
+    return `${bedText}, ${bathText}`
+  }
+  if (hasBed) {
+    return filters.value.bedrooms === 'Studio'
+      ? (isRtl.value ? 'استوديو' : 'Studio')
+      : (isRtl.value ? `${filters.value.bedrooms} غرف` : `${filters.value.bedrooms} Beds`)
+  }
+  if (hasBath) {
+    return isRtl.value ? `${filters.value.bathrooms} حمام` : `${filters.value.bathrooms} Baths`
+  }
+  return isRtl.value ? 'الغرف والحمامات' : 'Beds & Baths'
+})
+
+const resetPrice = () => {
+  filters.value.minPrice = ''
+  filters.value.maxPrice = ''
+  filters.value.priceRange = 'any'
+  priceOpen.value = false
+  runSearch()
+}
+
+const applyPrice = () => {
+  priceOpen.value = false
+  runSearch()
+}
+
+const formatCompact = (val) => {
+  const num = Number(val)
+  if (!num || isNaN(num)) return val
+  if (num >= 1000000) {
+    const m = (num / 1000000).toFixed(num % 1000000 === 0 ? 0 : 1)
+    return isRtl.value ? `${m} مليون` : `${m}M`
+  }
+  if (num >= 1000) {
+    const k = (num / 1000).toFixed(0)
+    return isRtl.value ? `${k} ألف` : `${k}K`
+  }
+  return String(num)
+}
+
+const priceDropdownLabel = computed(() => {
+  const min = filters.value.minPrice
+  const max = filters.value.maxPrice
+  if (min && max) {
+    return `${formatCompact(min)} - ${formatCompact(max)} ${isRtl.value ? 'درهم' : 'AED'}`
+  }
+  if (min) {
+    return `${isRtl.value ? 'من' : '>'} ${formatCompact(min)} ${isRtl.value ? 'درهم' : 'AED'}`
+  }
+  if (max) {
+    return `${isRtl.value ? 'إلى' : '<'} ${formatCompact(max)} ${isRtl.value ? 'درهم' : 'AED'}`
+  }
+  if (filters.value.priceRange && filters.value.priceRange !== 'any') {
+    return priceLabel.value
+  }
+  return isRtl.value ? 'السعر (درهم)' : 'Price (AED)'
+})
+
+const handleDocumentClick = (e) => {
+  if (searchTypeRef.value && !searchTypeRef.value.contains(e.target)) {
+    propertyTypeOpen.value = false
+  }
+  if (searchBedsRef.value && !searchBedsRef.value.contains(e.target)) {
+    bedsBathsOpen.value = false
+  }
+  if (searchPriceRef.value && !searchPriceRef.value.contains(e.target)) {
+    priceOpen.value = false
+  }
+}
 
 // ======= Quick tags =======
 const quickTags = computed(() => [
@@ -575,7 +929,10 @@ const hasActiveFilters = computed(() =>
   filters.value.purpose !== 'all' ||
   filters.value.type !== 'all' ||
   filters.value.priceRange !== 'any' ||
+  Boolean(filters.value.minPrice) ||
+  Boolean(filters.value.maxPrice) ||
   filters.value.bedrooms !== 'any' ||
+  (filters.value.bathrooms && filters.value.bathrooms !== 'any') ||
   filters.value.location !== 'all' ||
   filters.value.status !== 'all' ||
   Boolean(locationQuery.value.trim()) ||
@@ -653,17 +1010,37 @@ const displayProperties = computed(() => {
   else if (filters.value.status === 'offplan') list = list.filter(p => p.isOffPlan)
 
   // 6. Bedrooms filter
-  if (filters.value.bedrooms !== 'any') {
+  if (filters.value.bedrooms && filters.value.bedrooms !== 'any') {
     const beds = filters.value.bedrooms
-    if (beds === '5+') {
+    if (beds === 'Studio') {
+      list = list.filter(p => Number(p.beds) === 0 || String(p.beds).toLowerCase().includes('studio') || (p.title || '').toLowerCase().includes('studio'))
+    } else if (beds === '8+') {
+      list = list.filter(p => Number(p.beds) >= 8)
+    } else if (beds === '5+') {
       list = list.filter(p => Number(p.beds) >= 5)
     } else {
       list = list.filter(p => Number(p.beds) === Number(beds))
     }
   }
 
-  // 7. Price filter
-  if (filters.value.priceRange !== 'any') {
+  // 6b. Bathrooms filter
+  if (filters.value.bathrooms && filters.value.bathrooms !== 'any') {
+    const baths = filters.value.bathrooms
+    if (baths === '6+') {
+      list = list.filter(p => Number(p.baths) >= 6)
+    } else {
+      list = list.filter(p => Number(p.baths) === Number(baths))
+    }
+  }
+
+  // 7. Price filter (minPrice, maxPrice, priceRange)
+  if (filters.value.minPrice && Number(filters.value.minPrice) > 0) {
+    list = list.filter(p => Number(p.price) >= Number(filters.value.minPrice))
+  }
+  if (filters.value.maxPrice && Number(filters.value.maxPrice) > 0) {
+    list = list.filter(p => Number(p.price) <= Number(filters.value.maxPrice))
+  }
+  if (filters.value.priceRange && filters.value.priceRange !== 'any') {
     list = list.filter(p => {
       const price = Number(p.price) || 0
       if (filters.value.priceRange === 'under-2m') return price < 2000000
@@ -795,7 +1172,17 @@ const clearSearch = () => {
 }
 
 const clearAllFilters = () => {
-  filters.value = { purpose: 'all', type: 'all', priceRange: 'any', bedrooms: 'any', location: 'all', status: 'all' }
+  filters.value = {
+    purpose: 'all',
+    type: 'all',
+    priceRange: 'any',
+    minPrice: '',
+    maxPrice: '',
+    bedrooms: 'any',
+    bathrooms: 'any',
+    location: 'all',
+    status: 'all'
+  }
   locationQuery.value = ''
   searchQuery.value = ''
   sortBy.value = 'recommended'
@@ -856,10 +1243,18 @@ watch(
     const type = newQuery.type || ''
     const purpose = newQuery.purpose || ''
     const location = newQuery.location || ''
+    const beds = newQuery.bedrooms || newQuery.beds || ''
+    const baths = newQuery.bathrooms || newQuery.baths || ''
+    const minP = newQuery.min_price || newQuery.minPrice || ''
+    const maxP = newQuery.max_price || newQuery.maxPrice || ''
 
     if (q !== undefined) searchQuery.value = q
     if (type) filters.value.type = type
     if (purpose) filters.value.purpose = purpose
+    if (beds) filters.value.bedrooms = beds.split(',')[0]
+    if (baths) filters.value.bathrooms = baths.split(',')[0]
+    if (minP) filters.value.minPrice = minP
+    if (maxP) filters.value.maxPrice = maxP
     if (location) {
       locationQuery.value = location
       filters.value.location = location
@@ -877,21 +1272,33 @@ onMounted(async () => {
   const type = route.query.type || ''
   const purpose = route.query.purpose || ''
   const location = route.query.location || ''
+  const status = route.query.status || ''
+  const beds = route.query.bedrooms || route.query.beds || ''
+  const baths = route.query.bathrooms || route.query.baths || ''
+  const minP = route.query.min_price || route.query.minPrice || ''
+  const maxP = route.query.max_price || route.query.maxPrice || ''
 
   if (q) searchQuery.value = q
   if (type) filters.value.type = type
   if (purpose) filters.value.purpose = purpose
+  if (status) filters.value.status = status
+  if (beds) filters.value.bedrooms = beds.split(',')[0]
+  if (baths) filters.value.bathrooms = baths.split(',')[0]
+  if (minP) filters.value.minPrice = minP
+  if (maxP) filters.value.maxPrice = maxP
   if (location) {
     locationQuery.value = location
     filters.value.location = location
   }
 
+  document.addEventListener('click', handleDocumentClick)
   await runSearch()
 })
 
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
   if (toastTimer) clearTimeout(toastTimer)
+  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
@@ -916,7 +1323,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible !important;
+  z-index: 100;
   background: linear-gradient(135deg, #070d19 0%, #0a1628 40%, #070d19 100%);
   padding: 80px 24px 60px;
 }
@@ -960,10 +1368,12 @@ onUnmounted(() => {
 
 .search-hero-inner {
   position: relative;
-  z-index: 2;
+  z-index: 51;
   width: 100%;
-  max-width: 900px;
+  max-width: 960px;
   text-align: center;
+  overflow: visible !important;
+  margin-inline: auto;
 }
 
 .search-hero-badge {
@@ -1016,543 +1426,946 @@ onUnmounted(() => {
 
 [data-theme="light"] .search-hero-subtitle { color: #475569; }
 
-/* ==================== SEARCH WIDGET CARD ==================== */
-.search-widget-card {
+/* ==================== REDESIGNED COMPACT HERO SEARCH WIDGET ==================== */
+.green-hero-search {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0%, rgba(240, 249, 255, 0.58) 50%, rgba(224, 242, 254, 0.5) 100%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-radius: 22px;
+  padding: 13px 18px 15px;
+  box-shadow: 
+    0 20px 50px -10px rgba(15, 23, 42, 0.12),
+    0 0 0 1.5px rgba(255, 255, 255, 0.8) inset,
+    0 0 30px rgba(56, 189, 248, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  max-width: 940px;
+  margin: 18px auto 28px;
   width: 100%;
-  max-width: 960px;
-  margin-inline: auto;
-  margin-bottom: 28px;
-  background: rgba(13, 27, 53, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  padding: 22px 24px;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 210, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 2;
+  overflow: visible;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: initial;
 }
 
-[data-theme="light"] .search-widget-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 12px 40px -8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.05);
+[data-theme="dark"] .green-hero-search,
+.dark .green-hero-search {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.15);
 }
 
-/* ROW 1: AI Prompt Search */
-.swc-ai-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.swc-ai-input-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 0 16px;
-  height: 50px;
-  transition: all 0.25s ease;
-}
-
-.swc-ai-input-wrap:focus-within {
-  border-color: #00d2ff;
-  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="light"] .swc-ai-input-wrap {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .swc-ai-input-wrap:focus-within {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
-  background: #ffffff;
-}
-
-.swc-ai-icon {
-  color: #00d2ff;
-  font-size: 16px;
-  margin-inline-end: 12px;
-  flex-shrink: 0;
-}
-
-[data-theme="light"] .swc-ai-icon {
-  color: #0284c7;
-}
-
-.swc-ai-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 14.5px;
-  color: #f0f6ff;
-  font-family: inherit;
-  min-width: 0;
-}
-
-[data-theme="light"] .swc-ai-input {
-  color: #0f172a;
-}
-
-.swc-ai-input::placeholder {
-  color: rgba(176, 196, 222, 0.55);
-}
-
-[data-theme="light"] .swc-ai-input::placeholder {
-  color: #94a3b8;
-}
-
-.swc-ai-clear {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.swc-ai-clear:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #f0f6ff;
-}
-
-[data-theme="light"] .swc-ai-clear {
-  background: #e2e8f0;
-  color: #64748b;
-}
-
-[data-theme="light"] .swc-ai-clear:hover {
-  background: #cbd5e1;
-  color: #1e293b;
-}
-
-.swc-ask-ai-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 50px;
-  padding: 0 22px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #00d2ff 0%, #7c3aed 100%);
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 18px rgba(0, 210, 255, 0.25);
-  font-family: inherit;
-  flex-shrink: 0;
-}
-
-.swc-ask-ai-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
-  filter: brightness(1.08);
-}
-
-.swc-ask-ai-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* DIVIDER */
-.swc-divider {
-  position: relative;
-  text-align: center;
-  margin: 18px 0;
-}
-
-.swc-divider::before {
-  content: '';
+/* Glowing Topographic Vector Contour Lines */
+.ghs-contour-svg {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 22px;
+  overflow: hidden;
+  z-index: 0;
 }
 
-[data-theme="light"] .swc-divider::before {
-  background: #e2e8f0;
-}
-
-.swc-divider span {
+/* Rows General */
+.ghs-row {
   position: relative;
-  background: #0d1b35;
-  padding: 0 16px;
-  font-size: 12px;
-  color: rgba(176, 196, 222, 0.65);
-  font-weight: 500;
-  border-radius: 100px;
-}
-
-[data-theme="light"] .swc-divider span {
-  background: #ffffff;
-  color: #64748b;
-}
-
-/* ROW 2: Purpose + Location + Search */
-.swc-main-row {
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
+  width: 100%;
 }
 
-.swc-purpose-toggle {
+/* ROW 1: TOP NAVIGATION */
+.ghs-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.ghs-top-left-group {
   display: inline-flex;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
 }
 
-[data-theme="light"] .swc-purpose-toggle {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
+.ghs-nav-pills-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.swc-purpose-btn {
-  padding: 10px 22px;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
+.ghs-nav-pill {
+  padding: 6px 14px;
   font-size: 13.5px;
-  font-weight: 600;
-  color: rgba(176, 196, 222, 0.85);
+  font-weight: 500;
+  color: #334155;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
+  white-space: nowrap;
   font-family: inherit;
 }
 
-.swc-purpose-btn:hover {
-  color: #ffffff;
+[data-theme="dark"] .ghs-nav-pill,
+.dark .ghs-nav-pill {
+  color: #cbd5e1;
 }
 
-[data-theme="light"] .swc-purpose-btn {
-  color: #64748b;
-}
-
-[data-theme="light"] .swc-purpose-btn:hover {
-  color: #0f172a;
-}
-
-.swc-purpose-btn.active {
-  background: #00d2ff;
-  color: #061124;
-  font-weight: 700;
-  box-shadow: 0 2px 10px rgba(0, 210, 255, 0.35);
-}
-
-[data-theme="light"] .swc-purpose-btn.active {
-  background: #0284c7;
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
-}
-
-.swc-location-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 0 16px;
-  height: 48px;
-  transition: all 0.25s ease;
-}
-
-.swc-location-wrap:focus-within {
-  border-color: #00d2ff;
-  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="light"] .swc-location-wrap {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .swc-location-wrap:focus-within {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
-  background: #ffffff;
-}
-
-.swc-loc-icon {
-  color: #00d2ff;
-  font-size: 15px;
-  margin-inline-end: 12px;
-  flex-shrink: 0;
-}
-
-[data-theme="light"] .swc-loc-icon {
+.ghs-nav-pill:hover {
   color: #0284c7;
 }
 
-.swc-location-input {
+.ghs-nav-pill.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0284c7;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .ghs-nav-pill.active,
+.dark .ghs-nav-pill.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.ghs-nav-pill-highlight.active {
+  background: rgba(167, 243, 208, 0.35);
+  border: 1.5px solid rgba(45, 212, 191, 0.6);
+  color: #065f46;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.4);
+}
+
+[data-theme="dark"] .ghs-nav-pill-highlight.active,
+.dark .ghs-nav-pill-highlight.active {
+  background: rgba(45, 212, 191, 0.2);
+  color: #2dd4bf;
+}
+
+.ghs-v-sep {
+  width: 1.5px;
+  height: 20px;
+  background: rgba(148, 163, 184, 0.4);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* ROW 2: SEARCH INPUTS */
+.ghs-inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.ghs-input-wrap {
   flex: 1;
-  background: transparent;
+  min-width: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 16px;
+  padding: 0 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  gap: 8px;
+}
+
+.ghs-query-wrap {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02), 0 6px 18px rgba(0, 0, 0, 0.03);
+}
+
+.ghs-query-wrap:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 8px 22px rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="dark"] .ghs-query-wrap,
+.dark .ghs-query-wrap {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .ghs-query-wrap:focus-within,
+.dark .ghs-query-wrap:focus-within {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: #38bdf8;
+}
+
+.ghs-input-main-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.ghs-input-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ghs-query-icon {
+  color: #0284c7;
+}
+
+.ghs-loc-icon {
+  color: #005953;
+}
+
+[data-theme="dark"] .ghs-loc-icon,
+.dark .ghs-loc-icon {
+  color: #2dd4bf;
+}
+
+.ghs-text-input {
+  flex: 1;
   border: none;
   outline: none;
   font-size: 14px;
-  color: #f0f6ff;
-  font-family: inherit;
+  font-weight: 500;
+  color: #1e293b;
+  background: transparent;
   min-width: 0;
+  font-family: inherit;
 }
 
-[data-theme="light"] .swc-location-input {
-  color: #0f172a;
+[data-theme="dark"] .ghs-text-input,
+.dark .ghs-text-input {
+  color: #f8fafc;
 }
 
-.swc-location-input::placeholder {
-  color: rgba(176, 196, 222, 0.55);
+.ghs-text-input::placeholder {
+  color: #64748b;
+  font-size: 13.5px;
 }
 
-[data-theme="light"] .swc-location-input::placeholder {
+[data-theme="dark"] .ghs-text-input::placeholder,
+.dark .ghs-text-input::placeholder {
   color: #94a3b8;
 }
 
-.swc-search-btn {
+.ghs-cost-pins-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 48px;
-  padding: 0 28px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #00b4d8 0%, #0284c7 100%);
-  color: #ffffff;
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 16px rgba(0, 180, 216, 0.3);
-  font-family: inherit;
+  gap: 5px;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.swc-search-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 180, 216, 0.4);
-  filter: brightness(1.1);
+[data-theme="dark"] .ghs-cost-pins-badge,
+.dark .ghs-cost-pins-badge {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.swc-search-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
+.ghs-cost-pin-icon {
+  color: #0284c7;
+  font-size: 12px;
 }
 
-/* ROW 3: Filter Chips & Dropdowns */
-.swc-filters-row {
+.ghs-cost-pin-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #1e293b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+[data-theme="dark"] .ghs-cost-pin-pill,
+.dark .ghs-cost-pin-pill {
+  color: #e2e8f0;
+}
+
+.ghs-cost-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0284c7;
+}
+
+.ghs-location-wrap {
+  background: linear-gradient(135deg, rgba(186, 230, 253, 0.45) 0%, rgba(224, 242, 254, 0.65) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02), 0 6px 18px rgba(0, 0, 0, 0.03);
+}
+
+.ghs-location-wrap:focus-within {
+  background: linear-gradient(135deg, rgba(186, 230, 253, 0.6) 0%, rgba(224, 242, 254, 0.85) 100%);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.22), 0 8px 22px rgba(2, 132, 199, 0.08);
+}
+
+[data-theme="dark"] .ghs-location-wrap,
+.dark .ghs-location-wrap {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(30, 41, 59, 0.75) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ghs-loc-map-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.ghs-map-roads-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghs-clear-input {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s;
 }
 
-.swc-status-chips {
-  display: inline-flex;
-  gap: 6px;
-  flex-shrink: 0;
+.ghs-clear-input:hover {
+  color: #ef4444;
 }
 
-.swc-status-chip {
-  padding: 7px 16px;
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(176, 196, 222, 0.85);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.swc-status-chip:hover {
-  border-color: rgba(0, 210, 255, 0.4);
-  color: #00d2ff;
-  background: rgba(0, 210, 255, 0.08);
-}
-
-[data-theme="light"] .swc-status-chip {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-  color: #475569;
-}
-
-[data-theme="light"] .swc-status-chip:hover {
-  border-color: #7dd3fc;
-  color: #0284c7;
-  background: #f0f9ff;
-}
-
-.swc-status-chip.active {
-  background: rgba(0, 210, 255, 0.15);
-  border-color: #00d2ff;
-  color: #00d2ff;
-  font-weight: 700;
-}
-
-[data-theme="light"] .swc-status-chip.active {
-  background: #e0f2fe;
-  border-color: #0284c7;
-  color: #0284c7;
-}
-
-.swc-filter-sep {
-  width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 4px;
-  flex-shrink: 0;
-}
-
-[data-theme="light"] .swc-filter-sep {
-  background: #e2e8f0;
-}
-
-.swc-filter-select-wrap {
-  position: relative;
-  display: inline-flex;
+/* ROW 3: CAPSULE FILTERS & SEARCH ACTION */
+.ghs-filters-row {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.ghs-custom-dropdown {
+  position: relative;
   flex: 1;
   min-width: 130px;
 }
 
-.swc-filter-select {
+.ghs-capsule-btn {
   width: 100%;
-  height: 40px;
-  padding: 0 30px 0 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f0f6ff;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  transition: all 0.2s ease;
-}
-
-[dir="rtl"] .swc-filter-select {
-  padding: 0 14px 0 30px;
-}
-
-.swc-filter-select:hover,
-.swc-filter-select:focus {
-  border-color: #00d2ff;
-  outline: none;
-}
-
-[data-theme="light"] .swc-filter-select {
-  background: #f8fafc;
-  border-color: #e2e8f0;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
   color: #1e293b;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  user-select: none;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
 }
 
-[data-theme="light"] .swc-filter-select:hover,
-[data-theme="light"] .swc-filter-select:focus {
+[data-theme="dark"] .ghs-capsule-btn,
+.dark .ghs-capsule-btn {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.ghs-capsule-btn:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.12);
+}
+
+[data-theme="dark"] .ghs-capsule-btn:hover,
+.dark .ghs-capsule-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.ghs-capsule-btn.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+[data-theme="dark"] .ghs-capsule-btn.active,
+.dark .ghs-capsule-btn.active {
+  background: rgba(14, 165, 233, 0.18);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.ghs-capsule-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ghs-capsule-left .ghs-btn-icon {
+  font-size: 15px;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .ghs-capsule-left .ghs-btn-icon,
+.dark .ghs-capsule-left .ghs-btn-icon {
+  color: #94a3b8;
+}
+
+.ghs-capsule-btn.active .ghs-capsule-left .ghs-btn-icon {
+  color: #0284c7;
+}
+
+[data-theme="dark"] .ghs-capsule-btn.active .ghs-capsule-left .ghs-btn-icon,
+.dark .ghs-capsule-btn.active .ghs-capsule-left .ghs-btn-icon {
+  color: #38bdf8;
+}
+
+.ghs-capsule-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ghs-chevron {
+  font-size: 11px;
+  color: #94a3b8;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+/* UNIFIED AI SEARCH BUTTON (Bottom Action) */
+.ghs-unified-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4), 0 0 14px rgba(56, 189, 248, 0.3);
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.ghs-unified-ai-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 8px 26px rgba(2, 132, 199, 0.55), 0 0 20px rgba(56, 189, 248, 0.45);
+}
+
+.ghs-unified-ai-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ghs-unified-ai-btn i {
+  font-size: 15px;
+  color: #fef08a;
+  filter: drop-shadow(0 0 6px rgba(254, 240, 138, 0.7));
+}
+
+/* Floating Panels */
+.ghs-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 99999 !important;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #cbd5e1;
+}
+
+[dir="ltr"] .ghs-dropdown-panel {
+  left: 0;
+  right: auto;
+  text-align: left;
+}
+
+[dir="rtl"] .ghs-dropdown-panel {
+  right: 0;
+  left: auto;
+  text-align: right;
+}
+
+[data-theme="dark"] .ghs-dropdown-panel,
+.dark .ghs-dropdown-panel {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+}
+
+/* Property Type Popup Panel */
+.ghs-type-popup {
+  width: 340px;
+  max-width: 90vw;
+  padding: 14px 16px;
+}
+
+.ghs-cat-tabs {
+  display: flex;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+[data-theme="dark"] .ghs-cat-tabs,
+.dark .ghs-cat-tabs {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ghs-cat-tab {
+  flex: 1;
+  text-align: center;
+  padding: 7px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+[data-theme="dark"] .ghs-cat-tab,
+.dark .ghs-cat-tab {
+  color: #94a3b8;
+}
+
+.ghs-cat-tab.active {
+  color: #0284c7;
+  border-bottom-color: #0284c7;
+}
+
+[data-theme="dark"] .ghs-cat-tab.active,
+.dark .ghs-cat-tab.active {
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
+}
+
+.ghs-radio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ghs-radio-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: initial;
+  font-family: inherit;
+}
+
+[data-theme="dark"] .ghs-radio-pill,
+.dark .ghs-radio-pill {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ghs-radio-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.ghs-radio-pill.selected {
+  background: #e0f2fe;
   border-color: #0284c7;
 }
 
-.swc-filter-select option {
-  background: #0d1b35;
-  color: #f0f6ff;
+[data-theme="dark"] .ghs-radio-pill.selected,
+.dark .ghs-radio-pill.selected {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
 }
 
-[data-theme="light"] .swc-filter-select option {
+.ghs-radio-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ghs-radio-pill.selected .ghs-radio-circle {
+  border-color: #0284c7;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 9px;
+}
+
+.ghs-radio-text {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .ghs-radio-text,
+.dark .ghs-radio-text {
+  color: #e2e8f0;
+}
+
+/* Beds & Baths Popup Panel */
+.ghs-beds-panel {
+  width: 320px;
+  max-width: 90vw;
+  padding: 18px 20px;
+  background: #0b1322;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65), 0 4px 15px rgba(0, 210, 255, 0.1);
+}
+
+[data-theme="light"] .ghs-beds-panel {
   background: #ffffff;
-  color: #1e293b;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14), 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-.swc-filter-chevron {
-  position: absolute;
-  inset-inline-end: 12px;
-  font-size: 11px;
-  color: #64748b;
-  pointer-events: none;
-  transition: transform 0.2s;
+.ghs-panel-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
 }
 
-/* Responsive adjustments */
+[data-theme="light"] .ghs-panel-title {
+  color: #0f172a;
+}
+
+.ghs-baths-title {
+  margin-top: 14px;
+}
+
+.ghs-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ghs-pill-row-2 {
+  margin-bottom: 4px;
+}
+
+.ghs-pill-btn {
+  background: #1b263b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+
+.ghs-pill-circle {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.ghs-pill-studio {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 20px;
+}
+
+.ghs-pill-btn:hover {
+  background: #24344d;
+  border-color: #00d2ff;
+  color: #00d2ff;
+  transform: translateY(-1px);
+}
+
+.ghs-pill-btn.active {
+  background: #00d2ff !important;
+  border-color: #00d2ff !important;
+  color: #051322 !important;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(0, 210, 255, 0.5);
+}
+
+[data-theme="light"] .ghs-pill-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+[data-theme="light"] .ghs-pill-btn:hover {
+  background: #e2e8f0;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+[data-theme="light"] .ghs-pill-btn.active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
+}
+
+/* Price Popup Panel */
+.ghs-price-panel {
+  width: 310px;
+  max-width: 90vw;
+  padding: 18px 20px;
+  background: #0b1322;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65), 0 4px 15px rgba(0, 210, 255, 0.1);
+}
+
+[data-theme="light"] .ghs-price-panel {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14), 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.ghs-price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ghs-price-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ghs-price-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="light"] .ghs-price-label {
+  color: #475569;
+}
+
+.ghs-price-input {
+  width: 100%;
+  height: 42px;
+  background: #1b263b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.ghs-price-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ghs-price-input:focus {
+  border-color: #00d2ff;
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.25);
+  background: #202e47;
+}
+
+[data-theme="light"] .ghs-price-input {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .ghs-price-input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .ghs-price-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #ffffff;
+}
+
+/* Panel Divider */
+.ghs-panel-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 16px 0 14px;
+}
+
+[data-theme="light"] .ghs-panel-divider {
+  background: #e2e8f0;
+}
+
+/* Panel Footer */
+.ghs-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ghs-panel-reset {
+  flex: 1;
+  height: 42px;
+  background: transparent;
+  border: 2px solid #00d2ff;
+  color: #00d2ff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ghs-panel-reset:hover {
+  background: rgba(0, 210, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .ghs-panel-reset {
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+[data-theme="light"] .ghs-panel-reset:hover {
+  background: #e0f2fe;
+}
+
+.ghs-panel-done {
+  flex: 1;
+  height: 42px;
+  background: #00d2ff;
+  border: none;
+  border-radius: 10px;
+  color: #051322;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 210, 255, 0.35);
+}
+
+.ghs-panel-done:hover {
+  background: #38bdf8;
+  box-shadow: 0 6px 18px rgba(0, 210, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .ghs-panel-done {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="light"] .ghs-panel-done:hover {
+  background: #0369a1;
+}
+
+/* Dropdown Transitions */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 @media (max-width: 860px) {
-  .swc-main-row {
+  .ghs-inputs-row {
+    flex-direction: column;
+  }
+  .ghs-filters-row {
     flex-wrap: wrap;
   }
-  .swc-location-wrap {
-    order: 2;
-    min-width: 220px;
+  .ghs-custom-dropdown {
+    min-width: calc(50% - 6px);
   }
-  .swc-search-btn {
-    order: 3;
-    flex: 1;
+  .ghs-unified-ai-btn {
+    width: 100%;
   }
 }
 
-@media (max-width: 680px) {
-  .search-widget-card {
-    padding: 16px;
+@media (max-width: 600px) {
+  .green-hero-search {
+    padding: 12px;
   }
-  .swc-ai-row {
-    flex-direction: column;
-    align-items: stretch;
+  .ghs-top-left-group {
+    flex-wrap: wrap;
   }
-  .swc-ask-ai-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .swc-main-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .swc-purpose-toggle {
-    width: 100%;
-    display: flex;
-  }
-  .swc-purpose-btn {
-    flex: 1;
-    text-align: center;
-  }
-  .swc-filters-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .swc-status-chips {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .swc-status-chip {
-    flex: 1;
-    text-align: center;
-    padding: 6px 8px;
-    font-size: 11.5px;
-  }
-  .swc-filter-sep {
-    display: none;
+  .ghs-custom-dropdown {
+    min-width: 100%;
   }
 }
 
@@ -1618,7 +2431,7 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   position: sticky;
   top: 70px;
-  z-index: 50;
+  z-index: 30;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
