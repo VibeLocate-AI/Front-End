@@ -106,6 +106,91 @@
       </div>
     </Transition>
 
+    <!-- Two-Factor Authentication Setup Modal -->
+    <Transition name="modal-fade">
+      <div v-if="show2faModal" class="upgrade-modal-backdrop" @click.self="close2faModal">
+        <div class="upgrade-modal-content two-factor-modal-content">
+          <button class="close-modal-btn" :disabled="isVerifying2fa" @click="close2faModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <div class="modal-security-badge">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+
+          <h2 class="modal-title">{{ isRtl ? 'إعداد التحقق بخطوتين (2FA)' : 'Two-Factor Authentication Setup' }}</h2>
+          <p class="modal-subtitle">
+            {{ isRtl ? 'لحماية حسابك، اربط تطبيق المصادقة (Google Authenticator أو 1Password) عبر مسح رمز QR أو إدخال المفتاح.' : 'Scan the QR code with your authenticator app (Google Authenticator, Microsoft Authenticator) or enter the secret key manually.' }}
+          </p>
+
+          <div v-if="isLoading2fa" class="text-center py-4">
+            <i class="fa-solid fa-spinner fa-spin fa-2x text-primary mb-2"></i>
+            <p class="text-muted small">{{ isRtl ? 'جاري تجهيز مفتاح الأمان...' : 'Generating your security key...' }}</p>
+          </div>
+
+          <div v-else class="two-factor-modal-body">
+            <!-- QR Code Section -->
+            <div class="qr-preview-card text-center mb-3">
+              <div v-if="twoFactorQrCodeUrl" class="qr-image-frame mb-3 d-flex justify-content-center">
+                <img :src="twoFactorQrCodeUrl" alt="2FA QR Code" class="img-fluid rounded border p-2 bg-white" style="width: 175px; height: 175px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" />
+              </div>
+              <div class="secret-key-display d-flex align-items-center justify-content-center gap-2 flex-wrap p-2 rounded" style="background: rgba(2, 132, 199, 0.06); border: 1px dashed #0284c7;">
+                <span class="text-muted small">{{ isRtl ? 'المفتاح السري:' : 'Secret Key:' }}</span>
+                <code class="user-select-all fw-bold text-dark px-2 py-1 bg-white rounded border">{{ twoFactorSecret }}</code>
+                <button type="button" class="btn btn-sm btn-outline-primary" @click="copySecretKey" :title="isRtl ? 'نسخ المفتاح' : 'Copy Key'">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+              <small class="text-muted d-block mt-2">
+                {{ isRtl ? 'امسح الرمز أو انسخ المفتاح وألصقه في تطبيق Google Authenticator' : 'Scan code or copy the key into Google Authenticator' }}
+              </small>
+            </div>
+
+            <!-- Verification Code Input -->
+            <div class="two-factor-input-section mt-3 text-center">
+              <label class="form-label d-block mb-2 fw-bold">
+                {{ isRtl ? 'أدخل رمز التحقق المكون من 6 أرقام من التطبيق:' : 'Enter the 6-digit Code from your app:' }}
+              </label>
+              <div class="d-flex justify-content-center">
+                <input
+                  type="text"
+                  v-model="twoFactorCode"
+                  maxlength="6"
+                  class="form-control text-center fw-bold fs-4"
+                  placeholder="000000"
+                  style="max-width: 220px; letter-spacing: 6px; font-family: monospace; border: 2px solid #0284c7;"
+                  :disabled="isVerifying2fa"
+                  @keyup.enter="handleVerify2FA"
+                  autofocus
+                />
+              </div>
+            </div>
+
+            <!-- Error message if any -->
+            <div v-if="twoFactorError" class="alert-inline alert-danger mt-3 text-start">
+              <i class="fa-solid fa-circle-exclamation me-1"></i>
+              {{ twoFactorError }}
+            </div>
+          </div>
+
+          <div class="modal-actions mt-4">
+            <button
+              class="btn-save-primary"
+              :disabled="isVerifying2fa || !twoFactorCode || twoFactorCode.trim().length < 6"
+              @click="handleVerify2FA"
+            >
+              <i v-if="isVerifying2fa" class="fa-solid fa-spinner fa-spin me-1"></i>
+              <i v-else class="fa-solid fa-circle-check me-1"></i>
+              {{ isVerifying2fa ? (isRtl ? 'جاري التحقق...' : 'Verifying...') : (isRtl ? 'تأكيد وتفعيل' : 'Confirm & Enable') }}
+            </button>
+            <button class="btn-cancel-modal" :disabled="isVerifying2fa" @click="close2faModal">
+              {{ isRtl ? 'إلغاء' : 'Cancel' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
 
     <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
     <main class="profile-main-container">
@@ -984,22 +1069,52 @@
                 </form>
               </div>
 
-              <!-- Two-Factor Authentication Status Card -->
+              <!-- Two-Factor Authentication Interactive Card -->
               <div class="form-card mb-4">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                   <div class="d-flex align-items-center gap-3">
-                    <div class="security-feature-icon">
-                      <i class="fa-solid fa-mobile-screen-button"></i>
+                    <div class="security-feature-icon" :class="{ 'icon-active': is2faEnabled }">
+                      <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <div>
-                      <h4 class="card-subtitle mb-1">{{ isRtl ? 'التحقق بخطوتين (2FA)' : 'Two-Factor Authentication' }}</h4>
-                      <p class="text-muted small mb-0">{{ isRtl ? 'حماية إضافية لحسابك عند تسجيل الدخول برمز التحقق' : 'Extra login security using email verification OTP' }}</p>
+                      <div class="d-flex align-items-center gap-2">
+                        <h4 class="card-subtitle mb-0">{{ isRtl ? 'التحقق بخطوتين (2FA)' : 'Two-Factor Authentication (2FA)' }}</h4>
+                        <span :class="is2faEnabled ? 'badge-feature-active' : 'badge-feature-inactive'">
+                          <i class="fa-solid" :class="is2faEnabled ? 'fa-circle-check' : 'fa-circle-xmark'"></i>
+                          {{ is2faEnabled ? (isRtl ? 'مُفعّل' : 'Enabled') : (isRtl ? 'غير مُفعّل' : 'Disabled') }}
+                        </span>
+                      </div>
+                      <p class="text-muted small mb-0 mt-1">
+                        {{ isRtl ? 'حماية إضافية لحسابك باستخدام تطبيق المصادقة (Google Authenticator / Microsoft Authenticator)' : 'Extra login security using Google or Microsoft Authenticator app OTP.' }}
+                      </p>
                     </div>
                   </div>
-                  <span class="badge-feature-active">
-                    <i class="fa-solid fa-circle-check me-1"></i>
-                    {{ isRtl ? 'مُفعّل بالبريد' : 'Enabled via Email' }}
-                  </span>
+
+                  <div class="two-factor-actions">
+                    <button 
+                      v-if="!is2faEnabled"
+                      type="button" 
+                      class="btn-2fa-action btn-enable" 
+                      @click="handleStart2FA"
+                      :disabled="isLoading2fa"
+                    >
+                      <i v-if="isLoading2fa" class="fa-solid fa-spinner fa-spin me-1"></i>
+                      <i v-else class="fa-solid fa-lock me-1"></i>
+                      <span>{{ isRtl ? 'تفعيل التحقق بخطوتين' : 'Enable 2FA' }}</span>
+                    </button>
+
+                    <button 
+                      v-else
+                      type="button" 
+                      class="btn-2fa-action btn-disable" 
+                      @click="handleDisable2FA"
+                      :disabled="isDisabling2fa"
+                    >
+                      <i v-if="isDisabling2fa" class="fa-solid fa-spinner fa-spin me-1"></i>
+                      <i v-else class="fa-solid fa-shield-xmark me-1"></i>
+                      <span>{{ isRtl ? 'تعطيل التحقق' : 'Disable 2FA' }}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1894,6 +2009,9 @@ onMounted(async () => {
   } catch (alertErr) {
     console.warn('[ProfilePage] /profile/search-alerts note:', alertErr?.message)
   }
+
+  // Load Two-Factor Authentication Status from Backend API
+  await load2FAStatus()
 })
 
 // Preferences Saving Handler
@@ -2223,6 +2341,112 @@ const handleDeleteAccount = async () => {
   } finally {
     isDeletingAccount.value = false
   }
+}
+
+// ==================== TWO-FACTOR AUTHENTICATION (2FA) ====================
+const is2faEnabled = ref(false)
+const isLoading2fa = ref(false)
+const show2faModal = ref(false)
+const twoFactorSecret = ref('')
+const twoFactorOtpauthUrl = ref('')
+const twoFactorQrCodeUrl = ref('')
+const twoFactorCode = ref('')
+const twoFactorError = ref('')
+const isVerifying2fa = ref(false)
+const isDisabling2fa = ref(false)
+
+const load2FAStatus = async () => {
+  try {
+    const res = await authService.get2FAStatus()
+    // Backend format: { success: true, two_factor: { method: null, is_enabled: 0 or 1, verified_at: null } }
+    const tf = res?.two_factor || res?.data?.two_factor || res?.data
+    if (tf) {
+      is2faEnabled.value = Boolean(tf.is_enabled === 1 || tf.is_enabled === true || tf.enabled)
+    }
+  } catch (e) {
+    console.warn('[ProfilePage] 2FA check note:', e?.message || e)
+  }
+}
+
+const handleStart2FA = async () => {
+  twoFactorError.value = ''
+  twoFactorCode.value = ''
+  isLoading2fa.value = true
+  show2faModal.value = true
+  try {
+    const res = await authService.start2FA()
+    // Backend format: { success: true, message: '...', secret: '...', otpauth_url: '...' }
+    twoFactorSecret.value = res?.secret || res?.data?.secret || ''
+    const url = res?.otpauth_url || res?.data?.otpauth_url || ''
+    twoFactorOtpauthUrl.value = url
+    if (url) {
+      twoFactorQrCodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
+    }
+  } catch (err) {
+    console.error('[ProfilePage] start2FA error:', err)
+    twoFactorError.value = err?.data?.message || err?.message || (isRtl.value ? 'فشل بدء إعداد التحقق بخطوتين' : 'Failed to start 2FA setup.')
+  } finally {
+    isLoading2fa.value = false
+  }
+}
+
+const handleVerify2FA = async () => {
+  const code = (twoFactorCode.value || '').trim()
+  if (!code || code.length !== 6) {
+    twoFactorError.value = isRtl.value ? 'يرجى إدخال رمز التحقق المكون من 6 أرقام.' : 'Please enter the 6-digit verification code.'
+    return
+  }
+  twoFactorError.value = ''
+  isVerifying2fa.value = true
+  try {
+    const res = await authService.verify2FA(code)
+    is2faEnabled.value = true
+    show2faModal.value = false
+    showToast(isRtl.value ? 'تم تفعيل التحقق بخطوتين بنجاح!' : 'Two-Factor Authentication enabled successfully!')
+    await load2FAStatus()
+  } catch (err) {
+    console.error('[ProfilePage] verify2FA error:', err)
+    twoFactorError.value = err?.data?.message || err?.message || (isRtl.value ? 'رمز التحقق غير صحيح، يرجى المحاولة مجدداً.' : 'Invalid verification code. Please try again.')
+  } finally {
+    isVerifying2fa.value = false
+  }
+}
+
+const handleDisable2FA = async () => {
+  const msg = isRtl.value 
+    ? 'هل أنت متأكد من رغبتك في تعطيل التحقق بخطوتين؟ سيقل مستوى أمان حسابك.' 
+    : 'Are you sure you want to disable Two-Factor Authentication? Your account security will be reduced.'
+  if (!confirm(msg)) return
+
+  isDisabling2fa.value = true
+  try {
+    await authService.disable2FA()
+    is2faEnabled.value = false
+    showToast(isRtl.value ? 'تم تعطيل التحقق بخطوتين بنجاح.' : 'Two-Factor Authentication has been disabled.')
+    await load2FAStatus()
+  } catch (err) {
+    console.error('[ProfilePage] disable2FA error:', err)
+    showToast(err?.data?.message || err?.message || (isRtl.value ? 'فشل تعطيل التحقق بخطوتين' : 'Failed to disable 2FA'), 'error')
+  } finally {
+    isDisabling2fa.value = false
+  }
+}
+
+const copySecretKey = async () => {
+  if (!twoFactorSecret.value) return
+  try {
+    await navigator.clipboard.writeText(twoFactorSecret.value)
+    showToast(isRtl.value ? 'تم نسخ المفتاح السري إلى الحافظة' : 'Secret key copied to clipboard')
+  } catch {
+    showToast(isRtl.value ? 'يرجى نسخ المفتاح يدوياً' : 'Please copy key manually')
+  }
+}
+
+const close2faModal = () => {
+  if (isVerifying2fa.value) return
+  show2faModal.value = false
+  twoFactorError.value = ''
+  twoFactorCode.value = ''
 }
 </script>
 
@@ -4193,6 +4417,69 @@ const handleDeleteAccount = async () => {
   padding: 5px 12px;
   border-radius: 20px;
   border: 1px solid #a7f3d0;
+}
+
+.badge-feature-inactive {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+}
+
+.security-feature-icon.icon-active {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.btn-2fa-action {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+}
+
+.btn-2fa-action.btn-enable {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.btn-2fa-action.btn-enable:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1, #075985);
+  transform: translateY(-1px);
+}
+
+.btn-2fa-action.btn-disable {
+  background: #fff1f2;
+  color: #e11d48;
+  border-color: #fecdd3;
+}
+
+.btn-2fa-action.btn-disable:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.modal-security-badge {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 16px auto;
 }
 
 .session-card-row {

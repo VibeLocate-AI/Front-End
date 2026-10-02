@@ -1,110 +1,778 @@
 <template>
-  <div class="favorites-page">
-    <section class="hero">
-      <div class="hero-title"><div class="hero-heart"><i class="fa-solid fa-heart"></i></div><div><span>MY FAVORITES</span><h1>Your <strong>Favorite</strong> Properties</h1><p>Save properties you love and come back to them anytime.</p></div></div>
-      <div class="hero-note">Big dreams<br>start with<br>a favorite place <i class="fa-regular fa-heart"></i></div>
-      <div class="stats"><div><i class="fa-regular fa-heart"></i><b>{{cards.length}}</b><span>Saved Properties</span></div><div><i class="fa-regular fa-calendar"></i><b>2</b><span>In Progress</span></div><div><i class="fa-regular fa-clock"></i><b>1</b><span>Recently Viewed</span></div><div><i class="fa-solid fa-house"></i><b>0</b><span>Price Alerts</span></div></div>
+  <div class="favorites-page" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme" :class="{ 'light-theme': !isDark }">
+    <AppNavbar />
+
+    <!-- HERO HEADER -->
+    <section class="fav-hero">
+      <div class="fav-hero-content">
+        <div class="fav-hero-title-group">
+          <div class="fav-heart-icon-box">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+          <div>
+            <span class="fav-badge-subtitle">{{ isRtl ? 'المفضلة وقائمة الرغبات' : 'MY FAVORITES' }}</span>
+            <h1 class="fav-main-title">
+              <span>{{ isRtl ? 'عقاراتك ' : 'Your ' }}</span>
+              <strong class="text-cyan">{{ isRtl ? 'المفضلة' : 'Favorite' }}</strong>
+              <span>{{ isRtl ? ' المحفوظة' : ' Properties' }}</span>
+            </h1>
+            <p class="fav-subtitle">
+              {{ isRtl ? 'العقارات التي قمت بحفظها في حسابك، يمكنك الرجوع إليها ومقارنتها في أي وقت.' : 'Properties saved to your account. Come back to compare and inspect anytime.' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="fav-stats-row">
+          <div class="stat-pill">
+            <i class="fa-solid fa-heart text-red"></i>
+            <div class="stat-meta">
+              <b>{{ savedList.length }}</b>
+              <span>{{ isRtl ? 'عقار محفوظ' : 'Saved Properties' }}</span>
+            </div>
+          </div>
+          <div class="stat-pill">
+            <i class="fa-solid fa-building text-cyan"></i>
+            <div class="stat-meta">
+              <b>{{ countCategory('Apartments') }}</b>
+              <span>{{ isRtl ? 'شقق' : 'Apartments' }}</span>
+            </div>
+          </div>
+          <div class="stat-pill">
+            <i class="fa-solid fa-house-chimney text-green"></i>
+            <div class="stat-meta">
+              <b>{{ countCategory('Villas') }}</b>
+              <span>{{ isRtl ? 'فلل' : 'Villas' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <main class="content">
-      <div class="toolbar"><div class="tabs"><button v-for="tab in tabs" :key="tab.value" :class="{active:activeType===tab.value}" @click="activeType=tab.value">{{tab.label}} ({{countType(tab.value)}})</button></div><select v-model="sort"><option value="newest">Sort by: Newest First</option><option value="high">Price: High to Low</option><option value="low">Price: Low to High</option></select></div>
-      <div class="cards-grid">
-        <article v-for="property in filteredCards" :key="property.id" class="property-card">
-          <div class="image"><img :src="property.image"><span>{{singular(property.type)}}</span><button @click="remove(property)"><i class="fa-solid fa-heart"></i></button></div>
-          <div class="details"><h2>{{property.title}}</h2><p><i class="fa-solid fa-location-dot"></i> {{property.location}}</p><strong>{{property.price}}</strong><div class="specs"><span><i class="fa-solid fa-bed"></i>{{property.beds}} Beds</span><span><i class="fa-solid fa-bath"></i>{{property.baths}} Baths</span><span><i class="fa-solid fa-up-right-and-down-left-from-center"></i>{{property.sqft}} sqft</span></div><div class="card-foot"><span><i class="fa-regular fa-calendar"></i> Completion: {{property.completion}}</span><button @click="view(property)">View Details <i class="fa-solid fa-arrow-right"></i></button></div></div>
-        </article>
-        <section class="explore-card"><i class="fa-solid fa-house-circle-check"></i><h2>Your dream home<br>is still out there!</h2><p>Keep exploring and save more<br>properties to your favorites.</p><button @click="$router.push('/home')">Browse More Properties <i class="fa-solid fa-arrow-right"></i></button></section>
+    <!-- MAIN CONTENT -->
+    <main class="fav-content-wrap">
+      <!-- Toolbar: Category filter pills + Sort dropdown -->
+      <div class="fav-toolbar" v-if="savedList.length > 0">
+        <div class="fav-tabs">
+          <button 
+            v-for="tab in filterTabs" 
+            :key="tab.value" 
+            class="fav-tab-btn"
+            :class="{ active: activeCategory === tab.value }"
+            @click="activeCategory = tab.value"
+          >
+            {{ isRtl ? tab.labelAr : tab.labelEn }} ({{ countCategory(tab.value) }})
+          </button>
+        </div>
+
+        <div class="fav-sort-wrap">
+          <label class="sort-label">{{ isRtl ? 'الترتيب:' : 'Sort by:' }}</label>
+          <select v-model="sortOrder" class="fav-sort-select">
+            <option value="newest">{{ isRtl ? 'الأحدث أولاً' : 'Newest First' }}</option>
+            <option value="price-asc">{{ isRtl ? 'السعر: من الأقل للأعلى' : 'Price: Low to High' }}</option>
+            <option value="price-desc">{{ isRtl ? 'السعر: من الأعلى للأقل' : 'Price: High to Low' }}</option>
+          </select>
+        </div>
       </div>
-      <div v-if="!filteredCards.length" class="empty"><i class="fa-regular fa-heart"></i><h2>No saved properties here</h2><button @click="$router.push('/home')">Explore Properties</button></div>
+
+      <!-- Cards Grid -->
+      <div v-if="filteredCards.length > 0" class="fav-cards-grid">
+        <article 
+          v-for="prop in filteredCards" 
+          :key="prop.id || prop.title" 
+          class="fav-prop-card"
+        >
+          <div class="card-thumb-wrap" @click="viewDetails(prop)">
+            <img 
+              :src="prop.image || '/images/photo-1545324418-cc1a3fa10c00.avif'" 
+              :alt="prop.title" 
+              class="card-img" 
+              loading="lazy"
+              @error="onImgError"
+            />
+            <span class="prop-type-badge">{{ prop.type || 'Apartment' }}</span>
+            <button 
+              type="button" 
+              class="btn-remove-fav" 
+              @click.stop="removeFromFavorites(prop)" 
+              :title="isRtl ? 'إزالة من المفضلة' : 'Remove from Favorites'"
+            >
+              <i class="fa-solid fa-heart"></i>
+            </button>
+          </div>
+
+          <div class="card-details">
+            <h3 class="card-title" @click="viewDetails(prop)">{{ prop.title }}</h3>
+            <p class="card-location">
+              <i class="fa-solid fa-location-dot"></i> {{ prop.location || 'Dubai, UAE' }}
+            </p>
+            <div class="card-price">{{ prop.price }}</div>
+
+            <div class="card-specs">
+              <span><i class="fa-solid fa-bed"></i> {{ prop.beds || 2 }} {{ isRtl ? 'غرف' : 'Beds' }}</span>
+              <span><i class="fa-solid fa-bath"></i> {{ prop.baths || 2 }} {{ isRtl ? 'حمام' : 'Baths' }}</span>
+              <span><i class="fa-solid fa-vector-square"></i> {{ prop.sqft || '1,400' }} {{ isRtl ? 'قدم²' : 'sqft' }}</span>
+            </div>
+
+            <div class="card-footer">
+              <button type="button" class="btn-view-details" @click="viewDetails(prop)">
+                <span>{{ isRtl ? 'عرض التفاصيل' : 'View Details' }}</span>
+                <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- EMPTY STATE (Shown when account has no favorites) -->
+      <div v-else class="fav-empty-card">
+        <div class="empty-icon-wrap">
+          <i class="fa-regular fa-heart"></i>
+        </div>
+        <h2>{{ isRtl ? 'لا توجد عقارات مفضلة محفوظة حالياً' : 'No Saved Properties Yet' }}</h2>
+        <p>
+          {{ isRtl ? 'لم تقم بحفظ أي عقارات في هذا الحساب بعد. تصفح عقاراتنا الفاخرة في دبي واضغط على أيقونة القلب لحفظ مفضلاتك هنا.' : 'You have not saved any properties to this account yet. Explore luxury residences in Dubai and click the heart icon to save your favorites here.' }}
+        </p>
+        <div class="empty-actions">
+          <RouterLink to="/search?purpose=sale" class="btn-browse-primary">
+            <i class="fa-solid fa-compass"></i>
+            <span>{{ isRtl ? 'استكشف العقارات المتاحة' : 'Explore Properties' }}</span>
+          </RouterLink>
+          <RouterLink to="/home" class="btn-browse-secondary">
+            <span>{{ isRtl ? 'العودة للرئيسية' : 'Back to Home' }}</span>
+          </RouterLink>
+        </div>
+      </div>
     </main>
-    <Transition name="toast"><div v-if="toast" class="toast"><i class="fa-solid fa-circle-check"></i>{{toast}}</div></Transition>
+
+    <!-- Toast Notification -->
+    <Transition name="toast">
+      <div v-if="toastMessage" class="fav-toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>{{ toastMessage }}</span>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import AppNavbar from './AppNavbar.vue'
 import favoritesService from '../services/favoritesService'
-const router=useRouter(),menuOpen=ref(false),activeType=ref('all'),sort=ref('newest'),toast=ref('')
-const seed=[
- {id:'f1',title:'Marina Heights Residences',location:'Dubai Marina, Dubai',price:'AED 2,200,000',priceValue:2200000,beds:2,baths:2,sqft:'1,250',type:'Apartments',completion:'Dec 2025',image:'/images/photo-1545324418-cc1a3fa10c00.avif'},
- {id:'f2',title:'Palm Horizon Villas',location:'Palm Jumeirah, Dubai',price:'AED 12,500,000',priceValue:12500000,beds:4,baths:5,sqft:'5,200',type:'Villas',completion:'Jan 2027',image:'/images/photo-1600596542815-ffad4c1539a9.jfif'},
- {id:'f3',title:'Downtown Views Studio',location:'Downtown Dubai, Dubai',price:'AED 950,000',priceValue:950000,beds:1,baths:1,sqft:'620',type:'Studios',completion:'Jun 2026',image:'/images/photo-1600210492486-724fe5c67fb0.jfif'},
- {id:'f4',title:'Creek View Tower',location:'Dubai Creek Harbour, Dubai',price:'AED 2,950,000',priceValue:2950000,beds:3,baths:2,sqft:'1,800',type:'Apartments',completion:'Nov 2026',image:'/images/photo-1512917774080-9991f1c4c750 (1).jfif'},
- {id:'f5',title:'The Oasis Villas',location:'Dubai Land, Dubai',price:'AED 4,800,000',priceValue:4800000,beds:4,baths:4,sqft:'7,500',type:'Villas',completion:'Q4 2027',image:'/images/photo-1600585154340-be6161a56a0c.avif'}]
-const cards=ref(seed)
-const tabs=[{label:'All',value:'all'},{label:'Apartments',value:'Apartments'},{label:'Villas',value:'Villas'},{label:'Studios',value:'Studios'}]
-const countType=t=>t==='all'?cards.value.length:cards.value.filter(x=>x.type===t).length
-const filteredCards=computed(()=>{let list=activeType.value==='all'?cards.value:cards.value.filter(x=>x.type===activeType.value);return [...list].sort((a,b)=>sort.value==='high'?b.priceValue-a.priceValue:sort.value==='low'?a.priceValue-b.priceValue:0)})
-const singular=t=>t==='Apartments'?'Apartment':t==='Villas'?'Villa':t==='Studios'?'Studio':t
-function remove(p){cards.value=cards.value.filter(x=>x.id!==p.id);favoritesService.remove(p.title);toast.value='Property removed from favorites';setTimeout(()=>toast.value='',2300)}
-function view(p){sessionStorage.setItem('vibelocate:selected-property',JSON.stringify(p));router.push(`/property/${p.id}`)}
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
+
+const router = useRouter()
+const { isRtl, isDark, theme } = useThemeAndLanguage()
+
+const activeCategory = ref('all')
+const sortOrder = ref('newest')
+const toastMessage = ref('')
+let toastTimer = null
+
+// Real reactive list of saved properties for this user account
+const savedList = computed(() => favoritesService.savedItems.value || [])
+
+const filterTabs = [
+  { value: 'all', labelEn: 'All', labelAr: 'الكل' },
+  { value: 'Apartments', labelEn: 'Apartments', labelAr: 'شقق' },
+  { value: 'Villas', labelEn: 'Villas', labelAr: 'فلل' },
+  { value: 'Penthouses', labelEn: 'Penthouses', labelAr: 'بنتهاوس' },
+  { value: 'Studios', labelEn: 'Studios', labelAr: 'استوديو' }
+]
+
+const countCategory = (val) => {
+  if (val === 'all') return savedList.value.length
+  return savedList.value.filter(p => {
+    const t = (p.type || '').toLowerCase()
+    const target = val.toLowerCase().replace(/s$/, '')
+    return t.includes(target)
+  }).length
+}
+
+const parseNumericPrice = (p) => {
+  if (typeof p === 'number') return p
+  if (!p) return 0
+  const clean = String(p).replace(/[^0-9.]/g, '')
+  return Number(clean) || 0
+}
+
+const filteredCards = computed(() => {
+  let list = [...savedList.value]
+  if (activeCategory.value !== 'all') {
+    const target = activeCategory.value.toLowerCase().replace(/s$/, '')
+    list = list.filter(p => (p.type || '').toLowerCase().includes(target))
+  }
+
+  if (sortOrder.value === 'price-asc') {
+    list.sort((a, b) => parseNumericPrice(a.price) - parseNumericPrice(b.price))
+  } else if (sortOrder.value === 'price-desc') {
+    list.sort((a, b) => parseNumericPrice(b.price) - parseNumericPrice(a.price))
+  }
+  return list
+})
+
+const showToast = (msg) => {
+  toastMessage.value = msg
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastMessage.value = '' }, 2500)
+}
+
+const removeFromFavorites = (prop) => {
+  favoritesService.remove(prop.title || prop.id)
+  showToast(isRtl.value ? 'تمت إزالة العقار من المفضلة' : 'Property removed from favorites')
+}
+
+const viewDetails = (prop) => {
+  if (prop.id) {
+    sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
+    router.push(`/property/${prop.id}`)
+  }
+}
+
+const onImgError = (e) => {
+  e.target.src = '/images/photo-1545324418-cc1a3fa10c00.avif'
+}
+
+onMounted(async () => {
+  await favoritesService.syncWithBackend()
+})
 </script>
 
 <style scoped>
-*{box-sizing:border-box}.favorites-page{min-height:100vh;background:#021629;color:#eaf6ff;font-family:'Plus Jakarta Sans',sans-serif}.fav-header{height:70px;background:#031426;display:flex;align-items:center;padding:0 3.5%;gap:44px;border-bottom:1px solid #173550}.brand{display:flex;align-items:center;color:#fff;text-decoration:none;white-space:nowrap}.brand img{width:43px}.brand strong{font-size:18px}.brand strong span{color:#19d7ee}.brand b{font-size:9px;background:#1587f5;padding:3px 5px;border-radius:5px;margin-left:6px}.fav-header nav{display:flex;align-items:center;gap:28px;flex:1;height:100%}.fav-header nav a{color:#dbe6f0;text-decoration:none;font-size:12px;height:100%;display:flex;align-items:center;position:relative}.fav-header nav a.active{color:#00dbef}.fav-header nav a.active:after{content:'';height:2px;background:#00dff3;position:absolute;bottom:0;left:0;right:0}.actions{display:flex;align-items:center;gap:9px}.actions button{border:0;color:#fff;cursor:pointer}.lang{height:36px;background:#0b2338;border:1px solid #294962!important;border-radius:20px;padding:0 13px}.lang i{color:#13d1ed}.lang em{border-left:1px solid #5b6d7f;margin:0 8px}.round,.user{width:38px;height:38px;border-radius:50%;background:#10273d}.round i{color:#d8e5f1}.list{height:40px;border-radius:13px;background:#0c6df7;padding:0 18px;font-weight:700}.user{background:#13c9e7;color:#052033!important}.badge{position:relative}.badge small{position:absolute;right:-2px;top:-5px;background:#f44258;border-radius:50%;width:16px;height:16px;font-size:9px;padding-top:2px}.mobile-menu{display:none;background:none;border:0;color:#fff;font-size:20px}.hero{height:295px;position:relative;background:linear-gradient(90deg,rgba(2,20,38,.96),rgba(2,20,38,.36) 42%,rgba(2,20,38,.08)),url('/images/about-hero.png') center 50%/cover;color:#fff;padding:42px 4.6%}.hero-title{display:flex;align-items:flex-start;gap:25px}.hero-heart{width:88px;height:88px;border:1px solid #3c7daf;border-radius:20px;background:#0c3456aa;display:grid;place-items:center}.hero-heart i{font-size:42px}.hero-title>div:last-child>span{color:#11d2ed;font-size:13px;font-weight:800;letter-spacing:1.4px}.hero h1{font-size:39px;margin:7px 0}.hero h1 strong{color:#11cbe9}.hero p{font-size:14px;margin:0;color:#d5e0e9}.hero-note{position:absolute;right:8%;top:60px;font:italic 26px cursive;transform:rotate(-5deg);text-align:center}.hero-note i{display:block;margin-top:8px}.stats{position:absolute;left:4.6%;bottom:20px;display:grid;grid-template-columns:repeat(4,210px);gap:18px}.stats>div{height:65px;border:1px solid #285275;border-radius:12px;background:#0a2a47d9;display:grid;grid-template-columns:50px 1fr;grid-template-rows:1fr 1fr;padding:10px 14px}.stats i{grid-row:1/3;width:40px;height:40px;border-radius:50%;background:#0a466d;display:grid;place-items:center;color:#13d1ed;font-size:21px}.stats b{font-size:20px}.stats span{font-size:10px}.content{padding:20px 3.8% 45px;max-width:1800px;margin:auto}.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.tabs{display:flex;gap:14px}.tabs button,.toolbar select{height:40px;border:1px solid #2c5574;background:#08243d;color:#e1ebf4;border-radius:22px;padding:0 25px}.tabs button.active{background:#0c70fb;border-color:#1686ff;color:#fff;box-shadow:0 7px 20px #096cf94a}.toolbar select{min-width:210px}.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.property-card{border:1px solid #2b5a7b;border-radius:12px;background:#08263f;overflow:hidden}.image{height:142px;position:relative}.image img{width:100%;height:100%;object-fit:cover}.image>span{position:absolute;left:14px;top:12px;background:#123c61;border-radius:15px;padding:6px 14px;font-size:10px;font-weight:700}.image button{position:absolute;right:12px;top:10px;width:39px;height:39px;border:0;border-radius:50%;background:#fff;color:#f34356;font-size:17px}.details{padding:10px 17px}.details h2{font-size:15px;margin:0 0 5px}.details p{font-size:11px;color:#39cdec;margin:0}.details p i{margin-right:7px}.details>strong{display:block;color:#13d7ef;font-size:18px;margin:5px 0}.specs{display:flex;gap:32px;font-size:11px;margin-bottom:9px}.specs i{margin-right:8px}.card-foot{border-top:1px solid #2a506d;padding-top:9px;display:flex;justify-content:space-between;align-items:center}.card-foot>span{font-size:10px;color:#8cc4e6}.card-foot>span i{color:#19d7ef;margin-right:8px}.card-foot button,.explore-card button{border:1px solid #39769d;background:#0e3a60;color:#fff;border-radius:20px;padding:9px 20px;font-size:10px;font-weight:700}.card-foot button i{margin-left:12px}.explore-card{border:1px solid #2b5a7b;border-radius:12px;min-height:270px;background:linear-gradient(145deg,#08253e,#061d32);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.explore-card>i{font-size:43px;color:#15d3ee}.explore-card h2{font-size:17px;margin:9px 0}.explore-card p{font-size:11px;color:#d0dce6;line-height:1.5}.explore-card button{background:#19c9ee;color:#03203a;border:0;padding:11px 24px}.empty{text-align:center;padding:60px}.empty>i{font-size:45px;color:#15cfea}.empty button{display:block;margin:15px auto;border:0;border-radius:8px;padding:12px 22px;background:#0c70fa;color:#fff}.toast{position:fixed;right:22px;bottom:22px;background:#0a304d;border:1px solid #15d4ed;border-radius:9px;padding:13px 18px}.toast i{color:#28dda1;margin-right:8px}.toast-enter-active,.toast-leave-active{transition:.2s}.toast-enter-from,.toast-leave-to{opacity:0;transform:translateY(10px)}
-@media(max-width:1150px){.fav-header{gap:16px}.fav-header nav{gap:13px}.fav-header nav a:nth-child(6),.fav-header nav a:nth-last-child(1){display:none}.lang,.actions>.round:not(.badge){display:none}.stats{grid-template-columns:repeat(4,1fr);right:4.6%}.cards-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.fav-header{padding:0 14px}.mobile-menu{display:block}.fav-header nav{display:none;position:absolute;top:70px;left:0;right:0;background:#031426;z-index:20;padding:17px;flex-direction:column;align-items:flex-start}.fav-header nav.open{display:flex}.actions{margin-left:auto}.list{display:none}.hero{height:430px;padding:30px 18px}.hero-heart{width:65px;height:65px}.hero h1{font-size:30px}.hero-note{display:none}.stats{left:18px;right:18px;bottom:18px;grid-template-columns:1fr 1fr}.content{padding:17px}.toolbar{align-items:stretch;gap:12px;flex-direction:column}.tabs{overflow:auto}.tabs button{white-space:nowrap}.cards-grid{grid-template-columns:1fr}.image{height:180px}}
-@media(max-width:450px){.brand strong,.brand>b,.actions .badge{display:none}.hero-title{gap:14px}.hero h1{font-size:25px}.hero p{font-size:12px}.stats>div{padding:8px}.stats i{width:34px;height:34px}.specs{gap:15px}.card-foot{gap:10px}}
-</style>
+.favorites-page {
+  min-height: 100vh;
+  background-color: var(--bg-base, #070d19);
+  color: var(--text-primary, #f0f6ff);
+  font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+  padding-bottom: 80px;
+}
 
-<style>
-/* Light Theme Overrides for Favorites Page */
+/* HERO */
+.fav-hero {
+  position: relative;
+  background: linear-gradient(135deg, rgba(7, 13, 25, 0.95) 0%, rgba(10, 22, 40, 0.88) 100%), url('/images/about-hero.png') center/cover no-repeat;
+  padding: 60px 5% 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fav-hero-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.fav-hero-title-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.fav-heart-icon-box {
+  width: 72px;
+  height: 72px;
+  background: rgba(0, 210, 255, 0.1);
+  border: 1.5px solid rgba(0, 210, 255, 0.3);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #ef4444;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+  flex-shrink: 0;
+}
+
+.fav-badge-subtitle {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #00d2ff;
+  text-transform: uppercase;
+}
+
+.fav-main-title {
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 800;
+  margin: 4px 0 8px;
+  color: #ffffff;
+}
+
+.text-cyan {
+  color: #00d2ff;
+}
+
+.fav-subtitle {
+  font-size: 14px;
+  color: rgba(240, 246, 255, 0.7);
+  margin: 0;
+  max-width: 580px;
+}
+
+/* STATS */
+.fav-stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 18px;
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+}
+
+.stat-pill i {
+  font-size: 20px;
+}
+
+.text-red { color: #ef4444; }
+.text-green { color: #10b981; }
+
+.stat-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-meta b {
+  font-size: 18px;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.stat-meta span {
+  font-size: 11px;
+  color: rgba(240, 246, 255, 0.6);
+}
+
+/* CONTENT WRAP */
+.fav-content-wrap {
+  max-width: 1400px;
+  margin: 32px auto 0;
+  padding: 0 5%;
+}
+
+/* TOOLBAR */
+.fav-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.fav-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fav-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.fav-tab-btn:hover {
+  background: rgba(0, 210, 255, 0.1);
+  border-color: rgba(0, 210, 255, 0.3);
+  color: #00d2ff;
+}
+
+.fav-tab-btn.active {
+  background: #00d2ff;
+  border-color: #00d2ff;
+  color: #051322;
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+}
+
+.fav-sort-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-label {
+  font-size: 13px;
+  color: rgba(240, 246, 255, 0.6);
+}
+
+.fav-sort-select {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* CARDS GRID */
+.fav-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.fav-prop-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  display: flex;
+  flex-direction: column;
+}
+
+.fav-prop-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 210, 255, 0.35);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.card-thumb-wrap {
+  position: relative;
+  height: 200px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s;
+}
+
+.fav-prop-card:hover .card-img {
+  transform: scale(1.05);
+}
+
+.prop-type-badge {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  background: rgba(11, 19, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.btn-remove-fav {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #ef4444;
+  border: none;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+
+.btn-remove-fav:hover {
+  transform: scale(1.15);
+}
+
+.card-details {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.card-title:hover {
+  color: #00d2ff;
+}
+
+.card-location {
+  font-size: 12.5px;
+  color: rgba(240, 246, 255, 0.6);
+  margin: 0 0 12px;
+}
+
+.card-location i {
+  color: #00d2ff;
+  margin-inline-end: 4px;
+}
+
+.card-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #00d2ff;
+  margin-bottom: 14px;
+}
+
+.card-specs {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(240, 246, 255, 0.7);
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.card-specs i {
+  color: #00d2ff;
+  margin-inline-end: 4px;
+}
+
+.card-footer {
+  margin-top: auto;
+}
+
+.btn-view-details {
+  width: 100%;
+  height: 38px;
+  background: rgba(0, 210, 255, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  color: #00d2ff;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-view-details:hover {
+  background: #00d2ff;
+  color: #051322;
+}
+
+/* EMPTY STATE */
+.fav-empty-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 80px 24px;
+  text-align: center;
+  max-width: 680px;
+  margin: 40px auto;
+}
+
+.empty-icon-wrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(0, 210, 255, 0.08);
+  border: 1.5px solid rgba(0, 210, 255, 0.25);
+  color: #00d2ff;
+  font-size: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.fav-empty-card h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px;
+}
+
+.fav-empty-card p {
+  font-size: 14px;
+  color: rgba(240, 246, 255, 0.7);
+  max-width: 480px;
+  margin: 0 auto 26px;
+  line-height: 1.6;
+}
+
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-browse-primary {
+  background: #00d2ff;
+  color: #051322;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-browse-primary:hover {
+  background: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.btn-browse-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-browse-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* TOAST */
+.fav-toast {
+  position: fixed;
+  bottom: 28px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 19, 34, 0.95);
+  border: 1px solid rgba(0, 210, 255, 0.4);
+  color: #ffffff;
+  padding: 12px 22px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 99999;
+}
+
+.fav-toast i {
+  color: #10b981;
+}
+
+.toast-enter-active, .toast-leave-active {
+  transition: all 0.25s ease;
+}
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 15px);
+}
+
+/* LIGHT THEME */
 [data-theme="light"] .favorites-page {
-  background: #f8fafc !important;
-  color: #0f172a !important;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
-[data-theme="light"] .favorites-page .hero {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%), url('/images/about-hero.png') center 50% / cover !important;
-  color: #0f172a !important;
+[data-theme="light"] .fav-hero {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 249, 255, 0.9) 100%), url('/images/about-hero.png') center/cover no-repeat;
+  border-bottom-color: #e2e8f0;
 }
 
-[data-theme="light"] .favorites-page .hero h1 {
-  color: #0f172a !important;
+[data-theme="light"] .fav-main-title {
+  color: #0f172a;
 }
 
-[data-theme="light"] .favorites-page .hero h1 strong {
-  color: #0284c7 !important;
+[data-theme="light"] .fav-subtitle {
+  color: #475569;
 }
 
-[data-theme="light"] .favorites-page .hero p {
-  color: #475569 !important;
+[data-theme="light"] .stat-pill {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
-[data-theme="light"] .favorites-page .hero-title > div:last-child > span {
-  color: #0284c7 !important;
+[data-theme="light"] .stat-meta b {
+  color: #0f172a;
 }
 
-[data-theme="light"] .favorites-page .hero-heart {
-  background: rgba(2, 132, 199, 0.1) !important;
-  border-color: rgba(2, 132, 199, 0.3) !important;
+[data-theme="light"] .stat-meta span {
+  color: #64748b;
 }
 
-[data-theme="light"] .favorites-page .hero-heart i {
-  color: #0284c7 !important;
+[data-theme="light"] .fav-tab-btn {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
 }
 
-[data-theme="light"] .favorites-page .hero-note {
-  color: #1e293b !important;
+[data-theme="light"] .fav-sort-select {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
-[data-theme="light"] .favorites-page .stats > div {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+[data-theme="light"] .fav-prop-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
 
-[data-theme="light"] .favorites-page .stats i {
-  background: #f0f9ff !important;
-  color: #0284c7 !important;
+[data-theme="light"] .card-title {
+  color: #0f172a;
 }
 
-[data-theme="light"] .favorites-page .stats b {
-  color: #0f172a !important;
+[data-theme="light"] .card-location {
+  color: #64748b;
 }
 
-[data-theme="light"] .favorites-page .stats span {
-  color: #64748b !important;
+[data-theme="light"] .card-specs {
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .fav-empty-card {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .fav-empty-card h2 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .fav-empty-card p {
+  color: #64748b;
 }
 </style>

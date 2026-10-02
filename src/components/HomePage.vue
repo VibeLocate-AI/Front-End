@@ -1,5 +1,5 @@
 <template>
-  <div class="dubai-home" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme">
+  <div class="dubai-home" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme" :class="{ 'dark-theme': isDark, 'light-theme': !isDark, 'dark': isDark, 'light': !isDark }">
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="top">
       
@@ -27,16 +27,25 @@
             </p>
 
             <!-- شريط البحث العصري المتكامل -->
-<!-- شريط البحث العصري المتكامل المطابق للصور 100% وبمساحة واسعة لمربع الإدخال -->
-<div class="green-hero-search">
-  <!-- ROW 1: Toggles (Purpose + Divider + Status) + AI Search Button -->
+<!-- شريط البحث العصري المتكامل المطابق للتصميم المرفق 100% -->
+<div class="green-hero-search" :class="{ 'dark-theme': isDark, 'light-theme': !isDark, 'dark': isDark, 'light': !isDark }">
+  <!-- Topographic Neon Contour Lines Overlay -->
+  <svg class="ghs-contour-svg" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M 620 0 C 680 70, 770 110, 930 130 C 990 138, 1030 180, 1050 360" fill="none" stroke="rgba(56, 189, 248, 0.45)" stroke-width="1.5" />
+    <path d="M 580 0 C 640 85, 740 135, 900 165 C 970 180, 1020 230, 1045 360" fill="none" stroke="rgba(168, 85, 247, 0.35)" stroke-width="1.2" stroke-dasharray="6 4" />
+    <path d="M 540 0 C 610 95, 710 155, 870 195 C 950 215, 1005 270, 1040 360" fill="none" stroke="rgba(45, 212, 191, 0.35)" stroke-width="1.2" />
+    <path d="M 680 360 C 760 300, 860 280, 980 320 C 1020 335, 1050 350, 1080 360" fill="none" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.2" />
+  </svg>
+
+  <!-- ROW 1: Toggles (Purpose + Divider + Status) + AI Widget Cluster -->
   <div class="ghs-row ghs-row-top">
+    <!-- Left Group: For Sale / For Rent | All / Ready / Off-Plan -->
     <div class="ghs-top-left-group">
       <!-- Purpose Tabs: للبيع / للإيجار -->
-      <div class="ghs-mini-toggle-group">
+      <div class="ghs-nav-pills-wrap">
         <button
           type="button"
-          class="ghs-mini-toggle"
+          class="ghs-nav-pill ghs-nav-pill-highlight"
           :class="{ active: homePurpose === 'sale' }"
           @click="homePurpose = 'sale'"
         >
@@ -44,7 +53,7 @@
         </button>
         <button
           type="button"
-          class="ghs-mini-toggle"
+          class="ghs-nav-pill"
           :class="{ active: homePurpose === 'rent' }"
           @click="homePurpose = 'rent'"
         >
@@ -56,10 +65,10 @@
       <div class="ghs-v-sep"></div>
 
       <!-- Status Tabs: الكل / جاهز للسكن / قيد الإنشاء -->
-      <div class="ghs-mini-toggle-group">
+      <div class="ghs-nav-pills-wrap">
         <button
           type="button"
-          class="ghs-mini-toggle"
+          class="ghs-nav-pill"
           :class="{ active: homeStatus === 'all' }"
           @click="homeStatus = 'all'"
         >
@@ -67,7 +76,7 @@
         </button>
         <button
           type="button"
-          class="ghs-mini-toggle"
+          class="ghs-nav-pill"
           :class="{ active: homeStatus === 'ready' }"
           @click="homeStatus = 'ready'"
         >
@@ -75,7 +84,7 @@
         </button>
         <button
           type="button"
-          class="ghs-mini-toggle"
+          class="ghs-nav-pill"
           :class="{ active: homeStatus === 'offplan' }"
           @click="homeStatus = 'offplan'"
         >
@@ -83,83 +92,97 @@
         </button>
       </div>
     </div>
-
-    <!-- AI Search Button (Pill on Top Right) -->
-    <button 
-      type="button" 
-      class="ghs-ai-pill-btn"
-      @click="triggerAiSearch"
-      :title="isRtl ? 'بحث ذكي بالذكاء الاصطناعي' : 'Smart AI Search'"
-    >
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
-      <span>{{ isRtl ? 'بحث ذكي AI' : 'AI Search' }}</span>
-    </button>
   </div>
 
-  <!-- ROW 2: The Two Search Boxes (Search Text & Location) -->
+  <!-- ROW 2: The Two Large Input Boxes (Left: Search Query, Right: Location with map preview) -->
   <div class="ghs-row ghs-inputs-row">
     <!-- 1. Search Query / Keywords / AI Prompt Input -->
     <div class="ghs-input-wrap ghs-query-wrap">
-      <i class="fa-solid fa-magnifying-glass ghs-input-icon ghs-query-icon"></i>
-      <input
-        type="text"
-        class="ghs-text-input"
-        v-model="query"
-        :placeholder="isRtl ? 'ابحث عن عقار أحلامك، كلمات مفتاحية، أو بالذكاء الاصطناعي...' : 'Search property, keywords or AI prompt...'"
-        @keydown.enter.prevent="handleSearch"
-      />
-      <button 
-        v-if="query" 
-        type="button" 
-        class="ghs-clear-input"
-        @click="query = ''"
-        :title="isRtl ? 'مسح' : 'Clear'"
-      >
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <div class="ghs-input-main-field">
+        <i class="fa-solid fa-magnifying-glass ghs-input-icon ghs-query-icon"></i>
+        <input
+          type="text"
+          class="ghs-text-input"
+          v-model="query"
+          :placeholder="isRtl ? 'ابحث عن عقار أحلامك، كلمات مفتاحية، أو طلب AI...' : 'Search property, keywords or AI prompt...'"
+          @keydown.enter.prevent="handleSearch"
+        />
+        <button 
+          v-if="query" 
+          type="button" 
+          class="ghs-clear-input"
+          @click="query = ''"
+          :title="isRtl ? 'مسح' : 'Clear'"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Right Inside Feature: Map Pin + 'Cost Pins' Badge -->
+      <div class="ghs-cost-pins-badge" :title="isRtl ? 'دبابيس التكلفة' : 'Cost Pins Badge'">
+        <i class="fa-solid fa-location-dot ghs-cost-pin-icon"></i>
+        <span class="ghs-cost-pin-pill">
+          <span class="ghs-cost-dot"></span>
+          <span>Cost Pins</span>
+        </span>
+      </div>
     </div>
 
-    <!-- 2. Location / Area Input -->
+    <!-- 2. Location / Area Input (with mini map graphics & zoom controls) -->
     <div class="ghs-input-wrap ghs-location-wrap">
-      <i class="fa-solid fa-location-dot ghs-input-icon ghs-loc-icon"></i>
-      <input
-        type="text"
-        class="ghs-text-input"
-        v-model="homeLocation"
-        :placeholder="isRtl ? 'أدخل الموقع أو المنطقة أو الحي...' : 'Enter location, area or neighborhood...'"
-        @keydown.enter.prevent="handleSearch"
-      />
-      <button 
-        v-if="homeLocation" 
-        type="button" 
-        class="ghs-clear-input"
-        @click="homeLocation = ''"
-        :title="isRtl ? 'مسح' : 'Clear'"
-      >
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <!-- Mini Map Vector Background -->
+      <div class="ghs-loc-map-bg" aria-hidden="true">
+        <svg class="ghs-map-roads-svg" viewBox="0 0 320 80" preserveAspectRatio="none">
+          <path d="M 0 35 Q 90 65, 170 30 T 320 50" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" />
+          <path d="M 70 80 Q 130 15, 210 60 T 300 15" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" />
+          <path d="M 0 50 Q 150 45, 240 10" fill="none" stroke="rgba(56,189,248,0.25)" stroke-width="2" />
+        </svg>
+      </div>
+
+      <div class="ghs-input-main-field">
+        <i class="fa-solid fa-location-dot ghs-input-icon ghs-loc-icon"></i>
+        <input
+          type="text"
+          class="ghs-text-input"
+          v-model="homeLocation"
+          :placeholder="isRtl ? 'أدخل الموقع أو المنطقة أو الحي...' : 'Enter location, area or neighborhood...'"
+          @keydown.enter.prevent="handleSearch"
+        />
+        <button 
+          v-if="homeLocation" 
+          type="button" 
+          class="ghs-clear-input"
+          @click="homeLocation = ''"
+          :title="isRtl ? 'مسح' : 'Clear'"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- ROW 3: Custom Dropdown Filters + Search Submit Button -->
+  <!-- ROW 3: Capsule Filters (Residential + Beds & Baths + Price + Search Action) -->
   <div class="ghs-row ghs-filters-row">
 
-    <!-- 1. Property Type Dropdown (Exact Match to Image 2 with Residential / Commercial Tabs & Radio Pills) -->
+    <!-- 1. Property Type (Capsule) -->
     <div class="ghs-custom-dropdown" ref="searchTypeRef">
       <button 
         type="button" 
-        class="ghs-dropdown-btn" 
+        class="ghs-dropdown-btn ghs-capsule-btn" 
         :class="{ active: propertyTypeOpen || homeType !== 'all' }" 
         @click="propertyTypeOpen = !propertyTypeOpen; bedsBathsOpen = false; priceOpen = false; handoverByOpen = false; paymentPlanOpen = false;"
       >
-        <i class="fa-solid fa-city ghs-btn-icon"></i>
-        <span>{{ propertyTypeLabel }}</span>
+        <div class="ghs-capsule-left">
+          <i class="fa-solid fa-city ghs-btn-icon"></i>
+          <span class="ghs-capsule-text">{{ propertyTypeLabel }}</span>
+        </div>
         <i class="fa-solid ghs-chevron" :class="propertyTypeOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
       </button>
 
       <Transition name="dropdown-fade">
         <div v-if="propertyTypeOpen" class="ghs-dropdown-panel ghs-type-popup" @click.stop>
-          <!-- Category Tabs: Residential vs Commercial (Image 2) -->
+          <!-- Category Tabs: Residential vs Commercial -->
           <div class="ghs-cat-tabs">
             <button 
               type="button" 
@@ -179,7 +202,7 @@
             </button>
           </div>
 
-          <!-- Radio Pill Options (2 columns as in Image 2) -->
+          <!-- Radio Pill Options -->
           <div class="ghs-radio-grid">
             <button 
               type="button" 
@@ -209,18 +232,20 @@
       </Transition>
     </div>
 
-    <!-- DYNAMIC FILTERS: If Off-Plan -> Handover By & Payment Plan (Matching Images 3, 4, 5) -->
+    <!-- DYNAMIC FILTERS: If Off-Plan -> Handover By & Payment Plan -->
     <template v-if="homeStatus === 'offplan'">
-      <!-- Handover By Dropdown (Image 4) -->
+      <!-- Handover By Dropdown -->
       <div class="ghs-custom-dropdown" ref="searchHandoverRef">
         <button 
           type="button" 
-          class="ghs-dropdown-btn" 
+          class="ghs-dropdown-btn ghs-capsule-btn" 
           :class="{ active: handoverByOpen || handoverBy !== 'any' }" 
           @click="handoverByOpen = !handoverByOpen; propertyTypeOpen = false; paymentPlanOpen = false;"
         >
-          <i class="fa-solid fa-calendar-days ghs-btn-icon"></i>
-          <span>{{ handoverLabel }}</span>
+          <div class="ghs-capsule-left">
+            <i class="fa-solid fa-calendar-days ghs-btn-icon"></i>
+            <span class="ghs-capsule-text">{{ handoverLabel }}</span>
+          </div>
           <i class="fa-solid ghs-chevron" :class="handoverByOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
 
@@ -242,16 +267,18 @@
         </Transition>
       </div>
 
-      <!-- Payment Plan Dropdown (Image 5) -->
+      <!-- Payment Plan Dropdown -->
       <div class="ghs-custom-dropdown" ref="searchPaymentRef">
         <button 
           type="button" 
-          class="ghs-dropdown-btn" 
+          class="ghs-dropdown-btn ghs-capsule-btn" 
           :class="{ active: paymentPlanOpen || Number(preHandoverPayment) < 100 }" 
           @click="paymentPlanOpen = !paymentPlanOpen; propertyTypeOpen = false; handoverByOpen = false;"
         >
-          <i class="fa-solid fa-chart-pie ghs-btn-icon"></i>
-          <span>{{ paymentPlanLabel }}</span>
+          <div class="ghs-capsule-left">
+            <i class="fa-solid fa-chart-pie ghs-btn-icon"></i>
+            <span class="ghs-capsule-text">{{ paymentPlanLabel }}</span>
+          </div>
           <i class="fa-solid ghs-chevron" :class="paymentPlanOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
 
@@ -290,18 +317,20 @@
       </div>
     </template>
 
-    <!-- DYNAMIC FILTERS: If NOT Off-Plan ('all' or 'ready') -> Beds/Baths & Price (Images 3 & 5) -->
+    <!-- DYNAMIC FILTERS: If NOT Off-Plan -> Beds/Baths & Price -->
     <template v-else>
-      <!-- Beds & Baths Custom Popup (Image 5) -->
+      <!-- Beds & Baths Capsule -->
       <div class="ghs-custom-dropdown" ref="searchBedsRef">
         <button 
           type="button" 
-          class="ghs-dropdown-btn" 
+          class="ghs-dropdown-btn ghs-capsule-btn" 
           :class="{ active: bedsBathsOpen || selectedBeds.length || selectedBaths.length }" 
           @click="bedsBathsOpen = !bedsBathsOpen; propertyTypeOpen = false; priceOpen = false;"
         >
-          <i class="fa-solid fa-bed ghs-btn-icon"></i>
-          <span>{{ bedsBathsLabel }}</span>
+          <div class="ghs-capsule-left">
+            <i class="fa-solid fa-bed ghs-btn-icon"></i>
+            <span class="ghs-capsule-text">{{ bedsBathsLabel }}</span>
+          </div>
           <i class="fa-solid ghs-chevron" :class="bedsBathsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
 
@@ -309,10 +338,10 @@
           <div v-if="bedsBathsOpen" class="ghs-dropdown-panel ghs-beds-panel" @click.stop>
             <!-- Beds Section -->
             <div class="ghs-panel-title">{{ isRtl ? 'غرف النوم' : 'Beds' }}</div>
-            <div class="ghs-pill-grid">
+            <div class="ghs-pill-row">
               <button 
                 type="button" 
-                class="ghs-pill-btn" 
+                class="ghs-pill-btn ghs-pill-studio" 
                 :class="{ active: selectedBeds.includes('Studio') }"
                 @click="toggleBed('Studio')"
               >
@@ -320,8 +349,20 @@
               </button>
               <button 
                 type="button" 
-                class="ghs-pill-btn" 
-                v-for="b in ['1', '2', '3', '4', '5', '6', '7', '8+']" 
+                class="ghs-pill-btn ghs-pill-circle" 
+                v-for="b in ['1', '2', '3', '4']" 
+                :key="'bed-' + b"
+                :class="{ active: selectedBeds.includes(b) }"
+                @click="toggleBed(b)"
+              >
+                {{ b }}
+              </button>
+            </div>
+            <div class="ghs-pill-row ghs-pill-row-2">
+              <button 
+                type="button" 
+                class="ghs-pill-btn ghs-pill-circle" 
+                v-for="b in ['5', '6', '7', '8+']" 
                 :key="'bed-' + b"
                 :class="{ active: selectedBeds.includes(b) }"
                 @click="toggleBed(b)"
@@ -331,11 +372,11 @@
             </div>
 
             <!-- Baths Section -->
-            <div class="ghs-panel-title mt-3">{{ isRtl ? 'الحمامات' : 'Baths' }}</div>
-            <div class="ghs-pill-grid">
+            <div class="ghs-panel-title ghs-baths-title">{{ isRtl ? 'الحمامات' : 'Baths' }}</div>
+            <div class="ghs-pill-row">
               <button 
                 type="button" 
-                class="ghs-pill-btn" 
+                class="ghs-pill-btn ghs-pill-circle" 
                 v-for="b in ['1', '2', '3', '4', '5', '6+']" 
                 :key="'bath-' + b"
                 :class="{ active: selectedBaths.includes(b) }"
@@ -344,6 +385,8 @@
                 {{ b }}
               </button>
             </div>
+
+            <div class="ghs-panel-divider"></div>
 
             <!-- Actions Footer -->
             <div class="ghs-panel-footer">
@@ -357,42 +400,49 @@
           </div>
         </Transition>
       </div>
-      
-      <!-- Price (AED) Custom Popup (Image 3) -->
+
+      <!-- Price (AED) Capsule with Cost Graph Sparkline Widget -->
       <div class="ghs-custom-dropdown" ref="searchPriceRef">
         <button 
           type="button" 
-          class="ghs-dropdown-btn" 
+          class="ghs-dropdown-btn ghs-capsule-btn" 
           :class="{ active: priceOpen || minPrice || maxPrice }" 
           @click="priceOpen = !priceOpen; propertyTypeOpen = false; bedsBathsOpen = false;"
         >
-          <i class="fa-solid fa-coins ghs-btn-icon"></i>
-          <span>{{ priceLabel }}</span>
+          <div class="ghs-capsule-left">
+            <i class="fa-solid fa-coins ghs-btn-icon"></i>
+            <span class="ghs-capsule-text">{{ priceLabel }}</span>
+          </div>
+
           <i class="fa-solid ghs-chevron" :class="priceOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
 
         <Transition name="dropdown-fade">
           <div v-if="priceOpen" class="ghs-dropdown-panel ghs-price-panel" @click.stop>
-            <div class="ghs-price-inputs-row">
+            <div class="ghs-price-grid">
               <div class="ghs-price-col">
-                <label class="ghs-panel-label">{{ isRtl ? 'الحد الأدنى' : 'Minimum' }}</label>
+                <label class="ghs-price-label">{{ isRtl ? 'الحد الأدنى' : 'Minimum' }}</label>
                 <input 
                   type="number" 
-                  class="ghs-panel-input" 
+                  class="ghs-price-input" 
                   v-model="minPrice" 
                   placeholder="0" 
+                  @keydown.enter.prevent="applyPrice"
                 />
               </div>
               <div class="ghs-price-col">
-                <label class="ghs-panel-label">{{ isRtl ? 'الحد الأقصى' : 'Maximum' }}</label>
+                <label class="ghs-price-label">{{ isRtl ? 'الحد الأقصى' : 'Maximum' }}</label>
                 <input 
                   type="number" 
-                  class="ghs-panel-input" 
+                  class="ghs-price-input" 
                   v-model="maxPrice" 
                   :placeholder="isRtl ? 'أي سعر' : 'Any'" 
+                  @keydown.enter.prevent="applyPrice"
                 />
               </div>
             </div>
+
+            <div class="ghs-panel-divider"></div>
 
             <!-- Actions Footer -->
             <div class="ghs-panel-footer">
@@ -408,10 +458,10 @@
       </div>
     </template>
 
-    <!-- Primary Search Submit Button -->
-    <button type="button" class="ghs-search-btn" @click="handleSearch">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <span>{{ isRtl ? 'بحث' : 'Search' }}</span>
+    <!-- Unified AI Search Button (Single button at bottom) -->
+    <button type="button" class="ghs-unified-ai-btn" @click="handleSearch" :title="isRtl ? 'بحث ذكي AI' : 'Smart AI Search'">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>{{ isRtl ? 'بحث ذكي AI' : 'AI Search' }}</span>
     </button>
   </div>
 </div>
@@ -1119,7 +1169,7 @@ import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { favoritesService } from '../services/favoritesService'
 import SavedPropertiesModal from './SavedPropertiesModal.vue'
 
-const { t, isRtl, theme, lang, locProp } = useThemeAndLanguage()
+const { t, isRtl, theme, lang, locProp, isDark } = useThemeAndLanguage()
 
 const areas = ref([])
 const topAgents = ref([])
@@ -1479,6 +1529,11 @@ const triggerAiSearch = () => {
   handleSearch()
 }
 
+const handleDowntownQuickSearch = () => {
+  homeLocation.value = isRtl.value ? 'وسط مدينة دبي' : 'Downtown Dubai'
+  handleSearch()
+}
+
 const searchByArea = (areaName) => {
   if (!areaName) return
   router.push({
@@ -1761,33 +1816,90 @@ onUnmounted(() => {
 </style>
 <style>
 /* ========================================================
-   Redesigned Luxury Compact Hero Search (Light & Dark Mode)
+   Redesigned Glassmorphic Futuristic Hero Search (Reference Image Match)
    ======================================================== */
-.green-hero-search {
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(20px);
-  border-radius: 18px;
-  padding: 12px 16px;
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  max-width: 1040px;
-  margin: 20px auto 0;
-  width: 96%;
-  transition: all 0.3s ease;
+.dubai-home .hero-section {
+  padding: 2.5rem 0 5.5rem;
+  min-height: auto;
+  position: relative;
+  z-index: 100 !important;
+  overflow: visible !important;
 }
 
-/* Two-Row Structure */
+.dubai-home .hero-overlay {
+  overflow: visible !important;
+  pointer-events: none;
+}
+
+.dubai-home .hero-content {
+  position: relative;
+  z-index: 101 !important;
+  overflow: visible !important;
+}
+
+.dubai-home .main-container {
+  position: relative;
+  z-index: 1 !important;
+}
+
+.dubai-home .hero-title {
+  margin-bottom: 0.4rem;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.dubai-home .hero-desc {
+  margin-bottom: 1rem;
+}
+
+.green-hero-search {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(240, 249, 255, 0.55) 50%, rgba(224, 242, 254, 0.48) 100%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-radius: 22px;
+  padding: 13px 18px 15px;
+  box-shadow: 
+    0 20px 50px -10px rgba(15, 23, 42, 0.12),
+    0 0 0 1.5px rgba(255, 255, 255, 0.8) inset,
+    0 0 30px rgba(56, 189, 248, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  max-width: 940px;
+  margin: 18px auto 0;
+  width: 96%;
+  overflow: visible;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glowing Topographic Vector Contour Lines */
+.ghs-contour-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 22px;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Rows General */
 .ghs-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
+/* ROW 1: TOP NAVIGATION */
 .ghs-row-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
   margin-bottom: 10px;
   width: 100%;
 }
@@ -1795,122 +1907,273 @@ onUnmounted(() => {
 .ghs-top-left-group {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.ghs-v-sep {
-  width: 1px;
-  height: 24px;
-  background: #cbd5e1;
-  margin: 0 4px;
-  flex-shrink: 0;
-}
-
-.ghs-row-bottom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-bottom: 0;
-}
-
-.ghs-mini-toggle-group {
+.ghs-nav-pills-wrap {
   display: inline-flex;
   align-items: center;
-  background: #f1f5f9;
-  border-radius: 9px;
-  padding: 3px;
-  gap: 2px;
-  border: 1px solid #e2e8f0;
-  flex-shrink: 0;
+  gap: 4px;
 }
 
-.ghs-mini-toggle {
-  padding: 5px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
+.ghs-nav-pill {
+  padding: 6px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
   background: transparent;
-  border: none;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
   white-space: nowrap;
 }
 
-.ghs-mini-toggle:hover {
+.ghs-nav-pill:hover {
   color: #0284c7;
 }
 
-.ghs-mini-toggle.active {
-  background: #ffffff;
+.ghs-nav-pill.active {
+  background: rgba(255, 255, 255, 0.9);
   color: #0284c7;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* AI Pill Button on Row 1 (Top-Right) */
+/* Specific glowing mint pill for active "For Sale" matching the image */
+.ghs-nav-pill-highlight.active {
+  background: rgba(167, 243, 208, 0.35);
+  border: 1.5px solid rgba(45, 212, 191, 0.6);
+  color: #065f46;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.4);
+}
+
+.ghs-v-sep {
+  width: 1.5px;
+  height: 20px;
+  background: rgba(148, 163, 184, 0.4);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* TOP RIGHT AI CLUSTER */
+.ghs-top-right-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Mini Property Card (Downtown Dubai) */
+.ghs-mini-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 4px 8px 4px 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ghs-mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.15);
+}
+
+.ghs-mini-card-thumb {
+  width: 44px;
+  height: 38px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ghs-mini-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ghs-mini-fav {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.ghs-mini-card-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.ghs-mini-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.ghs-mini-loc {
+  font-size: 8.5px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.ghs-mini-match {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+/* AI Match Circular Gauge */
+.ghs-ai-gauge-badge {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ghs-gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ghs-gauge-bg {
+  fill: none;
+  stroke: rgba(56, 189, 248, 0.2);
+  stroke-width: 3.5;
+}
+
+.ghs-gauge-prog {
+  fill: none;
+  stroke: #0284c7;
+  stroke-width: 3.5;
+  stroke-dasharray: 85, 107;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(2, 132, 199, 0.5));
+}
+
+.ghs-gauge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 0.95;
+}
+
+.ghs-gauge-top {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+.ghs-gauge-bot {
+  font-size: 7.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* AI Search Pill Button */
 .ghs-ai-pill-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 20px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #0284c7;
-  background: #e0f2fe;
-  border: 1px solid #bae6fd;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.72) 0%, rgba(30, 41, 59, 0.85) 100%);
+  border: 1.5px solid #22d3ee;
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.4), inset 0 0 8px rgba(34, 211, 238, 0.15);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   white-space: nowrap;
 }
 
 .ghs-ai-pill-btn i {
+  color: #38bdf8;
   font-size: 12px;
 }
 
 .ghs-ai-pill-btn:hover {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.6);
+  transform: translateY(-1px);
 }
 
-/* Search Inputs Row (Row 2): The Two Input Boxes (Search Query & Location) */
+/* ROW 2: SEARCH INPUTS */
 .ghs-inputs-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .ghs-input-wrap {
   flex: 1;
   min-width: 0;
-  height: 42px;
+  height: 48px;
   display: flex;
   align-items: center;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  padding: 0 12px;
-  background: #ffffff;
-  transition: all 0.2s ease;
+  justify-content: space-between;
+  border-radius: 16px;
+  padding: 0 14px;
   position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
   gap: 8px;
 }
 
-.ghs-input-wrap:focus-within {
-  border-color: #0284c7;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+/* Query Wrap */
+.ghs-query-wrap {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02), 0 6px 18px rgba(0, 0, 0, 0.03);
+}
+
+.ghs-query-wrap:focus-within {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 8px 22px rgba(2, 132, 199, 0.08);
+}
+
+.ghs-input-main-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
 }
 
 .ghs-input-icon {
-  font-size: 14px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
@@ -1926,22 +2189,151 @@ onUnmounted(() => {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 13.5px;
+  font-size: 14px;
+  font-weight: 500;
   color: #1e293b;
   background: transparent;
   min-width: 0;
 }
 
 .ghs-text-input::placeholder {
-  color: #94a3b8;
+  color: #64748b;
+  font-size: 13.5px;
+}
+
+/* Cost Pins Badge inside query wrap */
+.ghs-cost-pins-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ghs-cost-pin-icon {
+  color: #0284c7;
+  font-size: 12px;
+}
+
+.ghs-cost-pin-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #1e293b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ghs-cost-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0284c7;
+}
+
+/* Location Wrap with Map Styling */
+.ghs-location-wrap {
+  background: linear-gradient(135deg, rgba(186, 230, 253, 0.45) 0%, rgba(224, 242, 254, 0.65) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02), 0 6px 18px rgba(0, 0, 0, 0.03);
+}
+
+.ghs-location-wrap:focus-within {
+  background: linear-gradient(135deg, rgba(186, 230, 253, 0.6) 0%, rgba(224, 242, 254, 0.85) 100%);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.22), 0 8px 22px rgba(2, 132, 199, 0.08);
+}
+
+.ghs-loc-map-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.ghs-map-roads-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghs-map-interactive-overlay {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.ghs-map-pin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ghs-map-pin-tag i {
+  color: #005953;
+  font-size: 11px;
+}
+
+.ghs-map-pin-mini i {
+  color: #0284c7;
   font-size: 13px;
+}
+
+.ghs-map-zoom-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ghs-zoom-btn {
+  width: 17px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.ghs-zoom-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
 }
 
 .ghs-clear-input {
   background: transparent;
   border: none;
   color: #94a3b8;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -1955,121 +2347,233 @@ onUnmounted(() => {
   color: #ef4444;
 }
 
-/* Filters Row (Row 3): Custom Dropdowns & Search Button */
+/* ROW 3: CAPSULE FILTERS & SEARCH ACTION */
 .ghs-filters-row {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  margin-bottom: 0;
 }
 
-/* Dropdown Buttons */
 .ghs-custom-dropdown {
   position: relative;
   flex: 1;
-  min-width: 120px;
-  max-width: 155px;
+  min-width: 130px;
 }
 
-.ghs-dropdown-btn {
+.ghs-capsule-btn {
   width: 100%;
-  height: 42px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 500;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  color: #1e293b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
   user-select: none;
-  gap: 6px;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.ghs-btn-icon {
-  font-size: 12px;
-  color: #64748b;
+.ghs-capsule-btn:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.12);
+}
+
+.ghs-capsule-btn.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.ghs-capsule-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ghs-capsule-left .ghs-btn-icon {
+  font-size: 15px;
+  color: #475569;
   flex-shrink: 0;
 }
 
-.ghs-dropdown-btn span {
+.ghs-capsule-btn.active .ghs-capsule-left .ghs-btn-icon {
+  color: #0284c7;
+}
+
+.ghs-capsule-text {
+  font-size: 13.5px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: right;
-  flex: 1;
-  font-size: 13px;
 }
 
-.ghs-chevron {
-  color: #64748b;
-  font-size: 11px;
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.ghs-dropdown-btn:hover {
-  border-color: #005953;
-  background: #ffffff;
-}
-
-.ghs-dropdown-btn.active {
-  border: 2px solid #005953;
-  color: #005953;
-  background: #f0fdfa;
-  font-weight: 700;
-}
-
-.ghs-dropdown-btn.active .ghs-btn-icon,
-.ghs-dropdown-btn.active .ghs-chevron {
-  color: #005953;
-}
-
-/* Search Submit Button */
-.ghs-search-btn {
-  height: 42px;
-  padding: 0 22px;
-  font-size: 13.5px;
-  font-weight: 700;
+/* AI Performance Card inside Residential Capsule */
+.ghs-ai-perf-badge {
+  display: inline-flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 9px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  line-height: 1;
+}
+
+.ghs-perf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.ghs-perf-close {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.ghs-perf-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ghs-perf-ring {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+.ghs-perf-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 7.5px;
+  color: #94a3b8;
+}
+
+/* Cost Graph Sparkline Widget inside Price Capsule */
+.ghs-cost-graph-widget {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+  min-width: 78px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.ghs-graph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.ghs-graph-dots {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.ghs-graph-body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ghs-graph-axis {
+  display: flex;
+  flex-direction: column;
+  font-size: 6.5px;
+  color: #94a3b8;
+  line-height: 1.1;
+}
+
+.ghs-sparkline-svg {
+  width: 52px;
+  height: 18px;
+}
+
+/* UNIFIED AI SEARCH BUTTON (Bottom Action) */
+.ghs-unified-ai-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #0284c7 0%, #00d2ff 100%);
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   cursor: pointer;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4), 0 0 14px rgba(56, 189, 248, 0.3);
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
-  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ghs-search-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 16px rgba(2, 132, 199, 0.35);
-  background: linear-gradient(135deg, #0369a1 0%, #00b8e6 100%);
+.ghs-unified-ai-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 8px 26px rgba(2, 132, 199, 0.55), 0 0 20px rgba(56, 189, 248, 0.45);
 }
 
-.ghs-search-btn i {
-  font-size: 13px;
+.ghs-unified-ai-btn i {
+  font-size: 15px;
+  color: #fef08a;
+  filter: drop-shadow(0 0 6px rgba(254, 240, 138, 0.7));
 }
 
 /* Floating Panels */
 .ghs-dropdown-panel {
   position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 1000;
+  top: calc(100% + 8px);
+  z-index: 99999 !important;
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #cbd5e1;
+}
+
+[dir="ltr"] .ghs-dropdown-panel {
+  left: 0;
+  right: auto;
+  text-align: left;
+}
+
+[dir="rtl"] .ghs-dropdown-panel {
+  right: 0;
+  left: auto;
   text-align: right;
 }
 
@@ -2256,145 +2760,274 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* Beds & Baths Panel */
+/* Beds & Baths Popup Panel */
 .ghs-beds-panel {
-  width: 310px;
+  width: 320px;
   max-width: 90vw;
-  padding: 16px 18px;
+  padding: 18px 20px;
+  background: #0b1322;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65), 0 4px 15px rgba(0, 210, 255, 0.1);
+}
+
+[data-theme="light"] .ghs-beds-panel {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14), 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .ghs-panel-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-
-.ghs-pill-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.ghs-pill-btn {
-  min-width: 40px;
-  height: 33px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.ghs-pill-btn:hover {
-  border-color: #005953;
-  color: #005953;
-  background: #f0fdfa;
-}
-
-.ghs-pill-btn.active {
-  background: #005953;
   color: #ffffff;
-  border-color: #005953;
-  font-weight: 700;
-}
-
-/* Price Panel */
-.ghs-price-panel {
-  width: 300px;
-  max-width: 90vw;
-  padding: 16px 18px;
-}
-
-.ghs-price-inputs-row {
-  display: flex;
-  gap: 10px;
   margin-bottom: 12px;
 }
 
-.ghs-price-col {
-  flex: 1;
+[data-theme="light"] .ghs-panel-title {
+  color: #0f172a;
+}
+
+.ghs-baths-title {
+  margin-top: 14px;
+}
+
+.ghs-pill-row {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.ghs-panel-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.ghs-panel-input {
-  width: 100%;
-  height: 38px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0 10px;
-  text-align: center;
-  font-size: 14px;
-  color: #1e293b;
-  outline: none;
-  background: #ffffff;
-  transition: border-color 0.2s ease;
-}
-
-.ghs-panel-input:focus {
-  border-color: #005953;
-  box-shadow: 0 0 0 3px rgba(0, 89, 83, 0.12);
-}
-
-/* Shared Panel Footer */
-.ghs-panel-footer {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid #f1f5f9;
-  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.ghs-pill-row-2 {
+  margin-bottom: 4px;
+}
+
+.ghs-pill-btn {
+  background: #1b263b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+
+.ghs-pill-circle {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.ghs-pill-studio {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 20px;
+}
+
+.ghs-pill-btn:hover {
+  background: #24344d;
+  border-color: #00d2ff;
+  color: #00d2ff;
+  transform: translateY(-1px);
+}
+
+.ghs-pill-btn.active {
+  background: #00d2ff !important;
+  border-color: #00d2ff !important;
+  color: #051322 !important;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(0, 210, 255, 0.5);
+}
+
+[data-theme="light"] .ghs-pill-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+[data-theme="light"] .ghs-pill-btn:hover {
+  background: #e2e8f0;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+[data-theme="light"] .ghs-pill-btn.active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
+}
+
+/* Price Popup Panel */
+.ghs-price-panel {
+  width: 310px;
+  max-width: 90vw;
+  padding: 18px 20px;
+  background: #0b1322;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65), 0 4px 15px rgba(0, 210, 255, 0.1);
+}
+
+[data-theme="light"] .ghs-price-panel {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14), 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.ghs-price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ghs-price-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ghs-price-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="light"] .ghs-price-label {
+  color: #475569;
+}
+
+.ghs-price-input {
+  width: 100%;
+  height: 42px;
+  background: #1b263b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.ghs-price-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ghs-price-input:focus {
+  border-color: #00d2ff;
+  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.25);
+  background: #202e47;
+}
+
+[data-theme="light"] .ghs-price-input {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .ghs-price-input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .ghs-price-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #ffffff;
+}
+
+/* Panel Divider */
+.ghs-panel-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 16px 0 14px;
+}
+
+[data-theme="light"] .ghs-panel-divider {
+  background: #e2e8f0;
+}
+
+/* Panel Footer */
+.ghs-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .ghs-panel-reset {
   flex: 1;
-  height: 35px;
-  background: #ffffff;
-  border: 1.5px solid #005953;
-  color: #005953;
-  border-radius: 7px;
-  font-size: 13.5px;
+  height: 42px;
+  background: transparent;
+  border: 2px solid #00d2ff;
+  color: #00d2ff;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ghs-panel-reset:hover {
-  background: #f0fdfa;
+  background: rgba(0, 210, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .ghs-panel-reset {
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+[data-theme="light"] .ghs-panel-reset:hover {
+  background: #e0f2fe;
 }
 
 .ghs-panel-done {
   flex: 1;
-  height: 35px;
-  background: #005953;
-  border: 1.5px solid #005953;
-  color: #ffffff;
-  border-radius: 7px;
-  font-size: 13.5px;
+  height: 42px;
+  background: #00d2ff;
+  border: none;
+  border-radius: 10px;
+  color: #051322;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 210, 255, 0.35);
 }
 
 .ghs-panel-done:hover {
-  background: #004540;
-  border-color: #004540;
+  background: #38bdf8;
+  box-shadow: 0 6px 18px rgba(0, 210, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .ghs-panel-done {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="light"] .ghs-panel-done:hover {
+  background: #0369a1;
 }
 
 /* Transitions */
@@ -2412,29 +3045,32 @@ onUnmounted(() => {
 /* ========================================================
    Responsive Search Layout Adjustments
    ======================================================== */
-@media (max-width: 960px) {
+@media (max-width: 990px) {
   .green-hero-search {
-    max-width: 95%;
+    max-width: 96%;
+    padding: 14px 16px;
+  }
+  .ghs-top-right-cluster {
+    gap: 8px;
+  }
+  .ghs-mini-card {
+    display: none;
   }
   .ghs-custom-dropdown {
-    min-width: 105px;
-    max-width: 135px;
-  }
-  .ghs-dropdown-btn {
-    padding: 0 8px;
+    min-width: 120px;
   }
 }
 
 @media (max-width: 820px) {
   .green-hero-search {
-    padding: 12px;
+    padding: 14px 12px;
     margin-top: 16px;
-    border-radius: 14px;
+    border-radius: 20px;
   }
   .ghs-row-top {
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
   }
   .ghs-top-left-group {
     flex-wrap: wrap;
@@ -2442,7 +3078,7 @@ onUnmounted(() => {
   }
   .ghs-inputs-row {
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
   .ghs-input-wrap {
     flex: 1 1 100%;
@@ -2453,13 +3089,13 @@ onUnmounted(() => {
     gap: 8px;
   }
   .ghs-custom-dropdown {
-    flex: 1 1 calc(33.333% - 6px);
-    min-width: 95px;
-    max-width: none;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 120px;
   }
-  .ghs-search-btn {
+  .ghs-search-btn-combo {
     width: 100%;
     flex: 1 1 100%;
+    justify-content: center;
   }
   .ghs-dropdown-panel {
     right: 0 !important;
@@ -2477,8 +3113,12 @@ onUnmounted(() => {
   .ghs-v-sep {
     display: none;
   }
-  .ghs-ai-pill-btn {
+  .ghs-top-right-cluster {
     width: 100%;
+    justify-content: space-between;
+  }
+  .ghs-ai-pill-btn {
+    flex: 1;
     justify-content: center;
   }
   .ghs-custom-dropdown {
@@ -2488,287 +3128,1069 @@ onUnmounted(() => {
 }
 
 /* ========================================================
-   Dark Theme Support (100% Connected with [data-theme="dark"] and .dark)
+   Theme Adaptations (Full Dark & Light Mode Integration)
    ======================================================== */
+
+/* DARK THEME STYLING (Connected with [data-theme="dark"], .dark-theme, .dark) */
 [data-theme="dark"] .green-hero-search,
-.dark .green-hero-search {
-  background: rgba(15, 23, 42, 0.94);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+.dark-theme .green-hero-search,
+.dark .green-hero-search,
+.green-hero-search.dark-theme,
+.green-hero-search.dark {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.90) 0%, rgba(10, 18, 36, 0.96) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(56, 189, 248, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
 }
 
 [data-theme="dark"] .ghs-v-sep,
-.dark .ghs-v-sep {
-  background: rgba(255, 255, 255, 0.15);
+.dark-theme .ghs-v-sep,
+.dark .ghs-v-sep,
+.green-hero-search.dark-theme .ghs-v-sep,
+.green-hero-search.dark .ghs-v-sep {
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
-[data-theme="dark"] .ghs-mini-toggle-group,
-.dark .ghs-mini-toggle-group {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.1);
+[data-theme="dark"] .ghs-nav-pill,
+.dark-theme .ghs-nav-pill,
+.dark .ghs-nav-pill,
+.green-hero-search.dark-theme .ghs-nav-pill,
+.green-hero-search.dark .ghs-nav-pill {
+  color: #94a3b8 !important;
 }
 
-[data-theme="dark"] .ghs-mini-toggle,
-.dark .ghs-mini-toggle {
-  color: #94a3b8;
+[data-theme="dark"] .ghs-nav-pill:hover,
+.dark-theme .ghs-nav-pill:hover,
+.dark .ghs-nav-pill:hover,
+.green-hero-search.dark-theme .ghs-nav-pill:hover,
+.green-hero-search.dark .ghs-nav-pill:hover {
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.08) !important;
 }
 
-[data-theme="dark"] .ghs-mini-toggle:hover,
-.dark .ghs-mini-toggle:hover {
-  color: #38bdf8;
+[data-theme="dark"] .ghs-nav-pill.active,
+.dark-theme .ghs-nav-pill.active,
+.dark .ghs-nav-pill.active,
+.green-hero-search.dark-theme .ghs-nav-pill.active,
+.green-hero-search.dark .ghs-nav-pill.active {
+  background: rgba(30, 41, 59, 0.95) !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
 }
 
-[data-theme="dark"] .ghs-mini-toggle.active,
-.dark .ghs-mini-toggle.active {
-  background: #1e293b;
-  color: #00d2ff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+[data-theme="dark"] .ghs-nav-pill-highlight.active,
+.dark-theme .ghs-nav-pill-highlight.active,
+.dark .ghs-nav-pill-highlight.active,
+.green-hero-search.dark-theme .ghs-nav-pill-highlight.active,
+.green-hero-search.dark .ghs-nav-pill-highlight.active {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(52, 211, 153, 0.65) !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35) !important;
 }
 
-[data-theme="dark"] .ghs-ai-pill-btn,
-.dark .ghs-ai-pill-btn {
-  background: rgba(0, 210, 255, 0.14);
-  border-color: rgba(0, 210, 255, 0.3);
-  color: #00d2ff;
+[data-theme="dark"] .ghs-mini-card,
+.dark-theme .ghs-mini-card,
+.dark .ghs-mini-card,
+.green-hero-search.dark-theme .ghs-mini-card,
+.green-hero-search.dark .ghs-mini-card {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
 }
 
-[data-theme="dark"] .ghs-ai-pill-btn:hover,
-.dark .ghs-ai-pill-btn:hover {
-  background: #00d2ff;
-  color: #0f172a;
+[data-theme="dark"] .ghs-mini-title,
+.dark-theme .ghs-mini-title,
+.dark .ghs-mini-title,
+.green-hero-search.dark-theme .ghs-mini-title,
+.green-hero-search.dark .ghs-mini-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .ghs-mini-loc,
+.dark-theme .ghs-mini-loc,
+.dark .ghs-mini-loc,
+.green-hero-search.dark-theme .ghs-mini-loc,
+.green-hero-search.dark .ghs-mini-loc {
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .ghs-input-wrap,
-.dark .ghs-input-wrap {
-  background: rgba(30, 41, 59, 0.75);
-  border-color: rgba(255, 255, 255, 0.14);
+.dark-theme .ghs-input-wrap,
+.dark .ghs-input-wrap,
+.green-hero-search.dark-theme .ghs-input-wrap,
+.green-hero-search.dark .ghs-input-wrap {
+  border-color: rgba(56, 189, 248, 0.25) !important;
 }
 
-[data-theme="dark"] .ghs-input-wrap:focus-within,
-.dark .ghs-input-wrap:focus-within {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: #00d2ff;
-  box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
+[data-theme="dark"] .ghs-query-wrap,
+.dark-theme .ghs-query-wrap,
+.dark .ghs-query-wrap,
+.green-hero-search.dark-theme .ghs-query-wrap,
+.green-hero-search.dark .ghs-query-wrap {
+  background: rgba(15, 23, 42, 0.85) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="dark"] .ghs-query-icon,
-.dark .ghs-query-icon {
-  color: #38bdf8;
-}
-
-[data-theme="dark"] .ghs-loc-icon,
-.dark .ghs-loc-icon {
-  color: #2dd4bf;
+[data-theme="dark"] .ghs-location-wrap,
+.dark-theme .ghs-location-wrap,
+.dark .ghs-location-wrap,
+.green-hero-search.dark-theme .ghs-location-wrap,
+.green-hero-search.dark .ghs-location-wrap {
+  background: linear-gradient(135deg, rgba(14, 30, 55, 0.92) 0%, rgba(10, 22, 44, 0.96) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
 }
 
 [data-theme="dark"] .ghs-text-input,
-.dark .ghs-text-input {
-  color: #f1f5f9;
+.dark-theme .ghs-text-input,
+.dark .ghs-text-input,
+.green-hero-search.dark-theme .ghs-text-input,
+.green-hero-search.dark .ghs-text-input {
+  color: #f8fafc !important;
 }
 
 [data-theme="dark"] .ghs-text-input::placeholder,
-.dark .ghs-text-input::placeholder {
-  color: #94a3b8;
+.dark-theme .ghs-text-input::placeholder,
+.dark .ghs-text-input::placeholder,
+.green-hero-search.dark-theme .ghs-text-input::placeholder,
+.green-hero-search.dark .ghs-text-input::placeholder {
+  color: #64748b !important;
 }
 
-[data-theme="dark"] .ghs-dropdown-btn,
-.dark .ghs-dropdown-btn {
-  background: rgba(30, 41, 59, 0.75);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #e2e8f0;
+[data-theme="dark"] .ghs-query-icon,
+.dark-theme .ghs-query-icon,
+.dark .ghs-query-icon,
+.green-hero-search.dark-theme .ghs-query-icon,
+.green-hero-search.dark .ghs-query-icon {
+  color: #38bdf8 !important;
 }
 
-[data-theme="dark"] .ghs-btn-icon,
-.dark .ghs-btn-icon,
+[data-theme="dark"] .ghs-clear-input,
+.dark-theme .ghs-clear-input,
+.dark .ghs-clear-input,
+.green-hero-search.dark-theme .ghs-clear-input,
+.green-hero-search.dark .ghs-clear-input {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .ghs-clear-input:hover,
+.dark-theme .ghs-clear-input:hover,
+.dark .ghs-clear-input:hover,
+.green-hero-search.dark-theme .ghs-clear-input:hover,
+.green-hero-search.dark .ghs-clear-input:hover {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .ghs-cost-pins-badge,
+.dark-theme .ghs-cost-pins-badge,
+.dark .ghs-cost-pins-badge,
+.green-hero-search.dark-theme .ghs-cost-pins-badge,
+.green-hero-search.dark .ghs-cost-pins-badge {
+  background: rgba(30, 41, 59, 0.92) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+[data-theme="dark"] .ghs-cost-pin-pill,
+.dark-theme .ghs-cost-pin-pill,
+.dark .ghs-cost-pin-pill,
+.green-hero-search.dark-theme .ghs-cost-pin-pill,
+.green-hero-search.dark .ghs-cost-pin-pill {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .ghs-cost-pin-icon,
+.dark-theme .ghs-cost-pin-icon,
+.dark .ghs-cost-pin-icon,
+.green-hero-search.dark-theme .ghs-cost-pin-icon,
+.green-hero-search.dark .ghs-cost-pin-icon {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .ghs-map-pin-tag,
+.dark-theme .ghs-map-pin-tag,
+.dark .ghs-map-pin-tag,
+.green-hero-search.dark-theme .ghs-map-pin-tag,
+.green-hero-search.dark .ghs-map-pin-tag {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .ghs-zoom-btn,
+.dark-theme .ghs-zoom-btn,
+.dark .ghs-zoom-btn,
+.green-hero-search.dark-theme .ghs-zoom-btn,
+.green-hero-search.dark .ghs-zoom-btn {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .ghs-zoom-btn:hover,
+.dark-theme .ghs-zoom-btn:hover,
+.dark .ghs-zoom-btn:hover,
+.green-hero-search.dark-theme .ghs-zoom-btn:hover,
+.green-hero-search.dark .ghs-zoom-btn:hover {
+  background: #1e293b !important;
+  color: #38bdf8 !important;
+  border-color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .ghs-capsule-btn,
+.dark-theme .ghs-capsule-btn,
+.dark .ghs-capsule-btn,
+.green-hero-search.dark-theme .ghs-capsule-btn,
+.green-hero-search.dark .ghs-capsule-btn {
+  background: rgba(15, 23, 42, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .ghs-capsule-left .ghs-btn-icon,
+.dark-theme .ghs-capsule-left .ghs-btn-icon,
+.dark .ghs-capsule-left .ghs-btn-icon,
+.green-hero-search.dark-theme .ghs-capsule-left .ghs-btn-icon,
+.green-hero-search.dark .ghs-capsule-left .ghs-btn-icon,
 [data-theme="dark"] .ghs-chevron,
-.dark .ghs-chevron {
-  color: #94a3b8;
+.dark-theme .ghs-chevron,
+.dark .ghs-chevron,
+.green-hero-search.dark-theme .ghs-chevron,
+.green-hero-search.dark .ghs-chevron {
+  color: #94a3b8 !important;
 }
 
-[data-theme="dark"] .ghs-dropdown-btn:hover,
-.dark .ghs-dropdown-btn:hover {
-  border-color: #00d2ff;
-  background: rgba(30, 41, 59, 0.9);
+[data-theme="dark"] .ghs-capsule-btn:hover,
+.dark-theme .ghs-capsule-btn:hover,
+.dark .ghs-capsule-btn:hover,
+.green-hero-search.dark-theme .ghs-capsule-btn:hover,
+.green-hero-search.dark .ghs-capsule-btn:hover {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #38bdf8 !important;
 }
 
-[data-theme="dark"] .ghs-dropdown-btn.active,
-.dark .ghs-dropdown-btn.active {
-  border-color: #00d2ff;
-  color: #00d2ff;
-  background: rgba(0, 210, 255, 0.12);
+[data-theme="dark"] .ghs-capsule-btn.active,
+.dark-theme .ghs-capsule-btn.active,
+.dark .ghs-capsule-btn.active,
+.green-hero-search.dark-theme .ghs-capsule-btn.active,
+.green-hero-search.dark .ghs-capsule-btn.active {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  background: rgba(14, 45, 75, 0.9) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25) !important;
 }
 
-[data-theme="dark"] .ghs-dropdown-btn.active .ghs-btn-icon,
-.dark .ghs-dropdown-btn.active .ghs-btn-icon,
-[data-theme="dark"] .ghs-dropdown-btn.active .ghs-chevron,
-.dark .ghs-dropdown-btn.active .ghs-chevron {
-  color: #00d2ff;
+[data-theme="dark"] .ghs-capsule-btn.active .ghs-chevron,
+.dark-theme .ghs-capsule-btn.active .ghs-chevron,
+.dark .ghs-capsule-btn.active .ghs-chevron,
+.green-hero-search.dark-theme .ghs-capsule-btn.active .ghs-chevron,
+.green-hero-search.dark .ghs-capsule-btn.active .ghs-chevron {
+  color: #38bdf8 !important;
 }
 
+[data-theme="dark"] .ghs-ai-perf-badge,
+.dark-theme .ghs-ai-perf-badge,
+.dark .ghs-ai-perf-badge,
+.green-hero-search.dark-theme .ghs-ai-perf-badge,
+.green-hero-search.dark .ghs-ai-perf-badge,
+[data-theme="dark"] .ghs-cost-graph-widget,
+.dark-theme .ghs-cost-graph-widget,
+.dark .ghs-cost-graph-widget,
+.green-hero-search.dark-theme .ghs-cost-graph-widget,
+.green-hero-search.dark .ghs-cost-graph-widget {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+  color: #cbd5e1 !important;
+}
+
+/* Dark theme dropdowns */
 [data-theme="dark"] .ghs-dropdown-panel,
-.dark .ghs-dropdown-panel {
-  background: #0f172a;
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
-  color: #f1f5f9;
+.dark-theme .ghs-dropdown-panel,
+.dark .ghs-dropdown-panel,
+.green-hero-search.dark-theme .ghs-dropdown-panel,
+.green-hero-search.dark .ghs-dropdown-panel {
+  background: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
+  color: #f1f5f9 !important;
 }
 
 [data-theme="dark"] .ghs-cat-tabs,
-.dark .ghs-cat-tabs {
-  border-bottom-color: #334155;
+.dark-theme .ghs-cat-tabs,
+.dark .ghs-cat-tabs,
+.green-hero-search.dark-theme .ghs-cat-tabs,
+.green-hero-search.dark .ghs-cat-tabs {
+  border-bottom-color: #334155 !important;
 }
 
 [data-theme="dark"] .ghs-cat-tab,
-.dark .ghs-cat-tab {
-  color: #94a3b8;
+.dark-theme .ghs-cat-tab,
+.dark .ghs-cat-tab,
+.green-hero-search.dark-theme .ghs-cat-tab,
+.green-hero-search.dark .ghs-cat-tab {
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .ghs-cat-tab:hover,
-.dark .ghs-cat-tab:hover {
-  color: #00d2ff;
+.dark-theme .ghs-cat-tab:hover,
+.dark .ghs-cat-tab:hover,
+.green-hero-search.dark-theme .ghs-cat-tab:hover,
+.green-hero-search.dark .ghs-cat-tab:hover {
+  color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-cat-tab.active,
-.dark .ghs-cat-tab.active {
-  color: #00d2ff;
-  border-bottom-color: #00d2ff;
+.dark-theme .ghs-cat-tab.active,
+.dark .ghs-cat-tab.active,
+.green-hero-search.dark-theme .ghs-cat-tab.active,
+.green-hero-search.dark .ghs-cat-tab.active {
+  color: #00d2ff !important;
+  border-bottom-color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-radio-pill,
-.dark .ghs-radio-pill {
-  background: #1e293b;
-  border-color: #334155;
+.dark-theme .ghs-radio-pill,
+.dark .ghs-radio-pill,
+.green-hero-search.dark-theme .ghs-radio-pill,
+.green-hero-search.dark .ghs-radio-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
 }
 
 [data-theme="dark"] .ghs-radio-pill:hover,
-.dark .ghs-radio-pill:hover {
-  border-color: #00d2ff;
-  background: rgba(0, 210, 255, 0.08);
+.dark-theme .ghs-radio-pill:hover,
+.dark .ghs-radio-pill:hover,
+.green-hero-search.dark-theme .ghs-radio-pill:hover,
+.green-hero-search.dark .ghs-radio-pill:hover {
+  border-color: #00d2ff !important;
+  background: rgba(0, 210, 255, 0.08) !important;
 }
 
 [data-theme="dark"] .ghs-radio-pill.selected,
-.dark .ghs-radio-pill.selected {
-  border-color: #00d2ff;
-  background: rgba(0, 210, 255, 0.12);
+.dark-theme .ghs-radio-pill.selected,
+.dark .ghs-radio-pill.selected,
+.green-hero-search.dark-theme .ghs-radio-pill.selected,
+.green-hero-search.dark .ghs-radio-pill.selected {
+  border-color: #00d2ff !important;
+  background: rgba(0, 210, 255, 0.12) !important;
 }
 
 [data-theme="dark"] .ghs-radio-pill.selected .ghs-radio-circle,
-.dark .ghs-radio-pill.selected .ghs-radio-circle {
-  border-color: #00d2ff;
-  background: #00d2ff;
-  color: #0f172a;
+.dark-theme .ghs-radio-pill.selected .ghs-radio-circle,
+.dark .ghs-radio-pill.selected .ghs-radio-circle,
+.green-hero-search.dark-theme .ghs-radio-pill.selected .ghs-radio-circle,
+.green-hero-search.dark .ghs-radio-pill.selected .ghs-radio-circle {
+  border-color: #00d2ff !important;
+  background: #00d2ff !important;
+  color: #0f172a !important;
 }
 
 [data-theme="dark"] .ghs-radio-text,
-.dark .ghs-radio-text {
-  color: #e2e8f0;
+.dark-theme .ghs-radio-text,
+.dark .ghs-radio-text,
+.green-hero-search.dark-theme .ghs-radio-text,
+.green-hero-search.dark .ghs-radio-text {
+  color: #e2e8f0 !important;
 }
 
 [data-theme="dark"] .ghs-radio-pill.selected .ghs-radio-text,
-.dark .ghs-radio-pill.selected .ghs-radio-text {
-  color: #00d2ff;
+.dark-theme .ghs-radio-pill.selected .ghs-radio-text,
+.dark .ghs-radio-pill.selected .ghs-radio-text,
+.green-hero-search.dark-theme .ghs-radio-pill.selected .ghs-radio-text,
+.green-hero-search.dark .ghs-radio-pill.selected .ghs-radio-text {
+  color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-handover-item,
-.dark .ghs-handover-item {
-  color: #cbd5e1;
+.dark-theme .ghs-handover-item,
+.dark .ghs-handover-item,
+.green-hero-search.dark-theme .ghs-handover-item,
+.green-hero-search.dark .ghs-handover-item {
+  color: #cbd5e1 !important;
 }
 
 [data-theme="dark"] .ghs-handover-item:hover,
-.dark .ghs-handover-item:hover {
-  background: #1e293b;
-  color: #38bdf8;
+.dark-theme .ghs-handover-item:hover,
+.dark .ghs-handover-item:hover,
+.green-hero-search.dark-theme .ghs-handover-item:hover,
+.green-hero-search.dark .ghs-handover-item:hover {
+  background: #1e293b !important;
+  color: #38bdf8 !important;
 }
 
 [data-theme="dark"] .ghs-handover-item.selected,
-.dark .ghs-handover-item.selected {
-  background: rgba(0, 210, 255, 0.15);
-  color: #00d2ff;
+.dark-theme .ghs-handover-item.selected,
+.dark .ghs-handover-item.selected,
+.green-hero-search.dark-theme .ghs-handover-item.selected,
+.green-hero-search.dark .ghs-handover-item.selected {
+  background: rgba(0, 210, 255, 0.15) !important;
+  color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-panel-title,
-.dark .ghs-panel-title {
-  color: #f1f5f9;
+.dark-theme .ghs-panel-title,
+.dark .ghs-panel-title,
+.green-hero-search.dark-theme .ghs-panel-title,
+.green-hero-search.dark .ghs-panel-title {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .ghs-panel-divider,
+.dark-theme .ghs-panel-divider,
+.dark .ghs-panel-divider,
+.green-hero-search.dark-theme .ghs-panel-divider,
+.green-hero-search.dark .ghs-panel-divider {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .ghs-pill-btn,
-.dark .ghs-pill-btn {
-  background: #1e293b;
-  border-color: #334155;
-  color: #cbd5e1;
+.dark-theme .ghs-pill-btn,
+.dark .ghs-pill-btn,
+.green-hero-search.dark-theme .ghs-pill-btn,
+.green-hero-search.dark .ghs-pill-btn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
 }
 
 [data-theme="dark"] .ghs-pill-btn:hover,
-.dark .ghs-pill-btn:hover {
-  border-color: #00d2ff;
-  color: #00d2ff;
-  background: rgba(0, 210, 255, 0.08);
+.dark-theme .ghs-pill-btn:hover,
+.dark .ghs-pill-btn:hover,
+.green-hero-search.dark-theme .ghs-pill-btn:hover,
+.green-hero-search.dark .ghs-pill-btn:hover {
+  border-color: #00d2ff !important;
+  color: #00d2ff !important;
+  background: rgba(0, 210, 255, 0.08) !important;
 }
 
 [data-theme="dark"] .ghs-pill-btn.active,
-.dark .ghs-pill-btn.active {
-  background: #005953;
-  border-color: #005953;
-  color: #ffffff;
+.dark-theme .ghs-pill-btn.active,
+.dark .ghs-pill-btn.active,
+.green-hero-search.dark-theme .ghs-pill-btn.active,
+.green-hero-search.dark .ghs-pill-btn.active {
+  background: #005953 !important;
+  border-color: #005953 !important;
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] .ghs-panel-label,
-.dark .ghs-panel-label {
-  color: #94a3b8;
+.dark-theme .ghs-panel-label,
+.dark .ghs-panel-label,
+.green-hero-search.dark-theme .ghs-panel-label,
+.green-hero-search.dark .ghs-panel-label {
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .ghs-panel-input,
-.dark .ghs-panel-input {
-  background: #1e293b;
-  border-color: #334155;
-  color: #f1f5f9;
+.dark-theme .ghs-panel-input,
+.dark .ghs-panel-input,
+.green-hero-search.dark-theme .ghs-panel-input,
+.green-hero-search.dark .ghs-panel-input {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
 }
 
 [data-theme="dark"] .ghs-panel-footer,
-.dark .ghs-panel-footer {
-  border-top-color: #334155;
+.dark-theme .ghs-panel-footer,
+.dark .ghs-panel-footer,
+.green-hero-search.dark-theme .ghs-panel-footer,
+.green-hero-search.dark .ghs-panel-footer {
+  border-top-color: #334155 !important;
 }
 
 [data-theme="dark"] .ghs-panel-reset,
-.dark .ghs-panel-reset {
-  background: transparent;
-  border-color: #00d2ff;
-  color: #00d2ff;
+.dark-theme .ghs-panel-reset,
+.dark .ghs-panel-reset,
+.green-hero-search.dark-theme .ghs-panel-reset,
+.green-hero-search.dark .ghs-panel-reset {
+  background: transparent !important;
+  border-color: #00d2ff !important;
+  color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-panel-reset:hover,
-.dark .ghs-panel-reset:hover {
-  background: rgba(0, 210, 255, 0.1);
+.dark-theme .ghs-panel-reset:hover,
+.dark .ghs-panel-reset:hover,
+.green-hero-search.dark-theme .ghs-panel-reset:hover,
+.green-hero-search.dark .ghs-panel-reset:hover {
+  background: rgba(0, 210, 255, 0.1) !important;
 }
 
 [data-theme="dark"] .ghs-panel-done,
-.dark .ghs-panel-done {
-  background: #00d2ff;
-  border-color: #00d2ff;
-  color: #0f172a;
+.dark-theme .ghs-panel-done,
+.dark .ghs-panel-done,
+.green-hero-search.dark-theme .ghs-panel-done,
+.green-hero-search.dark .ghs-panel-done {
+  background: #00d2ff !important;
+  border-color: #00d2ff !important;
+  color: #0f172a !important;
 }
 
 [data-theme="dark"] .ghs-panel-done:hover,
-.dark .ghs-panel-done:hover {
-  background: #38bdf8;
-  border-color: #38bdf8;
+.dark-theme .ghs-panel-done:hover,
+.dark .ghs-panel-done:hover,
+.green-hero-search.dark-theme .ghs-panel-done:hover,
+.green-hero-search.dark .ghs-panel-done:hover {
+  background: #38bdf8 !important;
+  border-color: #38bdf8 !important;
 }
 
 [data-theme="dark"] .ghs-slider-range-values,
-.dark .ghs-slider-range-values {
-  color: #94a3b8;
+.dark-theme .ghs-slider-range-values,
+.dark .ghs-slider-range-values,
+.green-hero-search.dark-theme .ghs-slider-range-values,
+.green-hero-search.dark .ghs-slider-range-values {
+  color: #94a3b8 !important;
 }
 
 [data-theme="dark"] .ghs-slider-curr-val,
-.dark .ghs-slider-curr-val {
-  background: rgba(0, 210, 255, 0.18);
-  color: #00d2ff;
+.dark-theme .ghs-slider-curr-val,
+.dark .ghs-slider-curr-val,
+.green-hero-search.dark-theme .ghs-slider-curr-val,
+.green-hero-search.dark .ghs-slider-curr-val {
+  background: rgba(0, 210, 255, 0.18) !important;
+  color: #00d2ff !important;
 }
 
 [data-theme="dark"] .ghs-payment-slider,
-.dark .ghs-payment-slider {
-  background: #334155;
-  accent-color: #00d2ff;
+.dark-theme .ghs-payment-slider,
+.dark .ghs-payment-slider,
+.green-hero-search.dark-theme .ghs-payment-slider,
+.green-hero-search.dark .ghs-payment-slider {
+  background: #334155 !important;
+  accent-color: #00d2ff !important;
+}
+
+/* ========================================================
+   LIGHT THEME STYLING (Connected with [data-theme="light"], .light-theme, .light)
+   ======================================================== */
+[data-theme="light"] .green-hero-search,
+.light-theme .green-hero-search,
+.light .green-hero-search,
+.green-hero-search.light-theme,
+.green-hero-search.light {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.80) 50%, rgba(224, 242, 254, 0.75) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.12), 0 0 30px rgba(56, 189, 248, 0.18), inset 0 0 0 1.5px rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme="light"] .ghs-v-sep,
+.light-theme .ghs-v-sep,
+.light .ghs-v-sep,
+.green-hero-search.light-theme .ghs-v-sep,
+.green-hero-search.light .ghs-v-sep {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .ghs-nav-pill,
+.light-theme .ghs-nav-pill,
+.light .ghs-nav-pill,
+.green-hero-search.light-theme .ghs-nav-pill,
+.green-hero-search.light .ghs-nav-pill {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .ghs-nav-pill:hover,
+.light-theme .ghs-nav-pill:hover,
+.light .ghs-nav-pill:hover,
+.green-hero-search.light-theme .ghs-nav-pill:hover,
+.green-hero-search.light .ghs-nav-pill:hover {
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.06) !important;
+}
+
+[data-theme="light"] .ghs-nav-pill.active,
+.light-theme .ghs-nav-pill.active,
+.light .ghs-nav-pill.active,
+.green-hero-search.light-theme .ghs-nav-pill.active,
+.green-hero-search.light .ghs-nav-pill.active {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #0284c7 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+[data-theme="light"] .ghs-nav-pill-highlight.active,
+.light-theme .ghs-nav-pill-highlight.active,
+.light .ghs-nav-pill-highlight.active,
+.green-hero-search.light-theme .ghs-nav-pill-highlight.active,
+.green-hero-search.light .ghs-nav-pill-highlight.active {
+  background: rgba(167, 243, 208, 0.45) !important;
+  border-color: rgba(45, 212, 191, 0.7) !important;
+  color: #065f46 !important;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.35) !important;
+}
+
+[data-theme="light"] .ghs-mini-card,
+.light-theme .ghs-mini-card,
+.light .ghs-mini-card,
+.green-hero-search.light-theme .ghs-mini-card,
+.green-hero-search.light .ghs-mini-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+}
+
+[data-theme="light"] .ghs-mini-title,
+.light-theme .ghs-mini-title,
+.light .ghs-mini-title,
+.green-hero-search.light-theme .ghs-mini-title,
+.green-hero-search.light .ghs-mini-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-mini-loc,
+.light-theme .ghs-mini-loc,
+.light .ghs-mini-loc,
+.green-hero-search.light-theme .ghs-mini-loc,
+.green-hero-search.light .ghs-mini-loc {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-input-wrap,
+.light-theme .ghs-input-wrap,
+.light .ghs-input-wrap,
+.green-hero-search.light-theme .ghs-input-wrap,
+.green-hero-search.light .ghs-input-wrap {
+  border-color: rgba(226, 232, 240, 0.95) !important;
+}
+
+[data-theme="light"] .ghs-query-wrap,
+.light-theme .ghs-query-wrap,
+.light .ghs-query-wrap,
+.green-hero-search.light-theme .ghs-query-wrap,
+.green-hero-search.light .ghs-query-wrap {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .ghs-text-input,
+.light-theme .ghs-text-input,
+.light .ghs-text-input,
+.green-hero-search.light-theme .ghs-text-input,
+.green-hero-search.light .ghs-text-input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-text-input::placeholder,
+.light-theme .ghs-text-input::placeholder,
+.light .ghs-text-input::placeholder,
+.green-hero-search.light-theme .ghs-text-input::placeholder,
+.green-hero-search.light .ghs-text-input::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-query-icon,
+.light-theme .ghs-query-icon,
+.light .ghs-query-icon,
+.green-hero-search.light-theme .ghs-query-icon,
+.green-hero-search.light .ghs-query-icon {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-clear-input,
+.light-theme .ghs-clear-input,
+.light .ghs-clear-input,
+.green-hero-search.light-theme .ghs-clear-input,
+.green-hero-search.light .ghs-clear-input {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-clear-input:hover,
+.light-theme .ghs-clear-input:hover,
+.light .ghs-clear-input:hover,
+.green-hero-search.light-theme .ghs-clear-input:hover,
+.green-hero-search.light .ghs-clear-input:hover {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-location-wrap,
+.light-theme .ghs-location-wrap,
+.light .ghs-location-wrap,
+.green-hero-search.light-theme .ghs-location-wrap,
+.green-hero-search.light .ghs-location-wrap {
+  background: linear-gradient(135deg, rgba(215, 242, 254, 0.75) 0%, rgba(235, 248, 255, 0.9) 100%) !important;
+  border-color: rgba(186, 230, 253, 0.95) !important;
+}
+
+[data-theme="light"] .ghs-cost-pins-badge,
+.light-theme .ghs-cost-pins-badge,
+.light .ghs-cost-pins-badge,
+.green-hero-search.light-theme .ghs-cost-pins-badge,
+.green-hero-search.light .ghs-cost-pins-badge {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+}
+
+[data-theme="light"] .ghs-cost-pin-pill,
+.light-theme .ghs-cost-pin-pill,
+.light .ghs-cost-pin-pill,
+.green-hero-search.light-theme .ghs-cost-pin-pill,
+.green-hero-search.light .ghs-cost-pin-pill {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .ghs-cost-pin-icon,
+.light-theme .ghs-cost-pin-icon,
+.light .ghs-cost-pin-icon,
+.green-hero-search.light-theme .ghs-cost-pin-icon,
+.green-hero-search.light .ghs-cost-pin-icon {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-map-pin-tag,
+.light-theme .ghs-map-pin-tag,
+.light .ghs-map-pin-tag,
+.green-hero-search.light-theme .ghs-map-pin-tag,
+.green-hero-search.light .ghs-map-pin-tag {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-zoom-btn,
+.light-theme .ghs-zoom-btn,
+.light .ghs-zoom-btn,
+.green-hero-search.light-theme .ghs-zoom-btn,
+.green-hero-search.light .ghs-zoom-btn {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-zoom-btn:hover,
+.light-theme .ghs-zoom-btn:hover,
+.light .ghs-zoom-btn:hover,
+.green-hero-search.light-theme .ghs-zoom-btn:hover,
+.green-hero-search.light .ghs-zoom-btn:hover {
+  background: #f8fafc !important;
+  color: #0284c7 !important;
+  border-color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-capsule-btn,
+.light-theme .ghs-capsule-btn,
+.light .ghs-capsule-btn,
+.green-hero-search.light-theme .ghs-capsule-btn,
+.green-hero-search.light .ghs-capsule-btn {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .ghs-capsule-left .ghs-btn-icon,
+.light-theme .ghs-capsule-left .ghs-btn-icon,
+.light .ghs-capsule-left .ghs-btn-icon,
+.green-hero-search.light-theme .ghs-capsule-left .ghs-btn-icon,
+.green-hero-search.light .ghs-capsule-left .ghs-btn-icon,
+[data-theme="light"] .ghs-chevron,
+.light-theme .ghs-chevron,
+.light .ghs-chevron,
+.green-hero-search.light-theme .ghs-chevron,
+.green-hero-search.light .ghs-chevron {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-capsule-btn:hover,
+.light-theme .ghs-capsule-btn:hover,
+.light .ghs-capsule-btn:hover,
+.green-hero-search.light-theme .ghs-capsule-btn:hover,
+.green-hero-search.light .ghs-capsule-btn:hover {
+  background: #ffffff !important;
+  border-color: #38bdf8 !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-capsule-btn.active,
+.light-theme .ghs-capsule-btn.active,
+.light .ghs-capsule-btn.active,
+.green-hero-search.light-theme .ghs-capsule-btn.active,
+.green-hero-search.light .ghs-capsule-btn.active {
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+  background: #f0f9ff !important;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.2) !important;
+}
+
+[data-theme="light"] .ghs-capsule-btn.active .ghs-chevron,
+.light-theme .ghs-capsule-btn.active .ghs-chevron,
+.light .ghs-capsule-btn.active .ghs-chevron,
+.green-hero-search.light-theme .ghs-capsule-btn.active .ghs-chevron,
+.green-hero-search.light .ghs-capsule-btn.active .ghs-chevron {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-ai-perf-badge,
+.light-theme .ghs-ai-perf-badge,
+.light .ghs-ai-perf-badge,
+.green-hero-search.light-theme .ghs-ai-perf-badge,
+.green-hero-search.light .ghs-ai-perf-badge,
+[data-theme="light"] .ghs-cost-graph-widget,
+.light-theme .ghs-cost-graph-widget,
+.light .ghs-cost-graph-widget,
+.green-hero-search.light-theme .ghs-cost-graph-widget,
+.green-hero-search.light .ghs-cost-graph-widget {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  color: #334155 !important;
+}
+
+/* Light theme dropdowns */
+[data-theme="light"] .ghs-dropdown-panel,
+.light-theme .ghs-dropdown-panel,
+.light .ghs-dropdown-panel,
+.green-hero-search.light-theme .ghs-dropdown-panel,
+.green-hero-search.light .ghs-dropdown-panel {
+  background: #ffffff !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-cat-tabs,
+.light-theme .ghs-cat-tabs,
+.light .ghs-cat-tabs,
+.green-hero-search.light-theme .ghs-cat-tabs,
+.green-hero-search.light .ghs-cat-tabs {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .ghs-cat-tab,
+.light-theme .ghs-cat-tab,
+.light .ghs-cat-tab,
+.green-hero-search.light-theme .ghs-cat-tab,
+.green-hero-search.light .ghs-cat-tab {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-cat-tab:hover,
+.light-theme .ghs-cat-tab:hover,
+.light .ghs-cat-tab:hover,
+.green-hero-search.light-theme .ghs-cat-tab:hover,
+.green-hero-search.light .ghs-cat-tab:hover {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-cat-tab.active,
+.light-theme .ghs-cat-tab.active,
+.light .ghs-cat-tab.active,
+.green-hero-search.light-theme .ghs-cat-tab.active,
+.green-hero-search.light .ghs-cat-tab.active {
+  color: #0284c7 !important;
+  border-bottom-color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-radio-pill,
+.light-theme .ghs-radio-pill,
+.light .ghs-radio-pill,
+.green-hero-search.light-theme .ghs-radio-pill,
+.green-hero-search.light .ghs-radio-pill {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .ghs-radio-pill:hover,
+.light-theme .ghs-radio-pill:hover,
+.light .ghs-radio-pill:hover,
+.green-hero-search.light-theme .ghs-radio-pill:hover,
+.green-hero-search.light .ghs-radio-pill:hover {
+  border-color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.05) !important;
+}
+
+[data-theme="light"] .ghs-radio-pill.selected,
+.light-theme .ghs-radio-pill.selected,
+.light .ghs-radio-pill.selected,
+.green-hero-search.light-theme .ghs-radio-pill.selected,
+.green-hero-search.light .ghs-radio-pill.selected {
+  border-color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+}
+
+[data-theme="light"] .ghs-radio-pill.selected .ghs-radio-circle,
+.light-theme .ghs-radio-pill.selected .ghs-radio-circle,
+.light .ghs-radio-pill.selected .ghs-radio-circle,
+.green-hero-search.light-theme .ghs-radio-pill.selected .ghs-radio-circle,
+.green-hero-search.light .ghs-radio-pill.selected .ghs-radio-circle {
+  border-color: #0284c7 !important;
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .ghs-radio-text,
+.light-theme .ghs-radio-text,
+.light .ghs-radio-text,
+.green-hero-search.light-theme .ghs-radio-text,
+.green-hero-search.light .ghs-radio-text {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .ghs-radio-pill.selected .ghs-radio-text,
+.light-theme .ghs-radio-pill.selected .ghs-radio-text,
+.light .ghs-radio-pill.selected .ghs-radio-text,
+.green-hero-search.light-theme .ghs-radio-pill.selected .ghs-radio-text,
+.green-hero-search.light .ghs-radio-pill.selected .ghs-radio-text {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-handover-item,
+.light-theme .ghs-handover-item,
+.light .ghs-handover-item,
+.green-hero-search.light-theme .ghs-handover-item,
+.green-hero-search.light .ghs-handover-item {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .ghs-handover-item:hover,
+.light-theme .ghs-handover-item:hover,
+.light .ghs-handover-item:hover,
+.green-hero-search.light-theme .ghs-handover-item:hover,
+.green-hero-search.light .ghs-handover-item:hover {
+  background: #f1f5f9 !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-handover-item.selected,
+.light-theme .ghs-handover-item.selected,
+.light .ghs-handover-item.selected,
+.green-hero-search.light-theme .ghs-handover-item.selected,
+.green-hero-search.light .ghs-handover-item.selected {
+  background: rgba(2, 132, 199, 0.1) !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-panel-title,
+.light-theme .ghs-panel-title,
+.light .ghs-panel-title,
+.green-hero-search.light-theme .ghs-panel-title,
+.green-hero-search.light .ghs-panel-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-panel-divider,
+.light-theme .ghs-panel-divider,
+.light .ghs-panel-divider,
+.green-hero-search.light-theme .ghs-panel-divider,
+.green-hero-search.light .ghs-panel-divider {
+  background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .ghs-pill-btn,
+.light-theme .ghs-pill-btn,
+.light .ghs-pill-btn,
+.green-hero-search.light-theme .ghs-pill-btn,
+.green-hero-search.light .ghs-pill-btn {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .ghs-pill-btn:hover,
+.light-theme .ghs-pill-btn:hover,
+.light .ghs-pill-btn:hover,
+.green-hero-search.light-theme .ghs-pill-btn:hover,
+.green-hero-search.light .ghs-pill-btn:hover {
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+  background: rgba(2, 132, 199, 0.06) !important;
+}
+
+[data-theme="light"] .ghs-pill-btn.active,
+.light-theme .ghs-pill-btn.active,
+.light .ghs-pill-btn.active,
+.green-hero-search.light-theme .ghs-pill-btn.active,
+.green-hero-search.light .ghs-pill-btn.active {
+  background: #005953 !important;
+  border-color: #005953 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .ghs-panel-label,
+.light-theme .ghs-panel-label,
+.light .ghs-panel-label,
+.green-hero-search.light-theme .ghs-panel-label,
+.green-hero-search.light .ghs-panel-label {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-panel-input,
+.light-theme .ghs-panel-input,
+.light .ghs-panel-input,
+.green-hero-search.light-theme .ghs-panel-input,
+.green-hero-search.light .ghs-panel-input {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ghs-panel-footer,
+.light-theme .ghs-panel-footer,
+.light .ghs-panel-footer,
+.green-hero-search.light-theme .ghs-panel-footer,
+.green-hero-search.light .ghs-panel-footer {
+  border-top-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .ghs-panel-reset,
+.light-theme .ghs-panel-reset,
+.light .ghs-panel-reset,
+.green-hero-search.light-theme .ghs-panel-reset,
+.green-hero-search.light .ghs-panel-reset {
+  background: transparent !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-panel-reset:hover,
+.light-theme .ghs-panel-reset:hover,
+.light .ghs-panel-reset:hover,
+.green-hero-search.light-theme .ghs-panel-reset:hover,
+.green-hero-search.light .ghs-panel-reset:hover {
+  background: rgba(2, 132, 199, 0.08) !important;
+}
+
+[data-theme="light"] .ghs-panel-done,
+.light-theme .ghs-panel-done,
+.light .ghs-panel-done,
+.green-hero-search.light-theme .ghs-panel-done,
+.green-hero-search.light .ghs-panel-done {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .ghs-panel-done:hover,
+.light-theme .ghs-panel-done:hover,
+.light .ghs-panel-done:hover,
+.green-hero-search.light-theme .ghs-panel-done:hover,
+.green-hero-search.light .ghs-panel-done:hover {
+  background: #0369a1 !important;
+  border-color: #0369a1 !important;
+}
+
+[data-theme="light"] .ghs-slider-range-values,
+.light-theme .ghs-slider-range-values,
+.light .ghs-slider-range-values,
+.green-hero-search.light-theme .ghs-slider-range-values,
+.green-hero-search.light .ghs-slider-range-values {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .ghs-slider-curr-val,
+.light-theme .ghs-slider-curr-val,
+.light .ghs-slider-curr-val,
+.green-hero-search.light-theme .ghs-slider-curr-val,
+.green-hero-search.light .ghs-slider-curr-val {
+  background: rgba(2, 132, 199, 0.12) !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .ghs-payment-slider,
+.light-theme .ghs-payment-slider,
+.light .ghs-payment-slider,
+.green-hero-search.light-theme .ghs-payment-slider,
+.green-hero-search.light .ghs-payment-slider {
+  background: #e2e8f0 !important;
+  accent-color: #0284c7 !important;
 }
 </style>
 <style>
