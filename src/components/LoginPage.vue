@@ -259,7 +259,7 @@ const handleLogin = async () => {
       storeAuthenticatedUser(response, { email: email.value.trim(), name: email.value.trim().split('@')[0] })
       showToast(response?.message || 'Login successful! Welcome to VibeLocate AI.', 'success')
 
-      const targetRoute = isAdmin ? '/admin' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
+      const targetRoute = isAdmin ? '/admin/portal' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
       setTimeout(() => router.push(targetRoute), 700)
     } catch (err) {
       showToast(err.message || 'Unable to log in. Please try again.', 'error')
@@ -287,7 +287,7 @@ const handleGoogleLogin = async () => {
     const isAgent = !isAdmin && (roles.includes('agent') || userObj.role === 'agent')
 
     showToast(response?.message || 'Google sign-in successful!', 'success')
-    const targetRoute = isAdmin ? '/admin' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
+    const targetRoute = isAdmin ? '/admin/portal' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
     setTimeout(() => router.push(targetRoute), 700)
   } catch (err) {
     showToast(err.message || 'Google sign-in was cancelled or failed.', 'error')

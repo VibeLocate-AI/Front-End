@@ -61,6 +61,9 @@
         </div>
 
         <div class="footer-action-links">
+          <button class="btn-return-portal" @click="router.push('/admin/portal')" :title="isRtl ? 'بوابة اختيار الوجهة' : 'Destination Portal'">
+            <i class="fa-solid fa-shapes"></i>
+          </button>
           <button class="btn-return-site" @click="router.push('/home')">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
             <span>{{ isRtl ? 'الموقع العام' : 'Public Site' }}</span>
@@ -2651,6 +2654,26 @@ onMounted(async () => {
   background: rgba(56, 189, 248, 0.1);
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.3);
+}
+
+.btn-return-portal {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: 6px;
+  color: #38bdf8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-return-portal:hover {
+  background: rgba(2, 132, 199, 0.25);
+  border-color: #38bdf8;
+  color: #ffffff;
 }
 
 .btn-admin-logout {

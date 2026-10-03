@@ -123,13 +123,6 @@
                   <i class="fa-solid fa-xmark"></i>
                 </button>
               </div>
-              <div class="ghs-cost-pins-badge" :title="isRtl ? 'دبابيس التكلفة' : 'Cost Pins Badge'">
-                <i class="fa-solid fa-location-dot ghs-cost-pin-icon"></i>
-                <span class="ghs-cost-pin-pill">
-                  <span class="ghs-cost-dot"></span>
-                  <span>Cost Pins</span>
-                </span>
-              </div>
             </div>
 
             <!-- 2. Location Input with map graphic -->
@@ -656,6 +649,12 @@
                 <span v-for="tag in prop.tags.slice(0, 3)" :key="tag" class="tag-chip">{{ tag }}</span>
               </div>
 
+              <!-- Matched Nearby POI / School / Cafe -->
+              <div class="card-matched-poi" v-if="prop.nearbyPoi">
+                <i v-if="!/[\u{1F300}-\u{1F9FF}]/u.test(prop.nearbyPoi)" class="fa-solid fa-location-dot"></i>
+                <span>{{ prop.nearbyPoi }}</span>
+              </div>
+
               <button type="button" class="btn-view-details" @click.stop="openDetails(prop)">
                 <span>{{ t('viewDetails') }}</span>
                 <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
@@ -959,29 +958,34 @@ const displayProperties = computed(() => {
   let list = [...allResults.value]
 
   // 1. Live text search filtering across title, location, area, type, description, tags, specs
-  const q = searchQuery.value.trim().toLowerCase()
-  if (q) {
-    const translatedQ = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(q).toLowerCase() : ''
-    const rawWords = q.split(/\s+/).filter(w => w.length > 1)
-    const transWords = translatedQ ? translatedQ.split(/\s+/).filter(w => w.length > 1) : []
-    const allWords = [...new Set([...rawWords, ...transWords])]
+  // When isAiSearch is true, results are already intelligently matched and filtered by the AI backend.
+  // We do NOT perform literal keyword string match on AI natural language prompts because prompts
+  // contain relative constraints (e.g. "قريب من كافيه", "حد أقصى 2 مليون") that don't match title strings.
+  if (!isAiSearch.value) {
+    const q = searchQuery.value.trim().toLowerCase()
+    if (q) {
+      const translatedQ = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(q).toLowerCase() : ''
+      const rawWords = q.split(/\s+/).filter(w => w.length > 1)
+      const transWords = translatedQ ? translatedQ.split(/\s+/).filter(w => w.length > 1) : []
+      const allWords = [...new Set([...rawWords, ...transWords])]
 
-    list = list.filter(p => {
-      const pText = [
-        p.title || '',
-        p.location || '',
-        p.area || '',
-        p.type || '',
-        p.category || '',
-        p.description || '',
-        p.summary || '',
-        ...(p.tags || []),
-        p.beds ? `${p.beds} bed` : '',
-        p.isForRent ? 'rent للايجار ايجار' : 'sale buy للبيع شراء'
-      ].join(' ').toLowerCase()
+      list = list.filter(p => {
+        const pText = [
+          p.title || '',
+          p.location || '',
+          p.area || '',
+          p.type || '',
+          p.category || '',
+          p.description || '',
+          p.summary || '',
+          ...(p.tags || []),
+          p.beds ? `${p.beds} bed` : '',
+          p.isForRent ? 'rent للايجار ايجار' : 'sale buy للبيع شراء'
+        ].join(' ').toLowerCase()
 
-      return pText.includes(q) || (translatedQ && pText.includes(translatedQ)) || allWords.some(w => pText.includes(w))
-    })
+        return pText.includes(q) || (translatedQ && pText.includes(translatedQ)) || allWords.some(w => pText.includes(w))
+      })
+    }
   }
 
   // 2. Purpose filter
@@ -3114,6 +3118,36 @@ onUnmounted(() => {
   background: #e0f2fe;
   border-color: #bae6fd;
   color: #0284c7;
+}
+
+.card-matched-poi {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #34d399;
+  letter-spacing: 0.2px;
+}
+
+.card-matched-poi i {
+  color: #10b981;
+  font-size: 12px;
+}
+
+[data-theme="light"] .card-matched-poi {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #059669;
+}
+
+[data-theme="light"] .card-matched-poi i {
+  color: #059669;
 }
 
 .btn-view-details {

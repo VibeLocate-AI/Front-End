@@ -22,6 +22,7 @@ import NotificationsPage from '../components/NotificationsPage.vue'
 import AgentContactPage from '../components/AgentContactPage.vue'
 import SearchPage from '../components/SearchPage.vue'
 import AdminDashboardPage from '../components/AdminDashboardPage.vue'
+import AdminDestinationPage from '../components/AdminDestinationPage.vue'
 
 const routes = [
   {
@@ -162,6 +163,12 @@ const routes = [
     path: '/reset-success',
     name: 'ResetSuccess',
     component: ResetSuccessPage
+  },
+  {
+    path: '/admin/portal',
+    name: 'AdminPortal',
+    component: AdminDestinationPage,
+    alias: ['/admin/destination', '/admin-portal', '/admin-destination']
   },
   {
     path: '/admin',
