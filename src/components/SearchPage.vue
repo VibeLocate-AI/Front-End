@@ -505,10 +505,16 @@
             </template>
           </div>
 
-          <!-- AI Search indicator -->
-          <div v-if="isAiSearch && !isLoading" class="ai-search-badge">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span>{{ t('aiPoweredResults') }}</span>
+          <!-- AI Search indicator and query confidence -->
+          <div v-if="isAiSearch && !isLoading" class="ai-header-group">
+            <div class="ai-search-badge">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>{{ t('aiPoweredResults') }}</span>
+            </div>
+            <div v-if="aiUnderstanding && (aiUnderstanding.confidence !== undefined)" class="ai-confidence-pill" :title="isRtl ? 'ثقة فهم الاستعلام من قبل الذكاء الاصطناعي' : 'AI Query Understanding Confidence'">
+              <i class="fa-solid fa-brain"></i>
+              <span>{{ isRtl ? 'ثقة فهم الاستعلام:' : 'Query Confidence:' }} {{ Math.round(Number(aiUnderstanding.confidence) * (Number(aiUnderstanding.confidence) <= 1 ? 100 : 1)) }}%</span>
+            </div>
           </div>
         </div>
 
@@ -592,10 +598,10 @@
             <div class="card-img-wrap">
               <img :src="prop.image" :alt="prop.title" loading="lazy" @error="onImgError" />
 
-              <!-- AI Match Badge -->
-              <div class="badge-ai">
+              <!-- AI Match Badge: Only shown if AI search succeeded AND backend provided an explicit match score -->
+              <div v-if="isAiSearch && prop.matchScore" class="badge-ai">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>{{ t('aiMatch') }} {{ prop.matchScore || prop.aiMatch }}%</span>
+                <span>{{ t('aiMatch') }} {{ prop.matchScore }}%</span>
               </div>
 
               <!-- Favorite -->
@@ -649,10 +655,10 @@
                 <span v-for="tag in prop.tags.slice(0, 3)" :key="tag" class="tag-chip">{{ tag }}</span>
               </div>
 
-              <!-- Matched Nearby POI / School / Cafe -->
-              <div class="card-matched-poi" v-if="prop.nearbyPoi">
-                <i v-if="!/[\u{1F300}-\u{1F9FF}]/u.test(prop.nearbyPoi)" class="fa-solid fa-location-dot"></i>
-                <span>{{ prop.nearbyPoi }}</span>
+              <!-- Matched Nearby Amenity from Backend -->
+              <div class="card-matched-poi" v-if="prop.nearbyAmenity">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>{{ prop.nearbyAmenity }}</span>
               </div>
 
               <button type="button" class="btn-view-details" @click.stop="openDetails(prop)">
@@ -713,6 +719,7 @@ const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const hasSearched = ref(false)
 const isAiSearch = ref(false)
+const aiUnderstanding = ref(null)
 const allResults = ref([])
 const page = ref(1)
 const perPage = 12
@@ -957,13 +964,16 @@ const priceLabel = computed(() => {
 const displayProperties = computed(() => {
   let list = [...allResults.value]
 
+  // When isAiSearch is true, the Backend AI is the Single Source of Truth:
+  // Return properties directly from POST /api/ai/contextual-search without
+  // local regex, price re-checking, or client-side re-filtering.
+  if (isAiSearch.value) {
+    return locProps(list)
+  }
+
   // 1. Live text search filtering across title, location, area, type, description, tags, specs
-  // When isAiSearch is true, results are already intelligently matched and filtered by the AI backend.
-  // We do NOT perform literal keyword string match on AI natural language prompts because prompts
-  // contain relative constraints (e.g. "قريب من كافيه", "حد أقصى 2 مليون") that don't match title strings.
-  if (!isAiSearch.value) {
-    const q = searchQuery.value.trim().toLowerCase()
-    if (q) {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
       const translatedQ = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(q).toLowerCase() : ''
       const rawWords = q.split(/\s+/).filter(w => w.length > 1)
       const transWords = translatedQ ? translatedQ.split(/\s+/).filter(w => w.length > 1) : []
@@ -986,7 +996,6 @@ const displayProperties = computed(() => {
         return pText.includes(q) || (translatedQ && pText.includes(translatedQ)) || allWords.some(w => pText.includes(w))
       })
     }
-  }
 
   // 2. Purpose filter
   if (filters.value.purpose === 'sale') list = list.filter(p => !p.isForRent)
@@ -1120,17 +1129,22 @@ const runSearch = async () => {
     }
 
     if (query) {
-      isAiSearch.value = true
       const result = await propertyService.searchWithAi(query)
       if (result.success && result.data && result.data.length > 0) {
+        isAiSearch.value = true
+        aiUnderstanding.value = result.ai_understanding || null
         allResults.value = result.data
       } else {
-        // Fall back to API properties with active parameters
+        // Backend is Single Source of Truth: if AI search fails or returns empty,
+        // fall back to standard database catalog without synthetic AI badges or fake match %
+        isAiSearch.value = false
+        aiUnderstanding.value = null
         const res = await propertyService.getProperties(apiParams)
         allResults.value = res.data || []
       }
     } else {
       isAiSearch.value = false
+      aiUnderstanding.value = null
       const res = await propertyService.getProperties(apiParams)
       allResults.value = res.data || []
     }
@@ -2653,6 +2667,13 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
+.ai-header-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .ai-search-badge {
   display: inline-flex;
   align-items: center;
@@ -2664,6 +2685,31 @@ onUnmounted(() => {
   color: #00d2ff;
   font-size: 12px;
   font-weight: 700;
+}
+
+[data-theme="light"] .ai-search-badge {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(124, 58, 237, 0.08));
+  border-color: rgba(2, 132, 199, 0.3);
+  color: #0284c7;
+}
+
+.ai-confidence-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 100px;
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+[data-theme="light"] .ai-confidence-pill {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #059669;
 }
 
 /* ========== SKELETON CARDS ========== */

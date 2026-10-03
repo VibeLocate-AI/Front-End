@@ -192,6 +192,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { favoritesService } from '../services/favoritesService'
 
 const props = defineProps({
@@ -243,8 +244,16 @@ const formatPrice = (val) => {
   return 'AED 0'
 }
 
+const router = useRouter()
+
 const handleBooking = () => {
-  emit('toast', `Scheduling private viewing for ${props.property?.title}...`)
+  if (props.property) {
+    try {
+      sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(props.property))
+    } catch {}
+    close()
+    router.push(`/property/${props.property.id || 102}/booking`)
+  }
 }
 
 const handleContact = () => {
