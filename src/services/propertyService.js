@@ -136,25 +136,39 @@ export function normalizeProperty(raw) {
     String(raw.title || '').toLowerCase().includes('off-plan') ||
     String(raw.description || '').toLowerCase().includes('off-plan')
 
-  let nearbyPoi = ''
-  const rawPoi = raw.nearby_poi || raw.nearest_poi || raw.matched_poi || raw.poi || raw.cafe
-  if (rawPoi) {
-    if (typeof rawPoi === 'string') {
-      nearbyPoi = rawPoi
+  // Extract nearby amenity if provided by backend (nearby_amenity or nearby_amenities)
+  let nearbyAmenity = ''
+  const rawAmenity = raw.nearby_amenity || raw.nearby_amenities
+  if (rawAmenity) {
+    if (typeof rawAmenity === 'string') {
+      nearbyAmenity = rawAmenity
+    } else if (Array.isArray(rawAmenity) && rawAmenity.length > 0) {
+      const first = rawAmenity[0]
+      if (typeof first === 'string') {
+        nearbyAmenity = first
+      } else {
+        const aName = first.name || first.title || ''
+        const dist = first.distance ?? first.dist
+        const distStr = dist !== undefined && dist !== null
+          ? (Number(dist) < 1 ? `${Math.round(Number(dist) * 1000)}m` : `${Number(dist).toFixed(2)}km`)
+          : ''
+        nearbyAmenity = [aName, distStr].filter(Boolean).join(' • ')
+      }
     } else {
-      const pName = rawPoi.name || rawPoi.title || ''
-      const dist = rawPoi.distance ?? raw.distance ?? rawPoi.dist
+      const aName = rawAmenity.name || rawAmenity.title || ''
+      const dist = rawAmenity.distance ?? raw.distance ?? rawAmenity.dist
       const distStr = dist !== undefined && dist !== null
         ? (Number(dist) < 1 ? `${Math.round(Number(dist) * 1000)}m` : `${Number(dist).toFixed(2)}km`)
         : ''
-      nearbyPoi = [pName, distStr].filter(Boolean).join(' • ')
+      nearbyAmenity = [aName, distStr].filter(Boolean).join(' • ')
     }
-  } else if (raw.poi_name || raw.cafe_name) {
-    const pName = raw.poi_name || raw.cafe_name
-    const dist = raw.distance || raw.poi_distance
-    const distStr = dist ? (Number(dist) < 1 ? `${Math.round(Number(dist) * 1000)}m` : `${Number(dist).toFixed(2)}km`) : ''
-    nearbyPoi = [pName, distStr].filter(Boolean).join(' • ')
   }
+
+  // Real backend match percentage if provided
+  const rawScore = raw.match_percentage || raw.match_score
+  const realMatchScore = rawScore !== undefined && rawScore !== null
+    ? (Number(rawScore) <= 1 ? Math.round(Number(rawScore) * 100) : Math.round(Number(rawScore)))
+    : null
 
   return {
     id: raw.id,
@@ -183,13 +197,14 @@ export function normalizeProperty(raw) {
     images: allImages.length > 0 ? allImages : [primaryImage],
     summary: raw.description || `${type} in ${areaText} with ${beds} beds and ${baths} baths.`,
     description: raw.description || '',
-    nearbyPoi,
+    nearbyAmenity,
+    nearbyAmenities: Array.isArray(raw.nearby_amenities) ? raw.nearby_amenities : (raw.nearby_amenity ? [raw.nearby_amenity] : []),
     is_furnished: raw.is_furnished || 'unfurnished',
     property_condition: raw.property_condition || (isOffPlan ? 'off_plan' : 'ready'),
     agency: raw.agency || { name: 'VibeLocate Real Estate' },
     rating: Number(raw.rating) || 4.8,
     reviews: Array.isArray(raw.reviews) ? raw.reviews : [],
-    aiMatch: 88 + ((raw.id * 7) % 12),
+    matchScore: realMatchScore,
     badgeStyle: type === 'Villa' || type === 'Penthouse'
       ? 'background: rgba(245, 158, 11, 0.18); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.4);'
       : 'background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.35);',
@@ -436,148 +451,8 @@ export function translateSearchTerm(query) {
   return text
 }
 
-/**
- * Intelligent Natural Language Parser for Real Estate & Location Prompts.
- * Extracts: property type, price bounds, bedrooms, purpose, and nearby POI amenities.
- */
-export function parseSearchIntent(queryStr) {
-  const text = (queryStr || '').toLowerCase()
-  const intent = {
-    type: null,
-    type_id: null,
-    maxPrice: null,
-    minPrice: null,
-    purpose: null,
-    bedrooms: null,
-    poiCategory: null,
-    poiSubcats: [],
-    poiEmoji: '',
-    poiLabelAr: '',
-    poiLabelEn: '',
-    vibe: null
-  }
-
-  // 1. Property Type
-  if (/شقة|شقق|apartment|apartments|flat|flats|ستوديو|استوديو|studio/i.test(text)) {
-    intent.type = 'Apartment'
-    intent.type_id = 1
-  } else if (/فيلا|فلل|villa|villas/i.test(text)) {
-    intent.type = 'Villa'
-    intent.type_id = 2
-  } else if (/بنتهاوس|penthouse|penthouses/i.test(text)) {
-    intent.type = 'Penthouse'
-    intent.type_id = 3
-  } else if (/تاون\s*هاوس|townhouse|townhouses/i.test(text)) {
-    intent.type = 'Townhouse'
-    intent.type_id = 4
-  } else if (/منزل|بيت|house/i.test(text)) {
-    intent.type = 'House'
-    intent.type_id = 5
-  } else if (/مكتب|مكاتب|office|offices/i.test(text)) {
-    intent.type = 'Office'
-    intent.type_id = 6
-  }
-
-  // 2. Max Price
-  // Match "اقل من 500000", "أقل من 500,000", "تحت 500000", "بسعر اقل من 500000", "under 500000", "less than 500k", "under 2m", "أقل من 2 مليون"
-  const maxPriceMatch = text.match(/(?:اقل من|أقل من|تحت|حد أقصى|حد اقصى|لا يتجاوز|دون|under|less than|max|up to|below|بسعر اقل من|بسعر أقل من)\s*([\d,]+(?:\.\d+)?|\d+(?:\.\d+)?\s*(?:مليون|m|k\b))/i)
-  if (maxPriceMatch) {
-    let pStr = maxPriceMatch[1].replace(/,/g, '').trim()
-    if (/مليون|m\b/i.test(pStr)) {
-      intent.maxPrice = parseFloat(pStr) * 1000000
-    } else if (/k\b/i.test(pStr)) {
-      intent.maxPrice = parseFloat(pStr) * 1000
-    } else {
-      intent.maxPrice = parseFloat(pStr)
-    }
-  }
-
-  // 3. Min Price
-  const minPriceMatch = text.match(/(?:اكثر من|أكثر من|فوق|حد أدنى|حد ادنى|above|more than|min|over)\s*([\d,]+(?:\.\d+)?|\d+(?:\.\d+)?\s*(?:مليون|m|k\b))/i)
-  if (minPriceMatch) {
-    let pStr = minPriceMatch[1].replace(/,/g, '').trim()
-    if (/مليون|m\b/i.test(pStr)) intent.minPrice = parseFloat(pStr) * 1000000
-    else if (/k\b/i.test(pStr)) intent.minPrice = parseFloat(pStr) * 1000
-    else intent.minPrice = parseFloat(pStr)
-  }
-
-  // 4. Purpose (Rent vs Buy)
-  if (/ايجار|إيجار|للايجار|للإيجار|rent|for rent/i.test(text)) {
-    intent.purpose = 'rent'
-  } else if (/بيع|للبيع|شراء|buy|for sale|sale|purchase/i.test(text)) {
-    intent.purpose = 'buy'
-  }
-
-  // 5. Bedrooms
-  const bedMatch = text.match(/(\d+)\s*(?:غرف|غرفة|نوم|beds?|bedrooms?)/i)
-  if (bedMatch) {
-    intent.bedrooms = parseInt(bedMatch[1], 10)
-  } else if (/استوديو|ستوديو|studio/i.test(text)) {
-    intent.bedrooms = 0
-  }
-
-  // 6. POI Category
-  if (/مدرسة|مدارس|تعليم|روضة|حضانة|school|schools|education|academy|college/i.test(text)) {
-    intent.poiCategory = 'school'
-    intent.poiSubcats = ['school']
-    intent.poiEmoji = '🏫'
-    intent.poiLabelAr = 'مدرسة قريبة'
-    intent.poiLabelEn = 'Near School'
-  } else if (/كافيه|كافيهات|مقهى|مقاهي|قهوة|cafe|cafes|coffee/i.test(text)) {
-    intent.poiCategory = 'cafe'
-    intent.poiSubcats = ['cafe']
-    intent.poiEmoji = '☕'
-    intent.poiLabelAr = 'كافيه قريب'
-    intent.poiLabelEn = 'Near Cafe'
-  } else if (/مستشفى|مستشفيات|عيادة|طبي|hospital|clinic/i.test(text)) {
-    intent.poiCategory = 'healthcare'
-    intent.poiSubcats = ['hospital', 'clinic', 'pharmacy']
-    intent.poiEmoji = '🏥'
-    intent.poiLabelAr = 'مرفق صحي'
-    intent.poiLabelEn = 'Near Healthcare'
-  } else if (/مترو|قطار|محطة|metro|transit/i.test(text)) {
-    intent.poiCategory = 'transit'
-    intent.poiSubcats = ['transit_station']
-    intent.poiEmoji = '🚉'
-    intent.poiLabelAr = 'محطة مترو'
-    intent.poiLabelEn = 'Near Metro'
-  } else if (/شاطئ|بحر|ساحل|beach|sea/i.test(text)) {
-    intent.poiCategory = 'beach'
-    intent.poiSubcats = ['beach']
-    intent.poiEmoji = '🏖️'
-    intent.poiLabelAr = 'قريب من الشاطئ'
-    intent.poiLabelEn = 'Near Beach'
-  } else if (/حديقة|حدائق|منتزه|park/i.test(text)) {
-    intent.poiCategory = 'park'
-    intent.poiSubcats = ['park']
-    intent.poiEmoji = '🌳'
-    intent.poiLabelAr = 'حديقة قريبة'
-    intent.poiLabelEn = 'Near Park'
-  } else if (/مول|تسوق|مركز تجاري|سوبرماركت|mall|supermarket/i.test(text)) {
-    intent.poiCategory = 'shopping'
-    intent.poiSubcats = ['supermarket']
-    intent.poiEmoji = '🛒'
-    intent.poiLabelAr = 'تسوق ومول'
-    intent.poiLabelEn = 'Near Shopping'
-  }
-
-  // 7. Vibe
-  if (/هادئة|هادئ|هدوء|quiet|peaceful|calm/i.test(text)) {
-    intent.vibe = 'peaceful'
-  } else if (/حيوي|حيوية|نشاط|vibrant|lively/i.test(text)) {
-    intent.vibe = 'vibrant'
-  } else if (/عائلي|عائلية|عائلات|family/i.test(text)) {
-    intent.vibe = 'family'
-  } else if (/فاخر|فخامة|luxury/i.test(text)) {
-    intent.vibe = 'luxury'
-  }
-
-  return intent
-}
-
 export const propertyService = {
   translateSearchTerm,
-  parseSearchIntent,
 
   /**
    * Fetch real property listings directly from backend database API (/api/properties)
@@ -817,20 +692,22 @@ export const propertyService = {
    * POST /api/ai/contextual-search
    * @param {string} queryStr
    */
+  /**
+   * AI Contextual Search endpoint
+   * The Backend is the Single Source of Truth for natural language real estate search.
+   * POST /api/ai/contextual-search
+   * @param {string} queryStr
+   */
   async searchWithAi(queryStr) {
     const term = (queryStr || '').trim()
     if (!term) {
       return { success: true, data: [] }
     }
 
-    const translatedTerm = translateSearchTerm(term)
-    const effectiveSearchTerm = translatedTerm || term
-
-    const intent = parseSearchIntent(term)
     const isArabic = /[\u0600-\u06FF]/.test(term)
     const language = isArabic ? 'ar' : 'en'
 
-    // Endpoints supported across environments (prioritize official Laravel AI contextual endpoint)
+    // Supported AI contextual endpoints across deployment environments
     const endpoints = [
       '/ai/contextual-search',
       '/search/ai-contextual',
@@ -838,6 +715,7 @@ export const propertyService = {
     ]
 
     const aiBase = (import.meta.env.VITE_AI_BASE_URL || '').replace(/\/+$/, '')
+    let lastError = null
 
     for (const ep of endpoints) {
       try {
@@ -846,44 +724,27 @@ export const propertyService = {
           const fullUrl = `${aiBase}${ep.startsWith('/') ? '' : '/'}${ep}`
           response = await axios.post(fullUrl, {
             query: term,
-            language,
-            search: term,
-            prompt: term
+            language
           }, {
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            timeout: 10000
+            timeout: 12000
           })
         } else {
           response = await apiClient.post(ep, {
             query: term,
-            language,
-            search: term,
-            prompt: term
+            language
           })
         }
 
         const respData = response?.data !== undefined ? response.data : response
 
-        // ONLY accept if the backend succeeded and did NOT return success: false
+        // Strict adherence to real backend contract
         if (respData && respData.success !== false) {
-          let rawList = []
-          if (Array.isArray(respData)) {
-            rawList = respData
-          } else if (Array.isArray(respData?.properties)) {
-            rawList = respData.properties
-          } else if (Array.isArray(respData?.results)) {
-            rawList = respData.results
-          } else if (Array.isArray(respData?.data)) {
-            rawList = respData.data
-          } else if (Array.isArray(respData?.data?.properties)) {
-            rawList = respData.data.properties
-          } else if (Array.isArray(respData?.data?.results)) {
-            rawList = respData.data.results
-          } else if (Array.isArray(respData?.matched_properties)) {
-            rawList = respData.matched_properties
-          } else if (Array.isArray(respData?.items)) {
-            rawList = respData.items
-          }
+          const rawList = respData.properties || respData.data?.properties || (Array.isArray(respData.data) ? respData.data : (Array.isArray(respData) ? respData : []))
+          const aiUnderstanding = respData.ai_understanding || respData.data?.ai_understanding || null
+          const nearbyAmenities = respData.nearby_amenities || respData.data?.nearby_amenities || []
+          const totalResults = respData.total_results ?? respData.data?.total_results ?? rawList.length
+          const returnedResults = respData.returned_results ?? respData.data?.returned_results ?? rawList.length
 
           if (rawList && rawList.length > 0) {
             const normalized = rawList.map(item => {
@@ -891,173 +752,56 @@ export const propertyService = {
               const norm = normalizeProperty(rawProp)
               if (!norm) return null
 
-              // If item has nearby POI / cafe matched by AI
-              const rawPoi = item.nearby_poi || item.nearest_poi || item.matched_poi || item.poi || item.cafe || rawProp.nearby_poi || rawProp.nearest_poi || rawProp.matched_poi || rawProp.cafe
-              if (rawPoi && !norm.nearbyPoi) {
-                if (typeof rawPoi === 'string') {
-                  norm.nearbyPoi = rawPoi
-                } else {
-                  const pName = rawPoi.name || rawPoi.title || ''
-                  const dist = rawPoi.distance ?? item.distance ?? rawProp.distance ?? rawPoi.dist
-                  const distStr = dist !== undefined && dist !== null
-                    ? (Number(dist) < 1 ? `${Math.round(Number(dist) * 1000)}m` : `${Number(dist).toFixed(2)}km`)
-                    : ''
-                  norm.nearbyPoi = [pName, distStr].filter(Boolean).join(' • ')
-                }
-              } else if (Array.isArray(item.nearby_pois) && item.nearby_pois.length > 0 && !norm.nearbyPoi) {
-                const first = item.nearby_pois[0]
-                const pName = first.name || first.title || ''
-                const dist = first.distance ?? first.dist
-                const distStr = dist !== undefined && dist !== null
-                  ? (Number(dist) < 1 ? `${Math.round(Number(dist) * 1000)}m` : `${Number(dist).toFixed(2)}km`)
-                  : ''
-                norm.nearbyPoi = [pName, distStr].filter(Boolean).join(' • ')
-              }
-
-              const extractedScore = item.match_percentage || item.matchScore || item.match_score || item.score || item.relevance || rawProp.match_score || rawProp.matchScore || item.confidence || respData.confidence
-              let matchScore = extractedScore
-                ? (Number(extractedScore) <= 1 ? Math.round(Number(extractedScore) * 100) : Math.round(Number(extractedScore)))
-                : (norm.aiMatch || 95)
+              // Real match score ONLY if explicitly provided by backend for this specific property
+              const itemScore = item.match_percentage || item.match_score || rawProp.match_score || rawProp.match_percentage
+              const matchScore = itemScore !== undefined && itemScore !== null
+                ? (Number(itemScore) <= 1 ? Math.round(Number(itemScore) * 100) : Math.round(Number(itemScore)))
+                : null
 
               return {
                 ...norm,
-                matchScore: Math.min(99, Math.max(60, matchScore))
+                matchScore // null if backend didn't provide a per-property score
               }
             }).filter(Boolean)
-
-            // Sort descending by match score
-            normalized.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
 
             return {
               success: true,
               data: normalized,
-              source: 'backend_ai',
-              meta: {
-                confidence: respData.confidence || 0.95,
-                matched_count: respData.matched_count || rawList.length
-              }
+              properties: normalized,
+              ai_understanding: aiUnderstanding,
+              nearby_amenities: nearbyAmenities,
+              total_results: totalResults,
+              returned_results: returnedResults,
+              source: 'backend_ai'
+            }
+          } else if (respData.properties || respData.data?.properties) {
+            // Backend AI executed successfully but found 0 matching properties
+            return {
+              success: true,
+              data: [],
+              properties: [],
+              ai_understanding: aiUnderstanding,
+              nearby_amenities: nearbyAmenities,
+              total_results: 0,
+              returned_results: 0,
+              source: 'backend_ai'
             }
           }
+        } else if (respData && respData.success === false) {
+          lastError = respData.message || 'Backend AI returned success: false'
         }
       } catch (err) {
-        // Try next endpoint
+        lastError = err?.response?.data?.message || err?.message
       }
     }
 
-    // 2. High-Precision Client-Side Semantic AI Engine (Resilient fallback when backend model fails)
-    try {
-      const queryParams = { per_page: 100 }
-      if (intent.type_id) queryParams.type_id = intent.type_id
-      if (intent.maxPrice) queryParams.max_price = intent.maxPrice
-      if (intent.minPrice) queryParams.min_price = intent.minPrice
-      if (intent.purpose) queryParams.action_type = intent.purpose
-      if (intent.bedrooms !== null) queryParams.bedrooms = intent.bedrooms
-
-      let res = await this.getProperties(queryParams)
-      let candidateList = res.data || []
-
-      // If backend didn't filter by type_id, fetch broader and filter strictly
-      if (candidateList.length === 0 && intent.type_id) {
-        const broadRes = await this.getProperties({ per_page: 100 })
-        candidateList = broadRes.data || []
-      }
-
-      // STRICT intent filtering: NEVER return houses when user asked for apartments, NEVER return >500k when asked for <500k!
-      if (intent.type) {
-        const targetType = intent.type.toLowerCase()
-        candidateList = candidateList.filter(p => (p.type || '').toLowerCase() === targetType)
-      }
-
-      if (intent.maxPrice) {
-        candidateList = candidateList.filter(p => Number(p.price) <= intent.maxPrice)
-      }
-
-      if (intent.minPrice) {
-        candidateList = candidateList.filter(p => Number(p.price) >= intent.minPrice)
-      }
-
-      if (intent.purpose === 'rent') {
-        candidateList = candidateList.filter(p => p.isForRent)
-      } else if (intent.purpose === 'buy') {
-        candidateList = candidateList.filter(p => !p.isForRent)
-      }
-
-      if (intent.bedrooms !== null) {
-        candidateList = candidateList.filter(p => Number(p.beds) === intent.bedrooms)
-      }
-
-      // Proximity POI enrichment using Dubai POIs dataset
-      let allPois = []
-      if (intent.poiCategory) {
-        try {
-          allPois = await poiService.loadPois()
-        } catch {}
-      }
-
-      const matchingSubcats = intent.poiSubcats || []
-
-      const scoredList = candidateList.map(prop => {
-        let score = 88
-        let nearbyPoiInfo = prop.nearbyPoi || ''
-
-        // Proximity calculation if property has lat/lng and query asked for POI
-        if (intent.poiCategory && prop.latitude && prop.longitude && allPois.length > 0) {
-          let closest = null
-          let minDistance = Infinity
-
-          for (const poi of allPois) {
-            if (matchingSubcats.includes(poi.subcategory) || poi.category === intent.poiCategory) {
-              const d = calculateDistanceKm(prop.latitude, prop.longitude, poi.latitude, poi.longitude)
-              if (d < minDistance) {
-                minDistance = d
-                closest = poi
-              }
-            }
-          }
-
-          if (closest && minDistance < 5) {
-            const distStr = minDistance < 1 ? `${Math.round(minDistance * 1000)}m` : `${minDistance.toFixed(2)}km`
-            const emoji = intent.poiEmoji || '📍'
-            nearbyPoiInfo = `${emoji} ${closest.name} • ${distStr}`
-            if (minDistance <= 1.0) score += 8
-            else if (minDistance <= 2.5) score += 5
-          }
-        }
-
-        // Vibe bonus (peaceful / quiet)
-        if (intent.vibe === 'peaceful') {
-          const loc = `${prop.location || ''} ${prop.area || ''} ${prop.title || ''}`.toLowerCase()
-          if (/hills|furjan|ranch|springs|village|green|oasis|park|creek/i.test(loc)) {
-            score += 3
-          }
-        }
-
-        return {
-          ...prop,
-          nearbyPoi: nearbyPoiInfo || (intent.poiCategory ? `${intent.poiEmoji || '📍'} ${isArabic ? intent.poiLabelAr : intent.poiLabelEn}` : prop.nearbyPoi),
-          matchScore: Math.min(99, Math.max(76, score))
-        }
-      })
-
-      scoredList.sort((a, b) => b.matchScore - a.matchScore)
-
-      return {
-        success: true,
-        data: scoredList,
-        source: 'semantic_ai',
-        meta: {
-          confidence: 0.95,
-          matched_count: scoredList.length,
-          intent
-        }
-      }
-    } catch (fallbackErr) {
-      console.error('Semantic search error:', fallbackErr)
-      return {
-        success: false,
-        data: [],
-        error: fallbackErr.message
-      }
+    // Backend is Single Source of Truth: if backend AI fails, report clean failure
+    return {
+      success: false,
+      data: [],
+      properties: [],
+      source: 'backend_ai',
+      message: lastError || 'تعذر تحليل طلب البحث عبر الذكاء الاصطناعي من السيرفر حالياً'
     }
   },
 
