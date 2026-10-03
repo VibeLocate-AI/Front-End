@@ -117,15 +117,6 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-
-      <!-- Right Inside Feature: Map Pin + 'Cost Pins' Badge -->
-      <div class="ghs-cost-pins-badge" :title="isRtl ? 'دبابيس التكلفة' : 'Cost Pins Badge'">
-        <i class="fa-solid fa-location-dot ghs-cost-pin-icon"></i>
-        <span class="ghs-cost-pin-pill">
-          <span class="ghs-cost-dot"></span>
-          <span>Cost Pins</span>
-        </span>
-      </div>
     </div>
 
     <!-- 2. Location / Area Input (with mini map graphics & zoom controls) -->
