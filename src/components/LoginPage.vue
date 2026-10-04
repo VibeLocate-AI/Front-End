@@ -149,7 +149,16 @@
 
           <!-- Social Login -->
           <div class="social-login">
-            <button type="button" @click="handleGoogleLogin" class="social-btn google-btn" :disabled="isLoading" aria-label="Log in with Google" title="Log in with Google">
+            <div id="google-login-btn-container" ref="googleBtnRef" class="google-btn-rendered"></div>
+            <button 
+              v-show="!isGoogleRendered"
+              type="button" 
+              @click="handleGoogleLogin" 
+              class="social-btn google-btn" 
+              :disabled="isLoading" 
+              aria-label="Log in with Google" 
+              title="Log in with Google"
+            >
               <i v-if="isLoading" class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #4285F4;"></i>
               <svg v-else class="google-icon" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
@@ -184,10 +193,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
-import { triggerGoogleSignIn } from '../services/googleAuth'
+import { triggerGoogleSignIn, renderGoogleButton } from '../services/googleAuth'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const emit = defineEmits(['switch-view'])
@@ -200,6 +209,10 @@ const password = ref('')
 const rememberMe = ref(true)
 const isPasswordVisible = ref(false)
 const isLoading = ref(false)
+
+// Google Sign-In Element Refs
+const googleBtnRef = ref(null)
+const isGoogleRendered = ref(false)
 
 // Features Bullet Points
 const features = computed(() => {
@@ -271,13 +284,11 @@ const handleLogin = async () => {
   }
 }
 
-const handleGoogleLogin = async () => {
+const processGoogleAuth = async (googleUser) => {
   try {
     isLoading.value = true
-    showToast('Connecting to Google Authentication...', 'success')
+    showToast('Authenticating with Google...', 'success')
 
-    // Opens Google's account and consent window.
-    const googleUser = await triggerGoogleSignIn()
     const response = await authService.loginWithGoogle(googleUser.token, rememberMe.value)
     storeAuthenticatedUser(response, googleUser)
 
@@ -289,6 +300,34 @@ const handleGoogleLogin = async () => {
     showToast(response?.message || 'Google sign-in successful!', 'success')
     const targetRoute = isAdmin ? '/admin/portal' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
     setTimeout(() => router.push(targetRoute), 700)
+  } catch (err) {
+    showToast(err.message || 'Google authentication failed. Please try again.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  if (googleBtnRef.value) {
+    const success = await renderGoogleButton(googleBtnRef.value, processGoogleAuth, {
+      theme: 'outline',
+      size: 'large',
+      shape: 'pill',
+      text: 'continue_with',
+      width: 240,
+      locale: lang.value === 'ar' ? 'ar' : 'en'
+    })
+    isGoogleRendered.value = success
+  }
+})
+
+const handleGoogleLogin = async () => {
+  try {
+    isLoading.value = true
+    showToast('Connecting to Google Authentication...', 'success')
+
+    const googleUser = await triggerGoogleSignIn()
+    await processGoogleAuth(googleUser)
   } catch (err) {
     showToast(err.message || 'Google sign-in was cancelled or failed.', 'error')
   } finally {

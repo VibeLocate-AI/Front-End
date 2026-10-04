@@ -591,7 +591,16 @@ body {
 .social-login {
     display: flex;
     justify-content: center;
+    align-items: center;
     margin-bottom: 22px;
+}
+
+.google-btn-rendered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 44px;
+    width: 100%;
 }
 
 .social-btn {

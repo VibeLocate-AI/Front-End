@@ -894,7 +894,9 @@
 
             <!-- Social Login (Google Sign-In) -->
             <div class="social-login">
+              <div id="google-signup-btn-container" ref="googleSignUpBtnRef" class="google-btn-rendered"></div>
               <button 
+                v-show="!isGoogleSignUpRendered"
                 type="button" 
                 @click="handleGoogleSignUp" 
                 class="social-btn google-btn" 
@@ -944,7 +946,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { authService } from '../services/authService'
-import { triggerGoogleSignIn } from '../services/googleAuth'
+import { triggerGoogleSignIn, renderGoogleButton } from '../services/googleAuth'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const emit = defineEmits(['switch-view'])
@@ -957,11 +959,78 @@ const accountType = ref('agent')
 const currentStep = ref(1)
 const isLoading = ref(false)
 
-onMounted(() => {
+// Google Sign-Up Refs
+const googleSignUpBtnRef = ref(null)
+const isGoogleSignUpRendered = ref(false)
+
+const processGoogleSignUp = async (googleUser) => {
+  try {
+    isLoading.value = true
+    showToast('Authenticating with Google...', 'success')
+
+    const response = await authService.loginWithGoogle(googleUser.token, true)
+    
+    // Store user data
+    const profile = response?.user || response?.data?.user || (response?.data && typeof response.data === 'object' && response.data.email ? response.data : {})
+    const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || googleUser.name || ''
+    const emailVal = profile.email || googleUser.email || ''
+    const avatar = profile.avatar || profile.profile_photo_url || profile.picture || googleUser.picture || ''
+    const roles = Array.isArray(profile.roles) ? profile.roles : (profile.role ? [profile.role] : [])
+    const isAdmin = roles.includes('admin') || roles.includes('super-admin') || profile.role === 'admin' || profile.role === 'super-admin' || emailVal === 'admin@vibelocate.ai'
+    const isAgent = !isAdmin && (roles.includes('agent') || profile.role === 'agent')
+    const role = isAdmin ? (profile.role || 'super-admin') : (isAgent ? 'agent' : (profile.role || 'tenant'))
+    const accType = isAdmin ? 'Admin' : (isAgent ? 'agent' : (profile.account_type || 'Free Member'))
+
+    if (name || emailVal) {
+      const userPayload = JSON.stringify({ name, email: emailVal, avatar, role, accountType: accType, roles })
+      localStorage.setItem('auth_user', userPayload)
+      sessionStorage.setItem('auth_user', userPayload)
+      localStorage.setItem('vibe_user_name', name)
+      localStorage.setItem('vibe_user_email', emailVal)
+      if (avatar) localStorage.setItem('vibe_user_avatar', avatar)
+      localStorage.setItem('vibe_user_role', isAdmin ? 'admin' : (isAgent ? 'agent' : role))
+    }
+
+    showToast(response?.message || 'Google sign-up successful!', 'success')
+    const targetRoute = isAdmin ? '/admin/portal' : (isAgent ? '/profile/agent-dashboard' : (response?.redirect_to || '/home'))
+    setTimeout(() => router.push(targetRoute), 700)
+  } catch (err) {
+    showToast(err.message || 'Google sign-up failed. Please try again.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleGoogleSignUp = async () => {
+  try {
+    isLoading.value = true
+    showToast('Connecting to Google Authentication...', 'success')
+    const googleUser = await triggerGoogleSignIn()
+    await processGoogleSignUp(googleUser)
+  } catch (err) {
+    showToast(err.message || 'Google sign-up was cancelled or failed.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(async () => {
   if (route.query.type === 'user') {
     accountType.value = 'user'
   } else {
     accountType.value = 'agent'
+  }
+
+  if (googleSignUpBtnRef.value) {
+    const success = await renderGoogleButton(googleSignUpBtnRef.value, processGoogleSignUp, {
+      theme: 'outline',
+      size: 'large',
+      shape: 'pill',
+      text: 'signup_with',
+      width: 240,
+      locale: lang.value === 'ar' ? 'ar' : 'en'
+    })
+    isGoogleSignUpRendered.value = success
   }
 })
 
@@ -1317,35 +1386,6 @@ const handleRegularUserSignUp = async () => {
     }
   } else {
     showToast('Please fix the highlighted errors before submitting.', 'error')
-  }
-}
-
-// -----------------------------------------------------------------------------
-// GOOGLE SIGN-UP
-// -----------------------------------------------------------------------------
-const handleGoogleSignUp = async () => {
-  try {
-    isLoading.value = true
-    showToast('Connecting to Google Registration...', 'success')
-    const googleUser = await triggerGoogleSignIn()
-    const response = await authService.loginWithGoogle(googleUser.token, true)
-    const profile = response?.user || response?.data?.user || (response?.data && typeof response.data === 'object' && response.data.email ? response.data : {})
-    const name = profile.name || profile.full_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || googleUser.name || ''
-    const emailVal = profile.email || googleUser.email || ''
-    const avatar = profile.avatar || profile.profile_photo_url || profile.picture || profile.photo || profile.image || googleUser.picture || ''
-
-    if (name || emailVal) {
-      const userPayload = JSON.stringify({ name, email: emailVal, avatar, role: accountType.value === 'agent' ? 'agent' : 'tenant' })
-      localStorage.setItem('auth_user', userPayload)
-      sessionStorage.setItem('auth_user', userPayload)
-    }
-
-    showToast(response?.message || 'Google registration successful!', 'success')
-    setTimeout(() => router.push('/home'), 700)
-  } catch (err) {
-    showToast(err.message || 'Google registration was cancelled or failed.', 'error')
-  } finally {
-    isLoading.value = false
   }
 }
 
