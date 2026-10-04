@@ -111,11 +111,13 @@ export const authService = {
    * @returns {Promise<Object>}
    */
   async loginWithGoogle(idToken, rememberMe = true) {
-    const data = await apiClient.post('/auth/google', {
+    const raw = await apiClient.post('/auth/google', {
       id_token: idToken,
       device_uuid: this.getDeviceUuid(),
       device_type: 'web'
     })
+
+    const data = raw?.data ?? raw
 
     const accessToken = data?.access_token || data?.token || data?.data?.token
     const refreshToken = data?.refresh_token || data?.data?.refresh_token
