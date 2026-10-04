@@ -1260,7 +1260,7 @@ import AgentHubView from './AgentHubView.vue'
 import NavbarControls from './NavbarControls.vue'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
-const { t, isRtl } = useThemeAndLanguage()
+const { t, isRtl, isDark } = useThemeAndLanguage()
 
 const route = useRoute()
 const router = useRouter()
@@ -1586,7 +1586,8 @@ const tabTitlesEn = {
   'agent-requests': 'Viewing Requests',
   'agent-messages': 'Client Inquiries',
   'agent-analytics': 'Agent Analytics',
-  'agent-verification': 'Profile & Verification'
+  'agent-verification': 'Profile & Verification',
+  'agent-pois': 'Agency POIs'
 }
 
 const tabTitlesAr = {
@@ -1604,7 +1605,8 @@ const tabTitlesAr = {
   'agent-requests': 'طلبات المعاينة',
   'agent-messages': 'الرسائل',
   'agent-analytics': 'الإحصائيات',
-  'agent-verification': 'الملف الشخصي والتحقق'
+  'agent-verification': 'الملف الشخصي والتحقق',
+  'agent-pois': 'نقاط الاهتمام (POIs)'
 }
 
 const tabSubtitlesEn = {
@@ -1622,7 +1624,8 @@ const tabSubtitlesEn = {
   'agent-requests': 'Track and confirm property viewing appointments',
   'agent-messages': 'Direct communication center for client inquiries',
   'agent-analytics': 'Detailed analytics on impressions and lead conversion',
-  'agent-verification': 'Government licenses, RERA broker card, and credentials'
+  'agent-verification': 'Government licenses, RERA broker card, and credentials',
+  'agent-pois': 'Manage local landmarks, amenities, and agency points of interest'
 }
 
 const tabSubtitlesAr = {
@@ -1640,7 +1643,8 @@ const tabSubtitlesAr = {
   'agent-requests': 'إدارة ومتابعة طلبات المعاينة والزيارات الميدانية',
   'agent-messages': 'مركز المحادثات والتواصل المباشر مع العملاء',
   'agent-analytics': 'إحصائيات تفصيلية لمشاهدات وتفاعل العقارات',
-  'agent-verification': 'بيانات التوثيق والترخيص العقاري وبطاقة الوسيط'
+  'agent-verification': 'بيانات التوثيق والترخيص العقاري وبطاقة الوسيط',
+  'agent-pois': 'إدارة المعالم المحلية والمرافق ونقاط اهتمام الوكالة'
 }
 
 const tabTitle = computed(() => (isRtl.value ? tabTitlesAr[activeTab.value] : tabTitlesEn[activeTab.value]) || (isRtl.value ? 'ملفي الشخصي' : 'My Profile'))
@@ -1736,9 +1740,15 @@ const syncTabFromRoute = () => {
     activeTab.value = 'agent-analytics'
   } else if (path.includes('/agent-verification') || route.query.tab === 'agent-verification') {
     isAgent.value = true
+    agentSectionOpen.value = true
     activeTab.value = 'agent-verification'
+  } else if (path.includes('/agent-pois') || route.query.tab === 'agent-pois') {
+    isAgent.value = true
+    agentSectionOpen.value = true
+    activeTab.value = 'agent-pois'
   } else if (route.params.tab && route.params.tab.startsWith('agent-')) {
     isAgent.value = true
+    agentSectionOpen.value = true
     activeTab.value = route.params.tab
   } else if (path.includes('/properties')) {
     activeTab.value = 'properties'
@@ -1771,6 +1781,7 @@ const syncTabFromRoute = () => {
 }
 
 watch(() => route.path, syncTabFromRoute)
+watch(() => route.params.tab, syncTabFromRoute)
 watch(() => route.query.tab, syncTabFromRoute)
 
 // Loading state for profile API
