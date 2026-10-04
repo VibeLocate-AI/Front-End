@@ -70,6 +70,8 @@ export const translations = {
   baths: { ar: 'حمامات', en: 'Baths' },
   sqft: { ar: 'قدم²', en: 'sqft' },
   viewDetails: { ar: 'عرض التفاصيل', en: 'View Details' },
+  viewOnMap: { ar: 'على الخريطة', en: 'On Map' },
+  propertyDetails: { ar: 'تفاصيل العقار', en: 'Property Details' },
   aiMatch: { ar: 'تطابق ذكي', en: 'AI Match' },
   readyToMove: { ar: 'جاهز للسكن', en: 'Ready to Move' },
   offPlan: { ar: 'على الخارطة', en: 'Off-Plan' },

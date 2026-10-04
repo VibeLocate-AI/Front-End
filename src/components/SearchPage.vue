@@ -592,7 +592,7 @@
             :key="prop.id"
             class="search-prop-card"
             :class="{ 'list-card': viewMode === 'list' }"
-            @click="openDetails(prop)"
+            @click="goToPropertyDetails(prop)"
           >
             <!-- Image -->
             <div class="card-img-wrap">
@@ -661,10 +661,28 @@
                 <span>{{ prop.nearbyAmenity }}</span>
               </div>
 
-              <button type="button" class="btn-view-details" @click.stop="openDetails(prop)">
-                <span>{{ t('viewDetails') }}</span>
-                <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
-              </button>
+              <!-- Card Dual Actions: View On Map & Property Details -->
+              <div class="card-actions-dual">
+                <button
+                  type="button"
+                  class="btn-card-action btn-card-map"
+                  @click.stop="viewOnMap(prop)"
+                  :title="t('viewOnMap')"
+                >
+                  <i class="fa-solid fa-map-location-dot"></i>
+                  <span>{{ t('viewOnMap') }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-card-action btn-card-details"
+                  @click.stop="goToPropertyDetails(prop)"
+                  :title="t('propertyDetails')"
+                >
+                  <span>{{ t('propertyDetails') }}</span>
+                  <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+                </button>
+              </div>
             </div>
           </article>
         </div>
@@ -1135,12 +1153,23 @@ const runSearch = async () => {
         aiUnderstanding.value = result.ai_understanding || null
         allResults.value = result.data
       } else {
-        // Backend is Single Source of Truth: if AI search fails or returns empty,
-        // fall back to standard database catalog without synthetic AI badges or fake match %
+        // AI returned empty (e.g. it parsed a single price as min_budget = max_budget,
+        // which demands an exact price). Reuse what the AI understood with a relaxed
+        // budget range before falling back to a plain catalog search.
         isAiSearch.value = false
-        aiUnderstanding.value = null
-        const res = await propertyService.getProperties(apiParams)
-        allResults.value = res.data || []
+        const understanding = result.success ? (result.ai_understanding || null) : null
+        aiUnderstanding.value = understanding
+        let fallback = understanding ? await fetchRelaxedAiMatches(understanding) : []
+        if (fallback.length > 0) {
+          showToast(isRtl.value
+            ? `لا يوجد تطابق تام، نعرض ${fallback.length} عقار قريب من طلبك`
+            : `No exact match — showing ${fallback.length} close matches`)
+        } else {
+          aiUnderstanding.value = null
+          const res = await propertyService.getProperties(apiParams)
+          fallback = res.data || []
+        }
+        allResults.value = fallback
       }
     } else {
       isAiSearch.value = false
@@ -1157,6 +1186,45 @@ const runSearch = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// Relaxed search based on the AI's parsed intent (type + budget ±20%)
+const fetchRelaxedAiMatches = async (u) => {
+  const minB = Number(u.min_budget) || 0
+  const maxB = Number(u.max_budget) || 0
+  const hasBudget = minB > 0 || maxB > 0
+  if (!u.type_id && !u.property_type && !hasBudget) return []
+
+  const params = { per_page: 100, page: 1 }
+  if (u.type_id) params.type_id = u.type_id
+  else if (u.property_type) params.type = u.property_type
+  if (u.action_type) params.action_type = u.action_type === 'rent' ? 'rent' : 'buy'
+  if (u.min_bedrooms) params.bedrooms = u.min_bedrooms
+
+  const res = await propertyService.getProperties(params)
+  let list = res.data || []
+
+  // Keep type filter on the client too, in case the backend ignores type_id
+  const wantedType = String(u.property_type || '').toLowerCase()
+  if (wantedType) {
+    const typed = list.filter(p => String(p.type || '').toLowerCase() === wantedType)
+    if (typed.length) list = typed
+  }
+
+  if (hasBudget) {
+    // A single price (min === max) becomes a ±20% window around it
+    const low = minB > 0 ? minB * 0.8 : 0
+    const high = maxB > 0 ? maxB * 1.2 : Infinity
+    const target = minB && maxB ? (minB + maxB) / 2 : (maxB || minB)
+    list = list
+      .filter(p => {
+        const price = Number(p.price) || 0
+        return price >= low && price <= high
+      })
+      .sort((a, b) => Math.abs((Number(a.price) || 0) - target) - Math.abs((Number(b.price) || 0) - target))
+  }
+
+  return list
 }
 
 const loadMore = async () => {
@@ -1235,6 +1303,62 @@ const applyTrending = (cat) => {
   if (cat.type) filters.value.type = cat.type
   if (cat.query) searchQuery.value = cat.query
   runSearch()
+}
+
+const NEIGHBORHOOD_COORDS = {
+  'downtown dubai': [25.1972, 55.2744],
+  'downtown': [25.1972, 55.2744],
+  'palm jumeirah': [25.1124, 55.1390],
+  'dubai marina': [25.0805, 55.1403],
+  'business bay': [25.1850, 55.2644],
+  'dubai hills': [25.1235, 55.2481],
+  'arabian ranches': [25.0560, 55.2620],
+  'difc': [25.2120, 55.2815],
+  'dubai creek': [25.1950, 55.3480],
+  'bluewaters': [25.0795, 55.1220],
+  'jumeirah village circle': [25.0600, 55.2050],
+  'jvc': [25.0600, 55.2050],
+  'jumeirah beach residence': [25.0800, 55.1340],
+  'jbr': [25.0800, 55.1340],
+}
+
+const getPropertyCoordinates = (prop) => {
+  const lat = Number(prop?.latitude ?? prop?.lat)
+  const lng = Number(prop?.longitude ?? prop?.lng)
+  if (Number.isFinite(lat) && Number.isFinite(lng) && lat && lng) {
+    return [lat, lng]
+  }
+  const locLower = `${prop?.location || ''} ${prop?.area || ''} ${prop?.title || ''}`.toLowerCase()
+  for (const [key, coords] of Object.entries(NEIGHBORHOOD_COORDS)) {
+    if (locLower.includes(key)) {
+      return coords
+    }
+  }
+  return [25.1972, 55.2744]
+}
+
+const viewOnMap = (prop) => {
+  if (!prop) return
+  const [lat, lng] = getPropertyCoordinates(prop)
+  router.push({
+    path: '/map',
+    query: {
+      id: prop.id,
+      lat: Number(lat).toFixed(6),
+      lng: Number(lng).toFixed(6),
+      title: prop.title || ''
+    }
+  })
+}
+
+const goToPropertyDetails = (prop) => {
+  if (!prop) return
+  try {
+    sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop))
+  } catch (err) {
+    console.warn('Could not cache property:', err)
+  }
+  router.push(`/property/${prop.id || encodeURIComponent(prop.title || 'details')}`)
 }
 
 const openDetails = (prop) => {
@@ -3196,37 +3320,124 @@ onUnmounted(() => {
   color: #059669;
 }
 
-.btn-view-details {
+/* ========== CARD DUAL ACTIONS ========== */
+.card-actions-dual {
   margin-top: auto;
-  display: flex;
+  padding-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-prop-card.list-card .card-actions-dual {
+  width: fit-content;
+  min-width: 270px;
+  grid-template-columns: auto auto;
+}
+
+.btn-card-action {
+  height: 38px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px;
-  background: rgba(0, 210, 255, 0.06);
-  border: 1px solid rgba(0, 210, 255, 0.15);
-  border-radius: 10px;
-  color: #00d2ff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  gap: 6px;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  padding: 0 10px;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
-.btn-view-details:hover {
-  background: rgba(0, 210, 255, 0.12);
-  border-color: rgba(0, 210, 255, 0.3);
+/* Map Button */
+.btn-card-map {
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.32);
+  color: #38bdf8;
 }
 
-[data-theme="light"] .btn-view-details {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
+.btn-card-map:hover {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+}
+
+.btn-card-map i {
+  font-size: 13px;
+  color: #00d2ff;
+  transition: transform 0.2s ease;
+}
+
+.btn-card-map:hover i {
+  transform: scale(1.15);
+}
+
+[data-theme="light"] .btn-card-map {
+  background: #f0f9ff;
+  border-color: #bae6fd;
   color: #0284c7;
 }
 
-[data-theme="light"] .btn-view-details:hover {
-  background: #bae6fd;
+[data-theme="light"] .btn-card-map:hover {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+  color: #0369a1;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+}
+
+[data-theme="light"] .btn-card-map i {
+  color: #0284c7;
+}
+
+/* Details Button */
+.btn-card-details {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.16) 0%, rgba(124, 58, 237, 0.2) 100%);
+  border: 1px solid rgba(0, 210, 255, 0.38);
+  color: #ffffff;
+}
+
+.btn-card-details:hover {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.28) 0%, rgba(124, 58, 237, 0.32) 100%);
+  border-color: #00d2ff;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 210, 255, 0.25);
+}
+
+.btn-card-details i {
+  font-size: 11px;
+  color: #00d2ff;
+  transition: transform 0.2s ease;
+}
+
+[dir="rtl"] .btn-card-details:hover i {
+  transform: translateX(-3px);
+}
+
+[dir="ltr"] .btn-card-details:hover i {
+  transform: translateX(3px);
+}
+
+[data-theme="light"] .btn-card-details {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-card-details:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="light"] .btn-card-details i {
+  color: #ffffff;
 }
 
 /* ========== LOAD MORE ========== */

@@ -513,7 +513,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { authService } from "../services/authService";
 import { propertyService } from "../services/propertyService";
 import { favoritesService } from "../services/favoritesService";
@@ -525,6 +525,7 @@ import { useThemeAndLanguage } from "../composables/useThemeAndLanguage";
 const { t, isRtl, isDark, theme: currentTheme } = useThemeAndLanguage();
 
 const router = useRouter();
+const route = useRoute();
 
 // POI layer state
 const showPois = ref(true);
@@ -1192,7 +1193,9 @@ async function fetchLiveMapProperties() {
       if (mapInstance) {
         renderMarkers(filteredProperties);
         renderSidebarList(filteredProperties);
-        if (propClusterLayer) {
+        if (route.query.id || (route.query.lat && route.query.lng)) {
+          checkRouteQueryFocus();
+        } else if (propClusterLayer) {
           try {
             const bounds = propClusterLayer.getBounds();
             if (bounds && bounds.isValid()) {
@@ -1291,6 +1294,30 @@ function loadLeaflet() {
   });
 }
 
+function checkRouteQueryFocus() {
+  const q = route.query;
+  if (!q) return;
+  const id = q.id ? Number(q.id) : null;
+  const lat = q.lat ? parseFloat(q.lat) : null;
+  const lng = q.lng ? parseFloat(q.lng) : null;
+
+  if (id && markersMap.has(id)) {
+    selectProperty(id);
+    return;
+  }
+
+  if (lat && lng && Number.isFinite(lat) && Number.isFinite(lng) && mapInstance) {
+    mapInstance.flyTo([lat, lng], 15, { duration: 1.2 });
+    if (id) {
+      setTimeout(() => {
+        if (markersMap.has(id)) {
+          selectProperty(id);
+        }
+      }, 500);
+    }
+  }
+}
+
 function initMap() {
   const el = document.getElementById("leaflet-map");
   if (!el || !window.L) return;
@@ -1304,6 +1331,7 @@ function initMap() {
   setTileLayer(isDark.value ? "dark" : "day");
   renderMarkers(filteredProperties);
   renderSidebarList(filteredProperties);
+  checkRouteQueryFocus();
   mapInstance.on("click", (e) => {
     if (e.originalEvent.target.id === "leaflet-map") clearActiveStates();
   });
@@ -2042,6 +2070,14 @@ onMounted(async () => {
   fetchLiveMapProperties();
   fetchAndRenderPois();
 });
+
+watch(
+  () => route.query,
+  () => {
+    checkRouteQueryFocus();
+  },
+  { deep: true }
+);
 
 onUnmounted(() => {
   document.removeEventListener("click", handleDocumentClick);
