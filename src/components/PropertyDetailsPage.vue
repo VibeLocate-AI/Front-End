@@ -189,7 +189,7 @@
                 </button>
               </div>
               <div class="map-wrap">
-                <div ref="propertyMap" class="property-map" aria-label="Interactive property location map"></div>
+                <div ref="propertyMap" class="property-map" :class="{ 'map-dark': theme === 'dark' }" aria-label="Interactive property location map"></div>
                 <div class="map-bottom-bar">
                   <span class="map-loc-label"><i class="fa-solid fa-location-dot"></i> {{ localizedLocation }}</span>
                   <div class="map-bar-actions">
@@ -980,21 +980,16 @@ const updateMapTiles = (L) => {
   if (tileLayerInstance) {
     try { mapInstance.removeLayer(tileLayerInstance) } catch {}
   }
-  const isDark = theme.value === 'dark'
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-  const tileOpts = isDark
-    ? { maxZoom: 19, subdomains: 'abcd', attribution: '&copy; CartoDB' }
-    : { maxZoom: 19, attribution: '&copy; OpenStreetMap' }
-
-  tileLayerInstance = L.tileLayer(tileUrl, tileOpts).addTo(mapInstance)
+  // Always use OpenStreetMap (no API key required)
+  tileLayerInstance = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(mapInstance)
 }
 
-// Watch theme changes to seamlessly switch map theme
+// Watch theme — CSS filter handles dark mode; no tile swap needed
 watch(theme, () => {
-  if (window.L && mapInstance) {
-    updateMapTiles(window.L)
+  if (mapInstance) {
+    setTimeout(() => mapInstance?.invalidateSize(), 100)
   }
 })
 
@@ -1712,6 +1707,16 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border);
   background: #112233;
   z-index: 1;
+  transition: filter 0.4s ease;
+}
+/* CSS dark mode filter — inverts OpenStreetMap tiles to a dark navy theme */
+.property-map.map-dark {
+  filter: invert(100%) hue-rotate(180deg) brightness(0.88) contrast(1.1) saturate(0.8);
+}
+/* Re-invert the custom markers so they appear with original colors on dark map */
+.property-map.map-dark :deep(.property-location-marker),
+.property-map.map-dark :deep(.mini-poi-marker) {
+  filter: invert(100%) hue-rotate(180deg) brightness(1.1) contrast(1);
 }
 .map-bottom-bar {
   display: flex;
