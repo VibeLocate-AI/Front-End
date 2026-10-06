@@ -1087,6 +1087,10 @@ onUnmounted(() => {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+[data-theme="light"] .rent-skeleton-thumb {
+  background: linear-gradient(90deg, #edf2f7 25%, #e2e8f0 50%, #edf2f7 75%);
+  background-size: 200% 100%;
+}
 .rent-sk-line {
   height: 12px;
   border-radius: 4px;
@@ -1094,6 +1098,10 @@ onUnmounted(() => {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   margin-bottom: 8px;
+}
+[data-theme="light"] .rent-sk-line {
+  background: linear-gradient(90deg, #edf2f7 25%, #cbd5e1 50%, #edf2f7 75%);
+  background-size: 200% 100%;
 }
 .rent-sk-badge { width: 35%; height: 16px; margin-bottom: 12px; }
 .rent-sk-title { width: 85%; height: 16px; }

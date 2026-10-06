@@ -1519,11 +1519,21 @@ onUnmounted(() => {
   animation: shimmer 1.8s infinite;
 }
 
+[data-theme="light"] .skeleton-thumb-box {
+  background: linear-gradient(90deg, #edf2f7 25%, #e2e8f0 50%, #edf2f7 75%);
+  background-size: 200% 100%;
+}
+
 .skeleton-line {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.8s infinite;
   border-radius: 4px;
+}
+
+[data-theme="light"] .skeleton-line {
+  background: linear-gradient(90deg, #edf2f7 25%, #cbd5e1 50%, #edf2f7 75%);
+  background-size: 200% 100%;
 }
 
 .skeleton-line.title {
