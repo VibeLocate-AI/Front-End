@@ -494,7 +494,10 @@
         <div class="results-header">
           <div class="results-count-wrap">
             <template v-if="isLoading">
-              <div class="results-skeleton-bar"></div>
+              <div class="results-loading-pill">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <span>{{ isRtl ? 'جاري التحليل والبحث الذكي...' : 'AI Analyzing & Searching...' }}</span>
+              </div>
             </template>
             <template v-else>
               <span class="results-count-num">{{ displayProperties.length }}</span>
@@ -514,6 +517,63 @@
             <div v-if="aiUnderstanding && (aiUnderstanding.confidence !== undefined)" class="ai-confidence-pill" :title="isRtl ? 'ثقة فهم الاستعلام من قبل الذكاء الاصطناعي' : 'AI Query Understanding Confidence'">
               <i class="fa-solid fa-brain"></i>
               <span>{{ isRtl ? 'ثقة فهم الاستعلام:' : 'Query Confidence:' }} {{ Math.round(Number(aiUnderstanding.confidence) * (Number(aiUnderstanding.confidence) <= 1 ? 100 : 1)) }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modern AI Loading / Waiting State Indicator -->
+        <div v-if="isLoading" class="ai-search-loading-state">
+          <div class="ai-loading-glow"></div>
+          
+          <div class="ai-loading-center">
+            <!-- Pulsing Radar / Orb Icon -->
+            <div class="ai-loading-orb-wrap">
+              <div class="ai-orb-ring ring-1"></div>
+              <div class="ai-orb-ring ring-2"></div>
+              <div class="ai-orb-core">
+                <i class="fa-solid fa-wand-magic-sparkles ai-orb-icon"></i>
+              </div>
+            </div>
+
+            <!-- Animated text & status -->
+            <div class="ai-loading-details">
+              <div class="ai-loading-badge">
+                <span class="ai-badge-dot"></span>
+                <span>{{ isRtl ? 'محرك البحث العقاري الذكي نشط' : 'Smart AI Real Estate Engine Active' }}</span>
+              </div>
+              <h3 class="ai-loading-title">
+                {{ isRtl ? 'جاري البحث والتحليل بالذكاء الاصطناعي...' : 'Searching & Analyzing with AI...' }}
+              </h3>
+              <p class="ai-loading-sub" v-if="searchQuery">
+                {{ isRtl ? 'نقوم الآن بمطابقة العقارات المناسبة لـ: ' : 'Matching ideal properties for: ' }}
+                <strong>"{{ searchQuery }}"</strong>
+              </p>
+              <p class="ai-loading-sub" v-else>
+                {{ isRtl ? 'جاري جلب وتحديث قائمة العقارات المتاحة...' : 'Fetching and updating available properties...' }}
+              </p>
+
+              <!-- Dynamic AI Steps Micro-bar -->
+              <div class="ai-loading-steps">
+                <div class="ai-step">
+                  <i class="fa-solid fa-brain"></i>
+                  <span>{{ isRtl ? 'فهم الطلب والميزانية' : 'Parsing Request & Budget' }}</span>
+                </div>
+                <div class="ai-step-arrow"><i class="fa-solid" :class="isRtl ? 'fa-angle-left' : 'fa-angle-right'"></i></div>
+                <div class="ai-step">
+                  <i class="fa-solid fa-map-location-dot"></i>
+                  <span>{{ isRtl ? 'تصفية المناطق والمواصفات' : 'Filtering Areas & Specs' }}</span>
+                </div>
+                <div class="ai-step-arrow"><i class="fa-solid" :class="isRtl ? 'fa-angle-left' : 'fa-angle-right'"></i></div>
+                <div class="ai-step">
+                  <i class="fa-solid fa-bullseye"></i>
+                  <span>{{ isRtl ? 'حساب نسبة التطابق' : 'Scoring Matches' }}</span>
+                </div>
+              </div>
+
+              <!-- Animated Shimmer Progress Line -->
+              <div class="ai-loading-progress-bar">
+                <div class="ai-progress-glow"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2852,6 +2912,38 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
+[data-theme="light"] .results-skeleton-bar {
+  background: linear-gradient(90deg, #edf2f7 0%, #cbd5e1 50%, #edf2f7 100%);
+  background-size: 400% 100%;
+}
+
+.results-loading-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(0, 210, 255, 0.12);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-radius: 100px;
+  color: #00d2ff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.15);
+  animation: pulsePill 2s infinite ease-in-out;
+}
+
+[data-theme="light"] .results-loading-pill {
+  background: rgba(2, 132, 199, 0.09);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);
+}
+
+@keyframes pulsePill {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.88; transform: scale(0.98); }
+}
+
 .ai-header-group {
   display: flex;
   align-items: center;
@@ -3042,35 +3134,363 @@ onUnmounted(() => {
   100% { background-position: 400% 0; }
 }
 
+/* ========== AI SEARCH LOADING WAITING STATE ========== */
+.ai-search-loading-state {
+  position: relative;
+  margin: 0 0 28px;
+  padding: 28px 24px;
+  background: linear-gradient(135deg, rgba(8, 20, 38, 0.95) 0%, rgba(13, 31, 56, 0.95) 100%);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(0, 210, 255, 0.08);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="light"] .ai-search-loading-state {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+  border-color: rgba(2, 132, 199, 0.3);
+  box-shadow: 0 12px 35px rgba(2, 132, 199, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ai-loading-glow {
+  position: absolute;
+  top: -50px;
+  left: 20%;
+  width: 320px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(0, 210, 255, 0.25) 0%, transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+  animation: glowMove 4s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .ai-loading-glow {
+  background: radial-gradient(circle, rgba(2, 132, 199, 0.15) 0%, transparent 70%);
+}
+
+@keyframes glowMove {
+  0% { transform: translateX(-40px); }
+  100% { transform: translateX(80px); }
+}
+
+.ai-loading-center {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .ai-loading-center {
+    flex-direction: column;
+    text-align: center;
+    gap: 18px;
+  }
+}
+
+/* Radar / Orb */
+.ai-loading-orb-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 210, 255, 0.4);
+  animation: radarWave 2.4s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+}
+
+[data-theme="light"] .ai-orb-ring {
+  border-color: rgba(2, 132, 199, 0.35);
+}
+
+.ai-orb-ring.ring-2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes radarWave {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.ai-orb-core {
+  position: relative;
+  z-index: 2;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d2ff 0%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+  animation: orbCorePulse 2s ease-in-out infinite;
+}
+
+[data-theme="light"] .ai-orb-core {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 0 16px rgba(2, 132, 199, 0.45);
+}
+
+@keyframes orbCorePulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.5)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(0, 210, 255, 0.8)); }
+}
+
+.ai-orb-icon {
+  font-size: 22px;
+  color: #ffffff;
+  animation: orbSpinSparkle 3s ease-in-out infinite;
+}
+
+@keyframes orbSpinSparkle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(15deg) scale(1.1); }
+}
+
+/* Loading details */
+.ai-loading-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-loading-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 4px 12px;
+  background: rgba(0, 210, 255, 0.1);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #00d2ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .ai-loading-badge {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0284c7;
+}
+
+@media (max-width: 768px) {
+  .ai-loading-badge {
+    align-self: center;
+  }
+}
+
+.ai-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: dotBlink 1.4s infinite;
+}
+
+@keyframes dotBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+.ai-loading-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+[data-theme="light"] .ai-loading-title {
+  color: #0f172a;
+}
+
+.ai-loading-sub {
+  margin: 0;
+  font-size: 13.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+[data-theme="light"] .ai-loading-sub {
+  color: #475569;
+}
+
+.ai-loading-sub strong {
+  color: #00d2ff;
+  font-weight: 700;
+}
+
+[data-theme="light"] .ai-loading-sub strong {
+  color: #0284c7;
+}
+
+/* AI Steps */
+.ai-loading-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .ai-loading-steps {
+    justify-content: center;
+  }
+}
+
+.ai-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+  animation: stepGlow 2.5s infinite ease-in-out;
+}
+
+.ai-step:nth-child(1) { animation-delay: 0s; }
+.ai-step:nth-child(3) { animation-delay: 0.8s; }
+.ai-step:nth-child(5) { animation-delay: 1.6s; }
+
+[data-theme="light"] .ai-step {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+  animation-name: stepGlowLight;
+}
+
+@keyframes stepGlow {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; }
+  50% { border-color: #00d2ff; color: #00d2ff; background: rgba(0, 210, 255, 0.1); }
+}
+
+@keyframes stepGlowLight {
+  0%, 100% { border-color: #cbd5e1; color: #64748b; }
+  50% { border-color: #0284c7; color: #0284c7; background: #e0f2fe; }
+}
+
+.ai-step-arrow {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 11px;
+}
+
+[data-theme="light"] .ai-step-arrow {
+  color: #94a3b8;
+}
+
+/* Progress bar shimmer */
+.ai-loading-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+[data-theme="light"] .ai-loading-progress-bar {
+  background: #e2e8f0;
+}
+
+.ai-progress-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, #00d2ff, #3b82f6, #8b5cf6);
+  border-radius: 10px;
+  animation: progressSlide 1.8s infinite ease-in-out;
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+}
+
+@keyframes progressSlide {
+  0% { left: -40%; width: 30%; }
+  50% { left: 40%; width: 50%; }
+  100% { left: 100%; width: 30%; }
+}
+
+/* ========== SKELETON CARDS ========== */
 .skeleton-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .skeleton-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 .sk-img {
   width: 100%;
   height: 200px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 100%);
   background-size: 400% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+[data-theme="light"] .sk-img {
+  background: linear-gradient(90deg, #edf2f7 0%, #e2e8f0 50%, #edf2f7 100%);
+  background-size: 400% 100%;
+}
+
 .sk-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
 .sk-line {
   height: 12px;
   border-radius: 6px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.05) 100%);
   background-size: 400% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
+}
+
+[data-theme="light"] .sk-line {
+  background: linear-gradient(90deg, #edf2f7 0%, #cbd5e1 50%, #edf2f7 100%);
+  background-size: 400% 100%;
 }
 
 .sk-title { width: 80%; height: 16px; }
 .sk-loc { width: 60%; }
 .sk-price { width: 40%; height: 18px; }
 .sk-specs { display: flex; gap: 8px; }
-.sk-spec { width: 60px; height: 10px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 100%); background-size: 400% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.sk-spec {
+  width: 60px;
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.05) 100%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+[data-theme="light"] .sk-spec {
+  background: linear-gradient(90deg, #edf2f7 0%, #cbd5e1 50%, #edf2f7 100%);
+  background-size: 400% 100%;
+}
 
 /* ========== EMPTY / INITIAL STATES ========== */
 .search-empty-state,
