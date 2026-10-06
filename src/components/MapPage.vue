@@ -465,12 +465,20 @@
           </div>
           <div class="modal-actions-row">
             <button
+              class="modal-btn-view-details"
+              type="button"
+              @click="goToModalPropertyDetails"
+            >
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>{{ isRtl ? 'الانتقال لتفاصيل العقار' : 'View Property Details' }}</span>
+            </button>
+            <button
               class="modal-btn-contact"
               type="button"
               @click="contactVerifiedAgent"
             >
               <i class="fa-solid fa-phone"></i>
-              <span>{{ isRtl ? 'تواصل مع الوكيل المعتمد' : 'Contact Verified Agent' }}</span>
+              <span>{{ isRtl ? 'تواصل مع الوكيل' : 'Contact Agent' }}</span>
             </button>
             <button
               id="modal-btn-directions"
@@ -478,7 +486,7 @@
               type="button"
             >
               <i class="fa-solid fa-diamond-turn-right"></i>
-              <span>{{ isRtl ? 'تخطيط الاتجاهات والمسار' : 'Get Route & Directions' }}</span>
+              <span>{{ isRtl ? 'تخطيط المسار' : 'Route' }}</span>
             </button>
             <button
               class="modal-btn-share"
@@ -547,6 +555,28 @@ const handleOpenSavedProp = (prop) => {
     openPropertyModal(prop.id);
   } else {
     router.push("/home#featured");
+  }
+};
+
+const goToPropertyDetails = (id) => {
+  const prop = currentProperties.find((p) => p.id === id);
+  closePropertyModal();
+  if (prop) {
+    try {
+      sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop));
+    } catch (e) {
+      console.warn('Could not cache property:', e);
+    }
+    router.push({ name: 'PropertyDetails', params: { id: prop.id || encodeURIComponent(prop.title || 'details') } });
+  } else if (id) {
+    router.push({ name: 'PropertyDetails', params: { id } });
+  }
+};
+
+const goToModalPropertyDetails = () => {
+  const activeId = window.__vibeMap?._activeModalPropId;
+  if (activeId) {
+    goToPropertyDetails(activeId);
   }
 };
 
@@ -1544,7 +1574,38 @@ function createIcon(prop, isActive = false) {
 }
 
 function popupHtml(p) {
-  return `<div class="popup-prop-card"><div class="popup-img-wrap"><img src="${p.image}" alt="${p.title}"><div class="popup-ai-badge">❆ ${p.aiScore}% Match</div></div><div class="popup-body"><div class="popup-price">${p.priceFormatted}</div><div class="popup-title">${p.title}</div><div class="popup-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}, Dubai</div><div class="popup-specs"><span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span><span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span><span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span></div><div class="popup-btn-row"><button class="popup-btn-detail" onclick="window.__vibeMap.openPropertyModal(${p.id})"><span>Explore</span><i class="fa-solid fa-arrow-right"></i></button><button class="popup-btn-route" onclick="window.__vibeMap.showRouteCard(${p.id})"><i class="fa-solid fa-diamond-turn-right"></i><span>اتجاهات</span></button></div></div></div>`;
+  const detailsLabel = isRtl.value ? "تفاصيل العقار" : "Property Details";
+  const routeLabel = isRtl.value ? "اتجاهات" : "Route";
+  const quickLabel = isRtl.value ? "نظرة سريعة" : "Quick View";
+  return `<div class="popup-prop-card">
+    <div class="popup-img-wrap">
+      <img src="${p.image}" alt="${p.title}">
+      <div class="popup-ai-badge">❆ ${p.aiScore}% Match</div>
+    </div>
+    <div class="popup-body">
+      <div class="popup-price">${p.priceFormatted}</div>
+      <div class="popup-title">${p.title}</div>
+      <div class="popup-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}, Dubai</div>
+      <div class="popup-specs">
+        <span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span>
+        <span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span>
+        <span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span>
+      </div>
+      <div class="popup-btn-row">
+        <button class="popup-btn-detail" onclick="window.__vibeMap.goToPropertyDetails(${p.id})" title="${detailsLabel}">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>${detailsLabel}</span>
+        </button>
+        <button class="popup-btn-quick" onclick="window.__vibeMap.openPropertyModal(${p.id})" title="${quickLabel}">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button class="popup-btn-route" onclick="window.__vibeMap.showRouteCard(${p.id})" title="${routeLabel}">
+          <i class="fa-solid fa-diamond-turn-right"></i>
+          <span>${routeLabel}</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function renderMarkers(props) {
@@ -1616,7 +1677,33 @@ function renderMarkers(props) {
 
 function cardHtml(p) {
   const isActive = p.id === activePropertyId ? "active" : "";
-  return `<div class="map-prop-card ${isActive}" id="prop-card-${p.id}" onclick="window.__vibeMap.selectProperty(${p.id})"><div class="prop-thumb-wrap"><img class="prop-thumb-img" src="${p.image}" alt="${p.title}"><div class="prop-distance-chip"><i class="fa-solid fa-location-arrow"></i> ${p.distanceFormatted}</div></div><div class="prop-card-details"><div class="prop-card-top"><span class="prop-ai-pill">❆ ${p.aiScore}% Match</span><span class="prop-rating"><i class="fa-solid fa-star"></i> ${p.rating}</span></div><div class="prop-card-title">${p.title}</div><div class="prop-card-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}</div><div class="prop-card-price">${p.priceFormatted} <span>/${p.period.toLowerCase()}</span></div><div class="prop-card-specs"><span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span><span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span><span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span></div></div></div>`;
+  const detailsLabel = isRtl.value ? "الانتقال لتفاصيل العقار" : "Property Details";
+  return `<div class="map-prop-card ${isActive}" id="prop-card-${p.id}" onclick="window.__vibeMap.selectProperty(${p.id})">
+    <div class="prop-thumb-wrap">
+      <img class="prop-thumb-img" src="${p.image}" alt="${p.title}">
+      <div class="prop-distance-chip"><i class="fa-solid fa-location-arrow"></i> ${p.distanceFormatted}</div>
+    </div>
+    <div class="prop-card-details">
+      <div class="prop-card-top">
+        <span class="prop-ai-pill">❆ ${p.aiScore}% Match</span>
+        <span class="prop-rating"><i class="fa-solid fa-star"></i> ${p.rating}</span>
+      </div>
+      <div class="prop-card-title">${p.title}</div>
+      <div class="prop-card-location"><i class="fa-solid fa-location-dot" style="color:#0284c7"></i> ${p.area}</div>
+      <div class="prop-card-price">${p.priceFormatted} <span>/${p.period.toLowerCase()}</span></div>
+      <div class="prop-card-specs">
+        <span><i class="fa-solid fa-bed"></i> ${p.beds} Beds</span>
+        <span><i class="fa-solid fa-bath"></i> ${p.baths} Baths</span>
+        <span><i class="fa-solid fa-ruler-combined"></i> ${p.sqft.toLocaleString()} sqft</span>
+      </div>
+      <div class="prop-card-actions-row">
+        <button type="button" class="btn-card-goto-details" onclick="event.stopPropagation(); window.__vibeMap.goToPropertyDetails(${p.id})" title="${detailsLabel}">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>${detailsLabel}</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function renderSidebarList(props) {
@@ -2091,6 +2178,7 @@ onMounted(async () => {
   window.addEventListener("keydown", handleKeyDown);
   window.__vibeMap = {
     openPropertyModal,
+    goToPropertyDetails,
     selectProperty,
     resetAllFilters,
     showRouteCard: (id) => {
@@ -3216,6 +3304,33 @@ onUnmounted(() => {
   background: #0284c7;
   color: #ffffff;
 }
+:deep(.popup-btn-quick) {
+  width: 32px;
+  height: 32px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #475569;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.78rem;
+}
+:deep(.popup-btn-quick:hover) {
+  background: #e2e8f0;
+  color: #0284c7;
+}
+[data-theme="dark"] :deep(.popup-btn-quick) {
+  background: #142038 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] :deep(.popup-btn-quick:hover) {
+  background: rgba(0, 210, 255, 0.15) !important;
+  color: #00d2ff !important;
+}
 :deep(.map-prop-card) {
   flex-shrink: 0;
   min-height: 106px;
@@ -3370,6 +3485,45 @@ onUnmounted(() => {
 :deep(.prop-card-specs i) {
   color: #0284c7;
   font-size: 0.68rem;
+}
+:deep(.prop-card-actions-row) {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+}
+:deep(.btn-card-goto-details) {
+  width: 100%;
+  height: 29px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
+}
+:deep(.btn-card-goto-details:hover) {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] :deep(.btn-card-goto-details) {
+  background: linear-gradient(135deg, #00d2ff 0%, #0284c7 100%) !important;
+  color: #070d19 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 8px rgba(0, 210, 255, 0.25) !important;
+}
+[data-theme="dark"] :deep(.btn-card-goto-details:hover) {
+  background: linear-gradient(135deg, #38bdf8 0%, #0369a1 100%) !important;
+  box-shadow: 0 4px 14px rgba(0, 210, 255, 0.4) !important;
 }
 :deep(.radar-marker-container) {
   background: transparent !important;
@@ -3641,6 +3795,36 @@ onUnmounted(() => {
 .modal-actions-row {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+}
+.modal-btn-view-details {
+  flex: 1.1;
+  height: 44px;
+  background: linear-gradient(135deg, #0284c7 0%, #00d2ff 100%);
+  color: #ffffff;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  font-size: 0.88rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+  white-space: nowrap;
+}
+.modal-btn-view-details:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .modal-btn-view-details {
+  background: linear-gradient(135deg, #00d2ff 0%, #0284c7 100%);
+  color: #070d19;
+  font-weight: 800;
 }
 .modal-btn-contact {
   flex: 1;
