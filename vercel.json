@@ -5,6 +5,10 @@
       "destination": "https://vibelocate-laravel.onrender.com/api/:path*"
     },
     {
+      "source": "/ai-service/:path*",
+      "destination": "https://ai1-j8rp.onrender.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

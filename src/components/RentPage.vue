@@ -78,6 +78,14 @@
                 <option value="Villa">{{ t('villa') }}</option>
                 <option value="Penthouse">{{ t('penthouse') }}</option>
                 <option value="Townhouse">{{ t('townhouse') }}</option>
+                <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
+                <option value="Full Building">{{ isRtl ? 'مبنى بالكامل' : 'Full Building' }}</option>
+                <option value="Land">{{ isRtl ? 'أرض' : 'Land' }}</option>
+                <option value="House">{{ isRtl ? 'منزل' : 'House' }}</option>
+                <option value="Commercial">{{ isRtl ? 'تجاري' : 'Commercial' }}</option>
+                <option value="Hotel">{{ isRtl ? 'فندق' : 'Hotel' }}</option>
+                <option value="Restaurant">{{ isRtl ? 'مطعم' : 'Restaurant' }}</option>
+                <option value="Cafe">{{ isRtl ? 'كافيه' : 'Cafe' }}</option>
               </select>
             </div>
 
@@ -413,7 +421,29 @@ const featureCheckboxes = computed(() => {
   ]
   return features.map(f => {
     const count = catalogProperties.value.filter(p => {
-      const text = `${p.title} ${p.description || ''} ${p.summary || ''} ${p.is_furnished || ''}`.toLowerCase()
+      if (f.key === 'furnished') {
+        const isFurn = String(p.is_furnished || '').toLowerCase()
+        if (isFurn === 'furnished' || isFurn === 'fully_furnished' || isFurn === 'semi_furnished') return true
+        if (isFurn === 'unfurnished') return false
+        const desc = `${p.title} ${p.description || ''} ${p.summary || ''}`.toLowerCase()
+        return desc.includes('furnished') && !desc.includes('unfurnished')
+      }
+      if (f.key === 'waterfront') {
+        const text = `${p.title} ${p.location} ${p.area} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+        return text.includes('waterfront') || text.includes('marina') || text.includes('beach') || text.includes('sea') || text.includes('palm') || text.includes('creek')
+      }
+      if (f.key === 'sea') {
+        const text = `${p.title} ${p.location} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+        return text.includes('sea view') || text.includes('sea') || text.includes('ocean')
+      }
+      if (f.key === 'metro') {
+        const text = `${p.title} ${p.location} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+        return text.includes('metro') || text.includes('station') || text.includes('tram')
+      }
+      if (f.key === 'ready') {
+        return !p.isOffPlan && p.property_condition !== 'off_plan'
+      }
+      const text = `${p.title} ${p.description || ''} ${p.summary || ''}`.toLowerCase()
       return text.includes(f.key)
     }).length
     return {
@@ -437,7 +467,7 @@ const aiSearchActive = ref(true)
 const viewMode = ref('grid')
 const sortBy = ref('ai-match')
 const currentPage = ref(1)
-const perPage = ref(8)
+const perPage = ref(20)
 const isLoading = ref(true)
 const popularAreasList = ref([])
 
@@ -448,7 +478,14 @@ const toCatalogProperty = (property) => {
     location: norm.location || norm.area || 'Dubai, UAE',
     price: Number(norm.price) || 0,
     sqft: norm.area_sqft ? Number(norm.area_sqft).toLocaleString() : (norm.size || 'N/A'),
-    matchScore: norm.matchScore || norm.aiMatch || 88,
+    matchScore: norm.matchScore || norm.aiMatch || (() => {
+      let score = 87
+      if (norm.is_verified || norm.verified) score += 4
+      if (norm.rating && norm.rating >= 4.7) score += 3
+      const nameSum = (norm.title || '').length
+      score += (nameSum % 7) - 2
+      return Math.min(98, Math.max(82, score))
+    })(),
     image: norm.image || '/images/photo-1512917774080-9991f1c4c750.jfif'
   }
 }
@@ -490,18 +527,18 @@ const loadRentalProperties = async () => {
   try {
     const langKey = isRtl.value ? 'ar' : 'en'
     const [propRes, areasRes] = await Promise.allSettled([
-      propertyService.getProperties({ action_type: 'rent', per_page: 60 }),
+      propertyService.getProperties({ action_type: 'rent', per_page: 200 }),
       propertyService.getPopularAreas(langKey)
     ])
 
     if (propRes.status === 'fulfilled' && propRes.value?.data && propRes.value.data.length > 0) {
-      const rentals = propRes.value.data.filter(isRental).map(toCatalogProperty)
-      catalogProperties.value = rentals.length > 0 ? rentals : propRes.value.data.map(toCatalogProperty)
+      // Accept all returned results — backend already filtered by action_type=rent
+      catalogProperties.value = propRes.value.data.map(toCatalogProperty)
     } else {
-      // Fallback to broader catalog
-      const fallback = await propertyService.getProperties({ per_page: 100 })
-      const rentals = (fallback.data || []).filter(isRental).map(toCatalogProperty)
-      catalogProperties.value = rentals
+      // Fallback: fetch all and filter client-side
+      const fallback = await propertyService.getProperties({ per_page: 200 })
+      const rentals = (fallback.data || []).filter(isRental)
+      catalogProperties.value = (rentals.length > 0 ? rentals : (fallback.data || [])).map(toCatalogProperty)
     }
 
     if (areasRes.status === 'fulfilled' && areasRes.value?.data) {
@@ -541,7 +578,7 @@ const applyFilters = async () => {
   const kw = filterState.value.keyword.trim()
   if (kw) {
     try {
-      const res = await propertyService.getProperties({ action_type: 'rent', search: kw, per_page: 50 })
+      const res = await propertyService.getProperties({ action_type: 'rent', search: kw, per_page: 200 })
       if (res.data && res.data.length > 0) {
         catalogProperties.value = res.data.map(toCatalogProperty)
       }
@@ -554,13 +591,14 @@ const filteredList = computed(() => {
   let list = [...catalogProperties.value]
 
   if (selectedCategory.value !== 'All Properties') {
-    const cat = selectedCategory.value.toLowerCase()
-    if (cat.includes('apartment')) list = list.filter(p => p.type === 'Apartment')
-    else if (cat.includes('villa')) list = list.filter(p => p.type === 'Villa')
-    else if (cat.includes('penthouse')) list = list.filter(p => p.type === 'Penthouse')
-    else if (cat.includes('townhouse')) list = list.filter(p => p.type === 'Townhouse')
+    const cat = selectedCategory.value.toLowerCase().trim()
+    if (cat.includes('apartment')) list = list.filter(p => (p.type || '').toLowerCase().includes('apartment'))
+    else if (cat.includes('villa')) list = list.filter(p => (p.type || '').toLowerCase().includes('villa'))
+    else if (cat.includes('penthouse')) list = list.filter(p => (p.type || '').toLowerCase().includes('penthouse'))
+    else if (cat.includes('townhouse')) list = list.filter(p => (p.type || '').toLowerCase().includes('townhouse'))
     else if (cat.includes('waterfront')) list = list.filter(p => (p.location && (p.location.includes('Marina') || p.location.includes('Palm') || p.location.includes('Island') || p.location.includes('Beach') || p.location.includes('Creek'))) || (p.tags && p.tags.some(t => t.toLowerCase().includes('water'))))
     else if (cat.includes('off-plan')) list = list.filter(p => p.isOffPlan || p.property_condition === 'off_plan')
+    else list = list.filter(p => (p.type || '').toLowerCase() === cat || (p.type || '').toLowerCase().includes(cat))
   }
 
   if (filterState.value.location !== 'All') {
@@ -569,7 +607,8 @@ const filteredList = computed(() => {
   }
 
   if (filterState.value.propertyType !== 'All') {
-    list = list.filter(p => (p.type || '').toLowerCase() === filterState.value.propertyType.toLowerCase())
+    const pType = filterState.value.propertyType.toLowerCase()
+    list = list.filter(p => (p.type || '').toLowerCase().includes(pType))
   }
 
   if (filterState.value.bedrooms !== 'Any') {
@@ -589,20 +628,58 @@ const filteredList = computed(() => {
 
   if (filterState.value.lifestyle !== 'Any') {
     const life = filterState.value.lifestyle.toLowerCase()
-    list = list.filter(p => (p.tags && p.tags.some(t => t.toLowerCase().includes(life))) || (p.description && p.description.toLowerCase().includes(life)) || (p.summary && p.summary.toLowerCase().includes(life)))
+    if (life.includes('waterfront')) {
+      list = list.filter(p => (p.location || '').match(/marina|palm|harbour|beach|waterfront|creek|island/i))
+    } else if (life.includes('pool')) {
+      list = list.filter(p => (p.description || '').toLowerCase().includes('pool') || (p.specs?.amenities || []).some(a => a.toLowerCase().includes('pool')))
+    } else if (life.includes('sea')) {
+      list = list.filter(p => (p.description || '').toLowerCase().includes('sea') || (p.location || '').toLowerCase().includes('marina'))
+    } else if (life.includes('metro')) {
+      list = list.filter(p => (p.description || '').toLowerCase().includes('metro'))
+    } else if (life.includes('off-plan')) {
+      list = list.filter(p => p.isOffPlan || p.property_condition === 'off_plan')
+    } else {
+      list = list.filter(p => (p.tags && p.tags.some(t => t.toLowerCase().includes(life))) || (p.description && p.description.toLowerCase().includes(life)) || (p.summary && p.summary.toLowerCase().includes(life)))
+    }
   }
 
   if (filterState.value.selectedFeatures.length > 0) {
-    const selected = filterState.value.selectedFeatures.map(f => f.toLowerCase())
     list = list.filter(p => {
-      const allText = `${p.title} ${p.description} ${p.summary} ${(p.tags || []).join(' ')}`.toLowerCase()
-      return selected.some(f => allText.includes(f))
+      return filterState.value.selectedFeatures.every(feat => {
+        if (feat === 'Furnished') {
+          const isFurn = String(p.is_furnished || '').toLowerCase()
+          if (isFurn === 'furnished' || isFurn === 'fully_furnished' || isFurn === 'semi_furnished') return true
+          if (isFurn === 'unfurnished') return false
+          const desc = `${p.title} ${p.description || ''} ${p.summary || ''}`.toLowerCase()
+          return desc.includes('furnished') && !desc.includes('unfurnished')
+        }
+        if (feat === 'Waterfront') {
+          const text = `${p.title} ${p.location} ${p.area} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+          return text.includes('waterfront') || text.includes('marina') || text.includes('beach') || text.includes('sea') || text.includes('palm') || text.includes('creek')
+        }
+        if (feat === 'Sea View') {
+          const text = `${p.title} ${p.location} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+          return text.includes('sea view') || text.includes('sea') || text.includes('ocean')
+        }
+        if (feat === 'Near Metro') {
+          const text = `${p.title} ${p.location} ${p.description || ''} ${p.summary || ''} ${(p.tags || []).join(' ')}`.toLowerCase()
+          return text.includes('metro') || text.includes('station') || text.includes('tram')
+        }
+        if (feat === 'Ready to Move') {
+          return !p.isOffPlan && p.property_condition !== 'off_plan'
+        }
+        return true
+      })
     })
   }
 
   if (filterState.value.keyword.trim()) {
     const kw = filterState.value.keyword.toLowerCase().trim()
-    list = list.filter(p => `${p.title} ${p.location} ${p.type} ${p.description || ''}`.toLowerCase().includes(kw))
+    const trans = propertyService.translateSearchTerm ? propertyService.translateSearchTerm(kw).toLowerCase() : ''
+    list = list.filter(p => {
+      const full = `${p.title} ${p.location} ${p.area} ${p.type} ${p.description || ''} ${p.summary || ''}`.toLowerCase()
+      return full.includes(kw) || (trans && full.includes(trans))
+    })
   }
 
   if (sortBy.value === 'price-asc') {
@@ -1076,5 +1153,29 @@ onUnmounted(() => {
 .btn-clear-empty-filter:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 210, 255, 0.35);
+}
+
+/* Custom Sleek Scrollbar for Category Pills */
+.explore-filter-pills-bar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 210, 255, 0.35) rgba(15, 23, 42, 0.6);
+}
+
+.explore-filter-pills-bar::-webkit-scrollbar {
+  height: 5px;
+}
+
+.explore-filter-pills-bar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
+}
+
+.explore-filter-pills-bar::-webkit-scrollbar-thumb {
+  background: rgba(0, 210, 255, 0.35);
+  border-radius: 4px;
+}
+
+.explore-filter-pills-bar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 210, 255, 0.7);
 }
 </style>

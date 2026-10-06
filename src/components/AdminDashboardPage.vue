@@ -1,5 +1,45 @@
 <template>
   <div class="admin-shell" :dir="isRtl ? 'rtl' : 'ltr'" :data-theme="theme" :class="{ 'light-theme': !isDark }">
+
+    <!-- ====== ADMIN TOAST NOTIFICATION ====== -->
+    <Transition name="admin-toast-fade">
+      <div v-if="adminToast.visible" class="admin-toast-bar" :class="`admin-toast--${adminToast.type}`">
+        <i :class="adminToast.type === 'error' ? 'fa-solid fa-circle-exclamation' : adminToast.type === 'warning' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check'"></i>
+        <span>{{ adminToast.message }}</span>
+        <button class="admin-toast-close" @click="adminToast.visible = false"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </Transition>
+
+    <!-- ====== REJECTION REASON MODAL ====== -->
+    <Transition name="modal-fade">
+      <div v-if="rejectModal.open" class="admin-modal-overlay" @click.self="rejectModal.open = false">
+        <div class="admin-modal-box">
+          <div class="admin-modal-header">
+            <i class="fa-solid fa-ban text-red"></i>
+            <h3>{{ isRtl ? rejectModal.titleAr : rejectModal.titleEn }}</h3>
+            <button class="admin-modal-close" @click="rejectModal.open = false"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="admin-modal-body">
+            <p class="admin-modal-desc">{{ isRtl ? rejectModal.descAr : rejectModal.descEn }}</p>
+            <textarea
+              v-model="rejectModal.reason"
+              class="admin-modal-textarea"
+              :placeholder="isRtl ? 'أدخل سبب الرفض هنا...' : 'Enter rejection reason here...'"
+              rows="4"
+            ></textarea>
+          </div>
+          <div class="admin-modal-footer">
+            <button class="admin-modal-btn-cancel" @click="rejectModal.open = false">
+              {{ isRtl ? 'إلغاء' : 'Cancel' }}
+            </button>
+            <button class="admin-modal-btn-confirm" @click="rejectModal.onConfirm(rejectModal.reason)" :disabled="!rejectModal.reason.trim()">
+              <i class="fa-solid fa-ban"></i>
+              {{ isRtl ? 'تأكيد الرفض' : 'Confirm Rejection' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
     
     <!-- Mobile Sidebar Backdrop Overlay -->
     <div 
@@ -1761,6 +1801,40 @@ import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 const router = useRouter()
 const { isRtl, isDark, theme, toggleTheme, toggleLanguage, lang } = useThemeAndLanguage()
 
+// ====== Toast & Modal System ======
+const adminToast = ref({ visible: false, message: '', type: 'success' })
+let adminToastTimer = null
+const showAdminToast = (message, type = 'success') => {
+  adminToast.value = { visible: true, message, type }
+  if (adminToastTimer) clearTimeout(adminToastTimer)
+  adminToastTimer = setTimeout(() => { adminToast.value.visible = false }, 4000)
+}
+
+const rejectModal = ref({
+  open: false,
+  titleEn: 'Reject Property',
+  titleAr: 'رفض العقار',
+  descEn: 'Please provide a reason for rejection. This will be sent to the advertiser.',
+  descAr: 'يرجى تقديم سبب الرفض. سيتم إرساله إلى المعلن.',
+  reason: '',
+  onConfirm: () => {}
+})
+
+const openRejectModal = ({ titleEn, titleAr, descEn, descAr, defaultReason, onConfirm }) => {
+  rejectModal.value = {
+    open: true,
+    titleEn: titleEn || 'Reject',
+    titleAr: titleAr || 'رفض',
+    descEn: descEn || 'Please provide a reason.',
+    descAr: descAr || 'يرجى تقديم سبب.',
+    reason: defaultReason || '',
+    onConfirm: (reason) => {
+      rejectModal.value.open = false
+      onConfirm(reason)
+    }
+  }
+}
+
 const activeSection = ref('overview')
 const mobileSidebarOpen = ref(false)
 const isRefreshing = ref(false)
@@ -2022,7 +2096,7 @@ const saveUserChanges = async () => {
   }
   selectedUser.value = null
   refreshAuditLogs()
-  alert(isRtl.value ? 'تم حفظ التعديلات بنجاح' : 'User updated successfully')
+  showAdminToast(isRtl.value ? 'تم حفظ التعديلات بنجاح ✓' : 'User updated successfully ✓', 'success')
 }
 
 const toggleUserStatus = async (user) => {
@@ -2047,29 +2121,35 @@ const approveProperty = async (id) => {
     }
     stats.value.totalProperties++
     refreshAuditLogs()
-    alert(isRtl.value ? 'تم اعتماد العقار ونشره بنجاح!' : 'Property approved and published!')
+    showAdminToast(isRtl.value ? '✓ تم اعتماد العقار ونشره بنجاح!' : '✓ Property approved and published!', 'success')
   } else {
-    alert(res.error || (isRtl.value ? 'فشل اعتماد العقار' : 'Failed to approve property'))
+    showAdminToast(res.error || (isRtl.value ? 'فشل اعتماد العقار' : 'Failed to approve property'), 'error')
   }
 }
 
-const rejectProperty = async (id) => {
-  const reason = prompt(isRtl.value ? 'أدخل سبب الرفض:' : 'Enter rejection reason:', 'معلومات العقار غير مكتملة أو غير مطابقة للواقع')
-  if (!reason) return
-  const res = await adminService.rejectProperty(id, reason)
-  if (res.success) {
-    const prop = pendingPropertiesList.value.find(p => p.id === id) || allModerationProperties.value.find(p => p.id === id)
-    if (prop) prop.status = 'rejected'
-    adminService.logAuditAction('رفض عقار معلق', prop ? prop.title : `#${id}`, `السبب: ${reason}`)
-    pendingPropertiesList.value = pendingPropertiesList.value.filter(p => p.id !== id)
-    if (prop && !rejectedPropertiesList.value.some(p => p.id === id)) {
-      rejectedPropertiesList.value.unshift(prop)
+const rejectProperty = (id) => {
+  openRejectModal({
+    titleEn: 'Reject Property', titleAr: 'رفض العقار',
+    descEn: 'Please provide a reason. This will be logged and the advertiser will be notified.',
+    descAr: 'يرجى إدخال سبب الرفض. سيتم تسجيله وإشعار المعلن.',
+    defaultReason: isRtl.value ? 'معلومات العقار غير مكتملة أو غير مطابقة للواقع' : 'Property information is incomplete or inaccurate.',
+    onConfirm: async (reason) => {
+      const res = await adminService.rejectProperty(id, reason)
+      if (res.success) {
+        const prop = pendingPropertiesList.value.find(p => p.id === id) || allModerationProperties.value.find(p => p.id === id)
+        if (prop) prop.status = 'rejected'
+        adminService.logAuditAction('رفض عقار معلق', prop ? prop.title : `#${id}`, `السبب: ${reason}`)
+        pendingPropertiesList.value = pendingPropertiesList.value.filter(p => p.id !== id)
+        if (prop && !rejectedPropertiesList.value.some(p => p.id === id)) {
+          rejectedPropertiesList.value.unshift(prop)
+        }
+        refreshAuditLogs()
+        showAdminToast(isRtl.value ? '✓ تم تسجيل رفض العقار وإشعار المعلن.' : '✓ Property rejected and advertiser notified.', 'success')
+      } else {
+        showAdminToast(res.error || (isRtl.value ? 'فشل رفض العقار' : 'Failed to reject property'), 'error')
+      }
     }
-    refreshAuditLogs()
-    alert(isRtl.value ? 'تم تسجيل رفض العقار وإشعار المعلن.' : 'Property rejected and advertiser notified.')
-  } else {
-    alert(res.error || (isRtl.value ? 'فشل رفض العقار' : 'Failed to reject property'))
-  }
+  })
 }
 
 const handleApproveAgency = async (agency) => {
@@ -2077,25 +2157,39 @@ const handleApproveAgency = async (agency) => {
   const res = await adminService.updateAgencyStatus(agency.id, 'active')
   adminService.logAuditAction('اعتماد رخصة وكالة عقارية', agency.agency_name || agency.name, 'تم التحقق من الرخصة وتفعيل حساب الوكالة')
   refreshAuditLogs()
-  alert(isRtl.value ? `تم اعتماد الوكالة "${agency.agency_name || agency.name}" بنجاح!` : `Agency "${agency.agency_name || agency.name}" approved successfully!`)
+  showAdminToast(isRtl.value ? `✓ تم اعتماد الوكالة "${agency.agency_name || agency.name}" بنجاح!` : `✓ Agency "${agency.agency_name || agency.name}" approved!`, 'success')
 }
 
-const handleRejectAgency = async (agency) => {
-  const reason = prompt(isRtl.value ? 'أدخل سبب رفض الوكالة:' : 'Enter rejection reason:', 'معلومات الرخصة غير مطابقة أو لم يتم التحقق منها')
-  if (!reason) return
-  agency.status = 'rejected'
-  await adminService.updateAgencyStatus(agency.id, 'rejected', reason)
-  adminService.logAuditAction('رفض وكالة عقارية', agency.agency_name || agency.name, `السبب: ${reason}`)
-  refreshAuditLogs()
+const handleRejectAgency = (agency) => {
+  openRejectModal({
+    titleEn: 'Reject Agency License', titleAr: 'رفض ترخيص الوكالة',
+    descEn: 'Provide a reason for rejecting this agency license application.',
+    descAr: 'أدخل سبب رفض طلب ترخيص الوكالة.',
+    defaultReason: isRtl.value ? 'معلومات الرخصة غير مطابقة أو لم يتم التحقق منها' : 'License information does not match or could not be verified.',
+    onConfirm: async (reason) => {
+      agency.status = 'rejected'
+      await adminService.updateAgencyStatus(agency.id, 'rejected', reason)
+      adminService.logAuditAction('رفض وكالة عقارية', agency.agency_name || agency.name, `السبب: ${reason}`)
+      refreshAuditLogs()
+      showAdminToast(isRtl.value ? `تم رفض طلب الوكالة "${agency.agency_name || agency.name}"` : `Agency "${agency.agency_name || agency.name}" rejected.`, 'warning')
+    }
+  })
 }
 
-const handleSuspendAgency = async (agency) => {
-  const reason = prompt(isRtl.value ? 'أدخل سبب إيقاف الوكالة:' : 'Enter suspension reason:', 'تم تعليق حساب الوكالة مؤقتاً للمراجعة')
-  if (!reason) return
-  agency.status = 'suspended'
-  await adminService.updateAgencyStatus(agency.id, 'suspended', reason)
-  adminService.logAuditAction('تعليق حساب وكالة عقارية', agency.agency_name || agency.name, `السبب: ${reason}`)
-  refreshAuditLogs()
+const handleSuspendAgency = (agency) => {
+  openRejectModal({
+    titleEn: 'Suspend Agency', titleAr: 'تعليق حساب الوكالة',
+    descEn: 'Provide a reason for suspending this agency account.',
+    descAr: 'أدخل سبب تعليق حساب الوكالة.',
+    defaultReason: isRtl.value ? 'تم تعليق حساب الوكالة مؤقتاً للمراجعة' : 'Agency account temporarily suspended for review.',
+    onConfirm: async (reason) => {
+      agency.status = 'suspended'
+      await adminService.updateAgencyStatus(agency.id, 'suspended', reason)
+      adminService.logAuditAction('تعليق حساب وكالة عقارية', agency.agency_name || agency.name, `السبب: ${reason}`)
+      refreshAuditLogs()
+      showAdminToast(isRtl.value ? `تم تعليق حساب "${agency.agency_name || agency.name}"` : `Agency "${agency.agency_name || agency.name}" suspended.`, 'warning')
+    }
+  })
 }
 
 const resolveCurrentReport = async (status) => {
@@ -2106,7 +2200,7 @@ const resolveCurrentReport = async (status) => {
     adminService.logAuditAction(status === 'resolved' ? 'إغلاق بلاغ ونزاع' : 'تحويل بلاغ للمراجعة', `بلاغ #${selectedReport.value.id}`, adminReportNotes.value || 'تمت المعالجة الإدارية')
     selectedReport.value = null
     refreshAuditLogs()
-    alert(isRtl.value ? 'تم تحديث حالة البلاغ بنجاح!' : 'Report status updated successfully!')
+    showAdminToast(isRtl.value ? '✓ تم تحديث حالة البلاغ بنجاح!' : '✓ Report status updated successfully!', 'success')
   }
 }
 
@@ -2120,7 +2214,7 @@ const triggerNeighborhoodGeneration = async (area) => {
     area.lastUpdated = new Date().toISOString().split('T')[0]
     adminService.logAuditAction('توليد مراجعات بالذكاء الاصطناعي', area.name, 'تم توليد 45 مراجعة ذكاء اصطناعي بنجاح')
     refreshAuditLogs()
-    alert(isRtl.value ? `تم توليد المراجعات الذكية لـ ${area.name} بنجاح!` : `Generated reviews for ${area.name}`)
+    showAdminToast(isRtl.value ? `✓ تم توليد المراجعات الذكية لـ ${area.name} بنجاح!` : `✓ Reviews generated for ${area.name}!`, 'success')
   }
 }
 
@@ -2174,7 +2268,7 @@ const handleBroadcastNotification = async () => {
   if (res.success) {
     adminService.logAuditAction('إرسال إشعار عام', broadcastForm.value.title, `الجمهور: ${broadcastForm.value.target}`)
     refreshAuditLogs()
-    alert(isRtl.value ? 'تم إرسال الإشعار بنجاح لكافة المستخدمين!' : 'Notification broadcasted successfully!')
+    showAdminToast(isRtl.value ? '✓ تم إرسال الإشعار بنجاح لكافة المستخدمين!' : '✓ Notification broadcasted successfully!', 'success')
     broadcastForm.value.title = ''
     broadcastForm.value.message = ''
   }
@@ -4701,4 +4795,135 @@ input:checked + .slider:before {
   border-color: #0284c7;
   color: #0284c7;
 }
+
+/* ====== ADMIN TOAST NOTIFICATION ====== */
+.admin-toast-bar {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  min-width: 300px;
+  max-width: 460px;
+  font-size: 13.5px;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  background: rgba(10, 26, 50, 0.95);
+}
+[dir="rtl"] .admin-toast-bar { right: auto; left: 28px; }
+.admin-toast--success { border-color: rgba(16,185,129,0.4); }
+.admin-toast--success i:first-child { color: #10b981; font-size: 18px; }
+.admin-toast--error { border-color: rgba(239,68,68,0.4); background: rgba(60,10,10,0.95); }
+.admin-toast--error i:first-child { color: #f87171; font-size: 18px; }
+.admin-toast--warning { border-color: rgba(245,158,11,0.4); }
+.admin-toast--warning i:first-child { color: #f59e0b; font-size: 18px; }
+.admin-toast-bar span { flex: 1; }
+.admin-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+.admin-toast-close:hover { color: #fff; }
+.admin-toast-fade-enter-active, .admin-toast-fade-leave-active { transition: all 0.35s cubic-bezier(0.16,1,0.3,1); }
+.admin-toast-fade-enter-from, .admin-toast-fade-leave-to { opacity: 0; transform: translateY(24px) scale(0.95); }
+
+/* ====== REJECTION REASON MODAL ====== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.admin-modal-box {
+  background: #0d1b2e;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(239,68,68,0.2);
+  overflow: hidden;
+}
+.admin-shell.light-theme .admin-modal-box {
+  background: #fff;
+  border-color: rgba(239,68,68,0.3);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.15);
+}
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.admin-shell.light-theme .admin-modal-header { border-bottom-color: rgba(0,0,0,0.08); }
+.admin-modal-header i { font-size: 20px; }
+.admin-modal-header h3 { flex: 1; font-size: 16px; font-weight: 700; color: #f8fafc; margin: 0; }
+.admin-shell.light-theme .admin-modal-header h3 { color: #0f172a; }
+.admin-modal-close {
+  background: none; border: none; color: rgba(255,255,255,0.4);
+  cursor: pointer; font-size: 16px; padding: 4px; transition: color 0.2s;
+}
+.admin-modal-close:hover { color: #fff; }
+.admin-shell.light-theme .admin-modal-close { color: rgba(0,0,0,0.3); }
+.admin-shell.light-theme .admin-modal-close:hover { color: #0f172a; }
+.admin-modal-body { padding: 16px 24px; }
+.admin-modal-desc {
+  font-size: 13px; color: rgba(255,255,255,0.55); margin: 0 0 12px; line-height: 1.6;
+}
+.admin-shell.light-theme .admin-modal-desc { color: #64748b; }
+.admin-modal-textarea {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; color: #f8fafc; font: inherit; font-size: 13px;
+  resize: vertical; outline: none; min-height: 96px;
+  transition: border-color 0.2s;
+}
+.admin-modal-textarea:focus { border-color: rgba(239,68,68,0.5); }
+.admin-shell.light-theme .admin-modal-textarea {
+  background: #f8fafc; border-color: #e2e8f0; color: #0f172a;
+}
+.admin-modal-footer {
+  display: flex; gap: 10px; padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06); justify-content: flex-end;
+}
+.admin-shell.light-theme .admin-modal-footer { border-top-color: rgba(0,0,0,0.07); }
+.admin-modal-btn-cancel {
+  padding: 9px 20px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; color: rgba(255,255,255,0.5); font: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.admin-modal-btn-cancel:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+.admin-shell.light-theme .admin-modal-btn-cancel { border-color: #e2e8f0; color: #64748b; }
+.admin-modal-btn-confirm {
+  padding: 9px 20px; border-radius: 9px; border: none;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff; font: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  transition: opacity 0.2s, transform 0.2s; box-shadow: 0 4px 14px rgba(239,68,68,0.3);
+}
+.admin-modal-btn-confirm:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.admin-modal-btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.3s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-from .admin-modal-box, .modal-fade-leave-to .admin-modal-box { transform: scale(0.95); }
+
+.text-red { color: #f87171 !important; }
 </style>

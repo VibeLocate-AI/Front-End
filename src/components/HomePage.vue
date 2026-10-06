@@ -467,8 +467,10 @@
             <!-- 1. POPULAR AREAS -->
             <section id="areas" class="content-block" v-if="areas.length > 0">
               <div class="block-header">
-                <h2>Popular Areas</h2>
-                <a href="#" class="see-all-link" @click.prevent="showToast('Viewing all 18 Dubai areas.')">See all areas <span class="arrow">&gt;</span></a>
+                <h2>{{ isRtl ? 'المناطق الأكثر طلباً' : 'Popular Areas' }}</h2>
+                <a href="#" class="see-all-link" @click.prevent="$router.push('/map')">
+                  {{ isRtl ? 'عرض كافة المناطق على الخريطة' : 'See all areas on map' }} <span class="arrow">&gt;</span>
+                </a>
               </div>
 
               <div class="areas-row-grid">
@@ -875,8 +877,13 @@
                 </a>
               </div>
 
-              <button class="btn-contact-agent" type="button" @click="showToast((isRtl ? 'جاري الاتصال بالوكيل: ' : 'Connecting you with ') + currentAgent.name + '...')">
-                {{ isRtl ? 'تواصل مع الوكيل' : 'Contact Agent' }}
+              <button 
+                class="btn-contact-agent" 
+                type="button" 
+                @click="$router.push({ path: '/agent-contact', query: { agent: currentAgent.name, agency: currentAgent.agencyName, phone: currentAgent.phone, email: currentAgent.email } })"
+              >
+                <i class="fa-solid fa-headset" style="margin-inline-end: 6px;"></i>
+                {{ isRtl ? 'تواصل مع الوكيل الآن' : 'Contact Agent Now' }}
               </button>
             </article>
 

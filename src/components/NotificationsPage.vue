@@ -25,7 +25,9 @@
           <div class="notification-copy">
             <div class="notification-heading"><h2>{{ isRtl ? item.arTitle : item.title }}</h2><time>{{ isRtl ? item.arTime : item.time }}</time></div>
             <p>{{ isRtl ? item.arText : item.text }}</p>
-            <button v-if="item.action" class="notification-action" @click="markRead(item)">{{ isRtl ? item.arAction : item.action }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i></button>
+            <button v-if="item.action" class="notification-action" @click="handleNotificationAction(item)">
+              {{ isRtl ? item.arAction : item.action }} <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
+            </button>
           </div>
           <div class="notification-controls">
             <span v-if="!item.read" class="unread-dot" :title="copy.unread"></span>
@@ -40,18 +42,35 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 import { notificationService } from '../services/notificationService'
 
+const router = useRouter()
 const { isRtl, theme } = useThemeAndLanguage()
 const activeFilter = ref('all')
-const notifications = ref([
+const defaultNotifications = [
   { id: 1, type: 'price', icon: 'fa-solid fa-tags', read: false, title: 'Price drop on a saved property', arTitle: 'انخفاض سعر عقار محفوظ', text: 'Palm Horizon Villas is now AED 450,000 below its previous price.', arText: 'أصبح سعر فلل بالم هورايزن أقل بمقدار 450,000 د.إ عن سعره السابق.', time: '10 minutes ago', arTime: 'منذ 10 دقائق', action: 'View property', arAction: 'عرض العقار' },
   { id: 2, type: 'match', icon: 'fa-solid fa-wand-magic-sparkles', read: false, title: 'A new AI match is ready', arTitle: 'تطابق ذكي جديد جاهز', text: 'We found 6 properties that match your saved preferences.', arText: 'وجدنا 6 عقارات تتوافق مع تفضيلاتك المحفوظة.', time: '1 hour ago', arTime: 'منذ ساعة', action: 'Explore matches', arAction: 'استكشف التطابقات' },
   { id: 3, type: 'tour', icon: 'fa-regular fa-calendar-check', read: false, title: 'Tour request confirmed', arTitle: 'تم تأكيد طلب المعاينة', text: 'Your private viewing for Creek Gate Residences is confirmed for tomorrow at 4:00 PM.', arText: 'تم تأكيد معاينتك الخاصة لمساكن كريك غيت غداً الساعة 4:00 مساءً.', time: '3 hours ago', arTime: 'منذ 3 ساعات', action: 'View booking', arAction: 'عرض الحجز' },
   { id: 4, type: 'market', icon: 'fa-solid fa-chart-line', read: true, title: 'Weekly Dubai market insight', arTitle: 'تقرير سوق دبي الأسبوعي', text: 'Dubai Marina rental demand rose by 8% this week. See the latest AI market report.', arText: 'ارتفع الطلب على الإيجار في دبي مارينا بنسبة 8% هذا الأسبوع. اطلع على أحدث تقرير ذكي للسوق.', time: 'Yesterday', arTime: 'أمس', action: 'Read report', arAction: 'قراءة التقرير' },
   { id: 5, type: 'system', icon: 'fa-solid fa-shield-heart', read: true, title: 'Your account is verified', arTitle: 'تم توثيق حسابك', text: 'Your VibeLocate profile is ready to unlock all personalized property features.', arText: 'أصبح ملفك في VibeLocate جاهزاً للاستفادة من جميع مزايا العقارات المخصصة.', time: '2 days ago', arTime: 'منذ يومين' }
-])
+]
+
+const loadNotifications = () => {
+  try {
+    const raw = localStorage.getItem('vibe_notifications')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return [...parsed, ...defaultNotifications]
+      }
+    }
+  } catch {}
+  return defaultNotifications
+}
+
+const notifications = ref(loadNotifications())
 
 const unreadCount = computed(() => notifications.value.filter(item => !item.read).length)
 const copy = computed(() => isRtl.value ? {
@@ -93,10 +112,27 @@ const markAllRead = async () => {
 }
 const removeNotification = id => { notifications.value = notifications.value.filter(item => item.id !== id) }
 
+const handleNotificationAction = async (item) => {
+  await markRead(item)
+  if (item.type === 'price' || item.type === 'tour') {
+    router.push('/buy')
+  } else if (item.type === 'match') {
+    router.push('/search')
+  } else if (item.type === 'market') {
+    router.push('/map')
+  } else if (item.type === 'system') {
+    router.push('/profile')
+  } else {
+    router.push('/home')
+  }
+}
+
 onMounted(async () => {
   try {
     const serverNotifications = await notificationService.getAll()
-    if (serverNotifications.length) notifications.value = serverNotifications.map(normalizeNotification)
+    if (serverNotifications.length) {
+      notifications.value = serverNotifications.map(normalizeNotification)
+    }
   } catch (error) {
     console.warn('[notifications] Using local preview data:', error?.message)
   } finally {

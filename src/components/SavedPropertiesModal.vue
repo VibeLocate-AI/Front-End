@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="isOpen" class="saved-modal-overlay" @click.self="close">
+      <div v-if="isOpen" class="saved-modal-overlay" :dir="isRtl ? 'rtl' : 'ltr'" @click.self="close">
         <div class="saved-modal-container" role="dialog" aria-modal="true">
           <!-- Modal Header -->
           <div class="saved-modal-header">
@@ -11,14 +11,16 @@
               </div>
               <div>
                 <h2 class="modal-main-title">
-                  Saved Properties
+                  {{ isRtl ? 'العقارات المحفوظة' : 'Saved Properties' }}
                   <span class="count-pill">{{ favoritesService.savedItems.value.length }}</span>
                 </h2>
-                <p class="modal-sub-title">Your favorite luxury residences in Dubai</p>
+                <p class="modal-sub-title">
+                  {{ isRtl ? 'عقاراتك المفضلة والمختارة في دبي' : 'Your favorite luxury residences in Dubai' }}
+                </p>
               </div>
             </div>
 
-            <button type="button" class="saved-modal-close" aria-label="Close modal" @click="close">
+            <button type="button" class="saved-modal-close" :aria-label="isRtl ? 'إغلاق' : 'Close modal'" @click="close">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -26,14 +28,14 @@
           <!-- Category Filter Tabs -->
           <div class="saved-filter-bar">
             <button
-              v-for="cat in ['All', 'Apartments', 'Villas', 'Penthouses', 'Townhouses']"
-              :key="cat"
+              v-for="cat in filterCategories"
+              :key="cat.key"
               type="button"
               class="filter-pill-btn"
-              :class="{ active: activeFilter === cat }"
-              @click="activeFilter = cat"
+              :class="{ active: activeFilter === cat.key }"
+              @click="activeFilter = cat.key"
             >
-              {{ cat }} ({{ getFilterCount(cat) }})
+              {{ isRtl ? cat.labelAr : cat.labelEn }} ({{ getFilterCount(cat.key) }})
             </button>
           </div>
 
@@ -46,12 +48,12 @@
                 class="saved-prop-card"
               >
                 <div class="card-thumb-wrap">
-                  <img :src="prop.image" :alt="prop.title" class="card-thumb-img">
-                  <span class="card-type-badge">{{ prop.type || 'Property' }}</span>
+                  <img :src="prop.image || '/images/A1.png'" :alt="prop.title" class="card-thumb-img">
+                  <span class="card-type-badge">{{ prop.type || (isRtl ? 'عقار' : 'Property') }}</span>
                   <button
                     type="button"
                     class="btn-remove-fav"
-                    title="Remove from saved"
+                    :title="isRtl ? 'إزالة من المحفوظات' : 'Remove from saved'"
                     @click="removeProperty(prop)"
                   >
                     <i class="fa-solid fa-heart"></i>
@@ -64,12 +66,12 @@
                     <i class="fa-solid fa-location-dot"></i> {{ prop.location }}
                   </p>
                   
-                  <div class="card-prop-price">{{ prop.price }}</div>
+                  <div class="card-prop-price">{{ formatPrice(prop.price) }}</div>
 
                   <div class="card-prop-specs">
-                    <span><i class="fa-solid fa-bed"></i> {{ prop.beds }} Beds</span>
-                    <span><i class="fa-solid fa-bath"></i> {{ prop.baths }} Baths</span>
-                    <span><i class="fa-solid fa-ruler-combined"></i> {{ prop.sqft }} sqft</span>
+                    <span><i class="fa-solid fa-bed"></i> {{ prop.beds || 0 }} {{ isRtl ? 'غرف' : 'Beds' }}</span>
+                    <span><i class="fa-solid fa-bath"></i> {{ prop.baths || 0 }} {{ isRtl ? 'حمامات' : 'Baths' }}</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> {{ prop.sqft || prop.size || 0 }} {{ isRtl ? 'قدم²' : 'sqft' }}</span>
                   </div>
 
                   <div class="card-actions-row">
@@ -78,12 +80,12 @@
                       class="btn-view-details"
                       @click="onViewDetails(prop)"
                     >
-                      <i class="fa-solid fa-eye"></i> View Details
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i> {{ isRtl ? 'عرض التفاصيل' : 'View Details' }}
                     </button>
                     <button
                       type="button"
                       class="btn-trash-remove"
-                      title="Remove"
+                      :title="isRtl ? 'حذف' : 'Remove'"
                       @click="removeProperty(prop)"
                     >
                       <i class="fa-solid fa-trash-can"></i>
@@ -98,10 +100,14 @@
               <div class="empty-heart-ring">
                 <i class="fa-regular fa-heart"></i>
               </div>
-              <h3 class="empty-title">No {{ activeFilter !== 'All' ? activeFilter : '' }} Saved Properties Yet</h3>
-              <p class="empty-text">Click the heart icon on any property while browsing to add it to your favorites.</p>
+              <h3 class="empty-title">
+                {{ isRtl ? 'لا توجد عقارات محفوظة في هذه الفئة' : `No ${activeFilter !== 'All' ? activeFilter : ''} Saved Properties Yet` }}
+              </h3>
+              <p class="empty-text">
+                {{ isRtl ? 'انقر فوق أيقونة القلب على أي عقار أثناء التصفح لإضافته إلى قائمة المفضلة.' : 'Click the heart icon on any property while browsing to add it to your favorites.' }}
+              </p>
               <button type="button" class="btn-browse-props" @click="goToExplore">
-                <i class="fa-solid fa-compass"></i> Explore Properties
+                <i class="fa-solid fa-compass"></i> {{ isRtl ? 'استكشف العقارات' : 'Explore Properties' }}
               </button>
             </div>
           </div>
@@ -109,10 +115,10 @@
           <!-- Modal Footer Bar -->
           <div class="saved-modal-footer">
             <button type="button" class="btn-footer-profile" @click="goToProfileSaved">
-              <i class="fa-solid fa-user-gear"></i> Manage in Profile
+              <i class="fa-solid fa-user-gear"></i> {{ isRtl ? 'إدارة في الملف الشخصي' : 'Manage in Profile' }}
             </button>
             <button type="button" class="btn-footer-close" @click="close">
-              Done
+              {{ isRtl ? 'تم' : 'Done' }}
             </button>
           </div>
         </div>
@@ -125,6 +131,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { favoritesService } from '../services/favoritesService'
+import { useThemeAndLanguage } from '../composables/useThemeAndLanguage'
 
 const props = defineProps({
   isOpen: {
@@ -136,7 +143,33 @@ const props = defineProps({
 const emit = defineEmits(['close', 'open-property'])
 
 const router = useRouter()
+const { isRtl } = useThemeAndLanguage()
 const activeFilter = ref('All')
+
+const filterCategories = [
+  { key: 'All', labelEn: 'All', labelAr: 'الكل' },
+  { key: 'Apartments', labelEn: 'Apartments', labelAr: 'شقق' },
+  { key: 'Villas', labelEn: 'Villas', labelAr: 'فلل' },
+  { key: 'Penthouses', labelEn: 'Penthouses', labelAr: 'بنتهاوس' },
+  { key: 'Townhouses', labelEn: 'Townhouses', labelAr: 'تاون هاوس' }
+]
+
+const formatPrice = (price) => {
+  if (!price && price !== 0) return isRtl.value ? '0 د.إ' : 'AED 0'
+  if (typeof price === 'string' && (price.includes('AED') || price.includes('د.إ') || price.includes('/'))) {
+    return price
+  }
+  const num = Number(price)
+  if (isNaN(num)) return String(price)
+  const currency = isRtl.value ? 'د.إ' : 'AED'
+  if (num >= 1_000_000) {
+    return `${currency} ${(num / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  }
+  if (num >= 1_000) {
+    return `${currency} ${(num / 1_000).toFixed(0)}K`
+  }
+  return `${currency} ${num.toLocaleString()}`
+}
 
 const close = () => {
   emit('close')
@@ -169,6 +202,13 @@ const removeProperty = (prop) => {
 const onViewDetails = (prop) => {
   emit('open-property', prop)
   close()
+  if (prop.id) {
+    router.push(`/property/${prop.id}`)
+  } else if (prop.title) {
+    router.push({ path: '/search', query: { q: prop.title } })
+  } else {
+    router.push('/home')
+  }
 }
 
 const goToExplore = () => {

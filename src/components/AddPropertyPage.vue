@@ -1766,7 +1766,7 @@ const handleSubmit = async () => {
     showToast('Property published successfully!')
 
     setTimeout(() => {
-      router.push('/profile/saved')
+      router.push('/my-properties')
     }, 1200)
 
   } catch (err) {

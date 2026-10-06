@@ -518,6 +518,51 @@
           </div>
         </div>
 
+        <!-- AI Semantic Understanding & Criteria Breakdown Banner -->
+        <div v-if="isAiSearch && aiUnderstanding && !isLoading" class="ai-criteria-banner">
+          <div class="ai-criteria-header">
+            <div class="ai-crit-title-wrap">
+              <span class="ai-crit-sparkle"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+              <strong>{{ isRtl ? 'تحليل الذكاء الاصطناعي لطلبك ومطابقة العقارات' : 'AI Request Analysis & Real Estate Match' }}</strong>
+            </div>
+            <div v-if="displayProperties.length > 0 && displayProperties[0].matchScore" class="ai-top-match-badge">
+              <i class="fa-solid fa-bullseye"></i>
+              <span>{{ isRtl ? 'أعلى نسبة تطابق:' : 'Highest Match:' }} <strong>{{ displayProperties[0].matchScore }}%</strong></span>
+            </div>
+          </div>
+          <div class="ai-criteria-chips">
+            <span v-if="aiUnderstanding.property_type" class="ai-chip type">
+              <i class="fa-solid fa-building"></i>
+              <b>{{ isRtl ? 'النوع:' : 'Type:' }}</b> {{ aiUnderstanding.property_type }}
+            </span>
+            <span v-if="aiUnderstanding.action_type" class="ai-chip action">
+              <i class="fa-solid fa-tag"></i>
+              <b>{{ isRtl ? 'الهدف:' : 'Purpose:' }}</b> {{ aiUnderstanding.action_type === 'rent' ? (isRtl ? 'للإيجار' : 'For Rent') : (isRtl ? 'للبيع' : 'For Sale') }}
+            </span>
+            <span v-if="aiUnderstanding.location_hint" class="ai-chip location">
+              <i class="fa-solid fa-location-dot"></i>
+              <b>{{ isRtl ? 'الموقع المستهدف:' : 'Target Area:' }}</b> {{ aiUnderstanding.location_hint }}
+            </span>
+            <span v-if="aiUnderstanding.min_bedrooms || aiUnderstanding.max_bedrooms" class="ai-chip beds">
+              <i class="fa-solid fa-bed"></i>
+              <b>{{ isRtl ? 'الغرف:' : 'Beds:' }}</b> {{ aiUnderstanding.min_bedrooms || aiUnderstanding.max_bedrooms }}+
+            </span>
+            <span v-if="aiUnderstanding.max_budget || aiUnderstanding.min_budget" class="ai-chip budget">
+              <i class="fa-solid fa-wallet"></i>
+              <b>{{ isRtl ? 'الميزانية:' : 'Budget:' }}</b>
+              {{ aiUnderstanding.min_budget ? formatPrice(aiUnderstanding.min_budget) : '' }}
+              {{ (aiUnderstanding.min_budget && aiUnderstanding.max_budget) ? ' - ' : '' }}
+              {{ aiUnderstanding.max_budget ? formatPrice(aiUnderstanding.max_budget) : '' }}
+            </span>
+            <span v-for="tag in (aiUnderstanding.vibe_tags || [])" :key="tag" class="ai-chip vibe">
+              <i class="fa-solid fa-sparkles"></i> {{ tag }}
+            </span>
+            <span v-for="amenity in (aiUnderstanding.required_amenities || [])" :key="amenity" class="ai-chip amenity">
+              <i class="fa-solid fa-circle-check"></i> {{ amenity }}
+            </span>
+          </div>
+        </div>
+
         <!-- Loading Skeletons -->
         <div v-if="isLoading" class="cards-skeleton-grid" :class="viewMode">
           <div v-for="i in 6" :key="i" class="skeleton-card">
@@ -598,10 +643,10 @@
             <div class="card-img-wrap">
               <img :src="prop.image" :alt="prop.title" loading="lazy" @error="onImgError" />
 
-              <!-- AI Match Badge: Only shown if AI search succeeded AND backend provided an explicit match score -->
-              <div v-if="isAiSearch && prop.matchScore" class="badge-ai">
+              <!-- AI Match Badge: Display calculated AI match score -->
+              <div v-if="prop.matchScore" class="badge-ai" :class="{ 'high-match': prop.matchScore >= 90 }">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>{{ t('aiMatch') }} {{ prop.matchScore }}%</span>
+                <span>{{ isRtl ? 'تطابق' : 'AI Match' }} {{ prop.matchScore }}%</span>
               </div>
 
               <!-- Favorite -->
@@ -982,10 +1027,15 @@ const priceLabel = computed(() => {
 const displayProperties = computed(() => {
   let list = [...allResults.value]
 
-  // When isAiSearch is true, the Backend AI is the Single Source of Truth:
-  // Return properties directly from POST /api/ai/contextual-search without
-  // local regex, price re-checking, or client-side re-filtering.
+  // When isAiSearch is true, properties are ranked by AI match score:
   if (isAiSearch.value) {
+    if (filters.value.status === 'ready') list = list.filter(p => !p.isOffPlan)
+    else if (filters.value.status === 'offplan') list = list.filter(p => p.isOffPlan)
+
+    if (sortBy.value === 'price-asc') list.sort((a, b) => a.price - b.price)
+    else if (sortBy.value === 'price-desc') list.sort((a, b) => b.price - a.price)
+    else list.sort((a, b) => (b.matchScore || b.aiMatch || 0) - (a.matchScore || a.aiMatch || 0))
+
     return locProps(list)
   }
 
@@ -1152,6 +1202,7 @@ const runSearch = async () => {
         isAiSearch.value = true
         aiUnderstanding.value = result.ai_understanding || null
         allResults.value = result.data
+        sortBy.value = 'ai-match'
       } else {
         // AI returned empty (e.g. it parsed a single price as min_budget = max_budget,
         // which demands an exact price). Reuse what the AI understood with a relaxed
@@ -2836,6 +2887,137 @@ onUnmounted(() => {
   color: #059669;
 }
 
+/* AI Criteria Banner */
+.ai-criteria-banner {
+  margin: 0 0 24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(124, 58, 237, 0.06) 100%);
+  border: 1px solid rgba(0, 210, 255, 0.25);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-theme="light"] .ai-criteria-banner {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.06) 0%, rgba(124, 58, 237, 0.04) 100%);
+  border-color: rgba(2, 132, 199, 0.25);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.ai-criteria-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ai-crit-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #f0f6ff;
+}
+
+[data-theme="light"] .ai-crit-title-wrap {
+  color: #0f172a;
+}
+
+.ai-crit-sparkle {
+  color: #00d2ff;
+  font-size: 14px;
+}
+
+.ai-top-match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.25));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 100px;
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ai-top-match-badge strong {
+  font-weight: 800;
+  color: #34d399;
+}
+
+.ai-criteria-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  font-size: 12px;
+  color: #cbd5e1;
+  transition: all 0.2s;
+}
+
+[data-theme="light"] .ai-chip {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ai-chip b {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+[data-theme="light"] .ai-chip b {
+  color: #64748b;
+}
+
+.ai-chip.type {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.ai-chip.action {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.ai-chip.location {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.ai-chip.budget {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.ai-chip.beds {
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #f472b6;
+}
+
+.ai-chip.vibe, .ai-chip.amenity {
+  background: rgba(0, 210, 255, 0.08);
+  border-color: rgba(0, 210, 255, 0.25);
+  color: #00d2ff;
+}
+
 /* ========== SKELETON CARDS ========== */
 .cards-skeleton-grid {
   display: grid;
@@ -3109,14 +3291,29 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(0, 210, 255, 0.4);
+  background: rgba(5, 19, 34, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 210, 255, 0.5);
   border-radius: 100px;
-  padding: 4px 10px;
+  padding: 4px 11px;
   font-size: 11px;
   font-weight: 700;
   color: #00d2ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s;
+}
+
+.badge-ai.high-match {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.9) 0%, rgba(13, 148, 136, 0.9) 100%);
+  border-color: rgba(52, 211, 153, 0.7);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+}
+
+.badge-ai.high-match i {
+  color: #fef08a;
+  filter: drop-shadow(0 0 4px rgba(254, 240, 138, 0.8));
 }
 
 .btn-fav {
