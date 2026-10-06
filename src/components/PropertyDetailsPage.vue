@@ -703,10 +703,15 @@ const aiInsights = computed(() => {
   const pLoc = `${p.location || ''} ${p.area || ''}`.toLowerCase()
   const pPrice = Number(p.price) || 0
 
-  // 1. Overall Match
-  let overall = p.matchScore || (p.id ? 87 + ((Number(p.id) * 7) % 11) : 94)
-  if (overall < 82) overall = 88
-  if (overall > 99) overall = 98
+  // 1. Overall Match - preserve real matchScore from AI search
+  let overall = Number(p.matchScore || p.aiMatch || 0)
+  if (!overall) {
+    let base = 88
+    if (p.rating && Number(p.rating) >= 4.5) base += 3
+    if (p.is_verified || p.verified) base += 3
+    if (amenities.value && amenities.value.length >= 4) base += 2
+    overall = Math.min(97, Math.max(80, base))
+  }
 
   // 2. Lifestyle Score
   let lifestyle = 86 + Math.min(8, amenities.value.length)

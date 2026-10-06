@@ -49,7 +49,7 @@ export function normalizeProperty(raw) {
     primaryImage = `https://vibelocate-laravel.onrender.com/${primaryImage}`
   }
 
-  // Location formatting from API property_locations table
+  // Location formatting from API property_locations table or AI microservice
   let areaText = 'Dubai, UAE'
   if (raw.location) {
     if (typeof raw.location === 'string') {
@@ -66,51 +66,29 @@ export function normalizeProperty(raw) {
     }
   } else if (raw.area) {
     areaText = raw.area
+  } else {
+    const locParts = [
+      raw.neighborhood_en || raw.neighborhood_ar,
+      raw.community_en || raw.community_ar,
+      raw.city_en || raw.city_ar
+    ].filter(Boolean)
+    if (locParts.length > 0) {
+      areaText = locParts.join(', ')
+    } else if (raw.address_en || raw.address_ar) {
+      areaText = raw.address_en || raw.address_ar
+    }
   }
 
   // Determine property type and category from title / type_id
   let type = typeof raw.type === 'string' ? raw.type : (raw.type?.name || '')
-  if (!type) {
-    const titleLower = (raw.title || '').toLowerCase()
-    if (raw.type_id === 2 || titleLower.includes('villa')) {
-      type = 'Villa'
-    } else if (raw.type_id === 3 || titleLower.includes('penthouse')) {
-      type = 'Penthouse'
-    } else if (raw.type_id === 4 || titleLower.includes('townhouse')) {
-      type = 'Townhouse'
-    } else if (raw.type_id === 5 || titleLower.includes('house')) {
-      type = 'House'
-    } else if (raw.type_id === 8 || titleLower.includes('land') || titleLower.includes('plot')) {
-      type = 'Land'
-    } else if (raw.type_id === 6 || titleLower.includes('office')) {
-      type = 'Office'
-    } else if (raw.type_id === 7 || titleLower.includes('warehouse')) {
-      type = 'Warehouse'
-    } else if (raw.type_id === 9 || titleLower.includes('restaurant')) {
-      type = 'Restaurant'
-    } else if (raw.type_id === 10 || titleLower.includes('hotel')) {
-      type = 'Hotel'
-    } else if (raw.type_id === 11 || titleLower.includes('building')) {
-      type = 'Full Building'
-    } else if (raw.type_id === 14 || titleLower.includes('school')) {
-      type = 'Commercial'
-    } else if (raw.type_id === 15 || titleLower.includes('showroom')) {
-      type = 'Showroom'
-    } else if (raw.type_id === 16 || titleLower.includes('cafe')) {
-      type = 'Cafe'
-    } else if (raw.type_id === 1 || titleLower.includes('apartment') || titleLower.includes('flat') || titleLower.includes('studio')) {
-      type = 'Apartment'
-    } else {
-      type = 'Apartment'
-    }
-  }
+  if (!type) type = inferTypeLabel(raw)
 
   const category = (raw.category || type).toLowerCase()
 
   // Format pricing and specifications from API
   const priceNum = Number(raw.price) || 0
-  const beds = Number(raw.bedrooms ?? 0)
-  const baths = Number(raw.bathrooms ?? 0)
+  const beds = Number(raw.bedrooms ?? raw.beds ?? 0)
+  const baths = Number(raw.bathrooms ?? raw.baths ?? 0)
   const rawSqft = raw.area_sqft || raw.size
   const sizeFormatted = rawSqft ? Math.round(Number(String(rawSqft).replace(/,/g, ''))).toLocaleString() : 'N/A'
 
@@ -120,12 +98,12 @@ export function normalizeProperty(raw) {
     : []
 
   const rawActionType = String(
-    raw.action_type || raw.listing_type || raw.listing_purpose || raw.purpose || raw.offer_type || raw.transaction_type || ''
+    raw.action_type || raw.listing_type || raw.listing_purpose || raw.purpose || raw.purpose_en || raw.purpose_ar || raw.offer_type || raw.transaction_type || ''
   ).toLowerCase()
 
   const isForRent = rawActionType === 'rent' ||
     raw.is_for_rent === true || raw.is_for_rent === 1 || raw.is_for_rent === '1' ||
-    rawActionType.includes('rent') ||
+    rawActionType.includes('rent') || rawActionType.includes('إيجار') || rawActionType.includes('ايجار') ||
     (Boolean(raw.rent_frequency) && rawActionType !== 'buy' && rawActionType !== 'sale')
 
   const listingPurpose = isForRent ? 'rent' : 'buy'
@@ -165,21 +143,23 @@ export function normalizeProperty(raw) {
   }
 
   // Real backend match percentage if provided
-  const rawScore = raw.match_percentage || raw.match_score
+  const rawScore = raw.match_score ?? raw.match_percentage ?? raw.score ?? raw.similarity_score
   const realMatchScore = rawScore !== undefined && rawScore !== null
     ? (Number(rawScore) <= 1 ? Math.round(Number(rawScore) * 100) : Math.round(Number(rawScore)))
     : null
 
   return {
-    id: raw.id,
-    title: raw.title || 'Dubai Property',
+    id: raw.id ?? raw.property_id ?? raw.source_id,
+    title: raw.title || raw.title_en || raw.title_ar || 'Dubai Property',
+    title_en: raw.title_en || raw.title || '',
+    title_ar: raw.title_ar || '',
     slug: raw.slug || '',
     type,
     category,
     area: areaText,
     location: areaText,
     price: priceNum,
-    currency: raw.currency || 'AED',
+    currency: raw.currency || raw.currency_code || raw.currency_en || 'AED',
     currencySymbol,
     rent_frequency: raw.rent_frequency || '',
     action_type: isForRent ? 'rent' : 'buy',
@@ -195,11 +175,11 @@ export function normalizeProperty(raw) {
     longitude: Number(raw.longitude ?? raw.lng ?? raw.lon ?? raw.location?.longitude ?? raw.location?.lng) || null,
     image: primaryImage,
     images: allImages.length > 0 ? allImages : [primaryImage],
-    summary: raw.description || `${type} in ${areaText} with ${beds} beds and ${baths} baths.`,
-    description: raw.description || '',
+    summary: raw.description || raw.description_en || raw.description_ar || `${type} in ${areaText} with ${beds} beds and ${baths} baths.`,
+    description: raw.description || raw.description_en || raw.description_ar || '',
     nearbyAmenity,
     nearbyAmenities: Array.isArray(raw.nearby_amenities) ? raw.nearby_amenities : (raw.nearby_amenity ? [raw.nearby_amenity] : []),
-    is_furnished: raw.is_furnished || 'unfurnished',
+    is_furnished: raw.is_furnished || raw.furnishing_en || 'unfurnished',
     property_condition: raw.property_condition || (isOffPlan ? 'off_plan' : 'ready'),
     agency: raw.agency || { name: 'VibeLocate Real Estate' },
     rating: Number(raw.rating) || 4.8,
@@ -484,9 +464,11 @@ export const propertyService = {
       else if (t.includes('restaurant') || t.includes('مطعم')) queryParams.type_id = 9
       else if (t.includes('hotel') || t.includes('فندق')) queryParams.type_id = 10
       else if (t.includes('building') || t.includes('مبنى')) queryParams.type_id = 11
-      else if (t.includes('commercial') || t.includes('تجاري')) queryParams.type_id = 14
+      else if (t.includes('commercial') || t.includes('shop') || t.includes('تجاري') || t.includes('محل')) queryParams.type_id = 12
+      else if (t.includes('clinic') || t.includes('عيادة')) queryParams.type_id = 13
+      else if (t.includes('school') || t.includes('مدرسة')) queryParams.type_id = 14
       else if (t.includes('showroom') || t.includes('معرض')) queryParams.type_id = 15
-      else if (t.includes('cafe') || t.includes('كافيه')) queryParams.type_id = 16
+      else if (t.includes('cafe') || t.includes('café') || t.includes('كافيه')) queryParams.type_id = 16
       delete queryParams.type
     }
 
@@ -688,7 +670,7 @@ export const propertyService = {
   },
 
   /**
-   * AI Query Parsing via FastAPI AI Service (https://ai1-j8rp.onrender.com)
+   * AI Query Parsing via FastAPI AI Service (criteria only — fallback/internal use)
    * POST /api/search/ai-contextual
    * @param {string} rawText
    * @param {string} language
@@ -707,7 +689,7 @@ export const propertyService = {
         language: lang
       }, {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        timeout: 12000
+        timeout: 45000
       })
       if (response?.data && typeof response.data === 'object') {
         return response.data
@@ -721,13 +703,20 @@ export const propertyService = {
   },
 
   /**
-   * AI Contextual Search & Multi-dimensional Matching
-   * Connects https://ai1-j8rp.onrender.com with catalog properties
-   * Calculates realistic AI match percentages (45% - 99%)
-   * @param {string} queryStr
+   * AI Full End-to-End Search
+   * POST /api/search/find-properties  →  https://ai1-j8rp.onrender.com
+   *
+   * This endpoint does the COMPLETE flow in one shot:
+   *   natural language text → parsed criteria → matched real properties → ranked results
+   *
+   * Falls back to the two-step flow (ai-contextual + local scoring) when the
+   * AI service is unreachable (e.g. Render cold-start or network error).
+   *
+   * @param {string} queryStr  — Free-text query in Arabic or English
    * @param {string} [language]
+   * @returns {Promise<{success, data, ai_understanding, source}>}
    */
-  async searchWithAi(queryStr, language) {
+  async searchWithAi(queryStr, language, options = {}) {
     const term = (queryStr || '').trim()
     if (!term) {
       return { success: true, data: [], properties: [] }
@@ -735,50 +724,86 @@ export const propertyService = {
 
     const isArabic = /[\u0600-\u06FF]/.test(term)
     const lang = language || (isArabic ? 'ar' : 'en')
+    const aiBase = (import.meta.env.VITE_AI_BASE_URL || '/ai-service').replace(/\/+$/, '')
 
-    // 1. Extract semantic criteria from natural language using FastAPI AI Microservice
-    const criteria = await this.parseQueryWithAi(term, lang)
-
-    // 2. Fetch properties catalog from backend
-    let catalog = []
+    // ── PRIMARY PATH ─────────────────────────────────────────────────────────
+    // POST /api/search/find-properties
+    // Returns: { parsed_criteria, matches_found, properties[] }
+    // ─────────────────────────────────────────────────────────────────────────
     try {
-      const propRes = await this.getProperties({ per_page: 100 })
-      if (propRes?.data && Array.isArray(propRes.data) && propRes.data.length > 0) {
-        catalog = propRes.data
+      const aiRes = await axios.post(
+        `${aiBase}/api/search/find-properties`,
+        { raw_text: term, language: lang },
+        {
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          timeout: 60000
+        }
+      )
+
+      const payload = aiRes?.data
+      const criteria = payload?.parsed_criteria || null
+      const rawProps = Array.isArray(payload?.properties) ? payload.properties : []
+
+      if (rawProps.length > 0) {
+        // Normalize + attach match scores
+        const scored = rawProps.map(p => {
+          const norm = normalizeProperty(p)
+          // The FastAPI service may include a match_score field; prefer it
+          const rawScore = p.match_score ?? p.match_percentage ?? null
+          const score = rawScore !== null
+            ? (Number(rawScore) <= 1 ? Math.round(Number(rawScore) * 100) : Math.round(Number(rawScore)))
+            : calculateAiMatchScore(norm, criteria)
+          return {
+            ...norm,
+            matchScore: score,
+            aiMatch: score,
+            aiCriteria: criteria
+          }
+        })
+
+        scored.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+
+        console.log('[AI Search] source: ai_find_properties | criteria:', criteria)
+        if (typeof console.table === 'function') {
+          console.table(scored.slice(0, 8).map((p) => ({ id: p.id, title: p.title, price: p.price, matchScore: p.matchScore })))
+        }
+
+        return {
+          success: true,
+          data: scored,
+          properties: scored,
+          ai_understanding: criteria,
+          nearby_amenities: [],
+          total_results: payload?.matches_found ?? scored.length,
+          returned_results: scored.length,
+          source: 'ai_find_properties'
+        }
+      }
+
+      // AI returned 0 properties but gave us criteria — pass criteria to caller
+      // so the fallback logic in SearchPage can do a relaxed search
+      if (criteria) {
+        return {
+          success: true,
+          data: [],
+          properties: [],
+          ai_understanding: criteria,
+          nearby_amenities: [],
+          total_results: 0,
+          returned_results: 0,
+          source: 'ai_find_properties_empty'
+        }
       }
     } catch (err) {
-      console.warn('Error fetching catalog for AI search:', err?.message)
+      console.warn('FastAPI /api/search/find-properties error:', err?.message)
     }
 
-    // If backend catalog was empty, use DEFAULT_PROPERTIES fallback
-    if (catalog.length === 0) {
-      catalog = DEFAULT_PROPERTIES.map(normalizeProperty).filter(Boolean)
-    }
-
-    // 3. Compute real AI match percentages for each property against the criteria
-    const scoredProperties = catalog.map(p => {
-      const score = calculateAiMatchScore(p, criteria)
-      return {
-        ...p,
-        matchScore: score,
-        aiMatch: score,
-        aiCriteria: criteria
-      }
-    })
-
-    // 4. Sort properties by AI match score descending (highest match first)
-    scoredProperties.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
-
-    return {
-      success: true,
-      data: scoredProperties,
-      properties: scoredProperties,
-      ai_understanding: criteria,
-      nearby_amenities: [],
-      total_results: scoredProperties.length,
-      returned_results: scoredProperties.length,
-      source: 'ai_fastapi'
-    }
+    // ── FALLBACK PATH ────────────────────────────────────────────────────────
+    // If /find-properties is unreachable, fall back to criteria-only parsing
+    // (ai-contextual) + server-side filtered querying against the Laravel catalog.
+    // ─────────────────────────────────────────────────────────────────────────
+    console.warn('[AI Search] Falling back to server-side filtered fallback (ai-contextual + getProperties)')
+    return runServerSideFallback(this, term, lang, options)
   },
 
   /**
@@ -1028,43 +1053,49 @@ export const propertyService = {
 }
 
 /**
- * Calculates a multidimensional AI match score (45% - 99%)
+ * Calculates a multidimensional AI match score (15% - 99%)
  * between a property and structured criteria parsed by the AI.
  * Weights:
- * - Property Type: 25%
- * - Action Type (Rent/Buy): 20%
- * - Location: 20%
- * - Budget: 15%
- * - Bedrooms: 10%
- * - Vibe tags & Amenities: 10%
+ * - Property Type: 25% (with severe penalty for incompatible types)
+ * - Action Type (Rent/Buy): 20% (with severe penalty for opposite action)
+ * - Budget: 25% (with severe disqualifying penalty if price >> max budget)
+ * - Location: 15% (direct or semantic neighborhood/community match)
+ * - Bedrooms: 10% (exact or minimum match)
+ * - Vibe tags & Amenities: 5% (rewarding matches)
  */
 export function calculateAiMatchScore(prop, criteria) {
-  if (!prop || !criteria) return 85
+  if (!prop) return 0
+  if (!criteria || Object.keys(criteria).length === 0) return 90
 
   let score = 0
+  let penaltyMultiplier = 1.0
+
   const weights = {
     type: 25,
     action: 20,
-    location: 20,
-    budget: 15,
+    budget: 25,
+    location: 15,
     bedrooms: 10,
-    vibeAndAmenities: 10
+    vibeAndAmenities: 5
   }
 
   // 1. Property Type (25%)
   if (criteria.property_type) {
     const expected = String(criteria.property_type).toLowerCase().trim()
-    const propType = String(prop.type || prop.category || prop.title || '').toLowerCase()
+    const propType = String(prop.type || prop.category || prop.property_type_en || prop.title || '').toLowerCase()
+
     if (propType.includes(expected)) {
       score += weights.type
     } else if (expected === 'apartment' && (propType.includes('flat') || propType.includes('studio') || propType.includes('penthouse'))) {
-      score += weights.type * 0.85
+      score += weights.type * 0.9
     } else if (expected === 'villa' && (propType.includes('townhouse') || propType.includes('house') || propType.includes('compound'))) {
-      score += weights.type * 0.8
-    } else if (expected === 'office' && (propType.includes('commercial') || propType.includes('building'))) {
+      score += weights.type * 0.85
+    } else if ((expected === 'office' || expected === 'commercial') && (propType.includes('shop') || propType.includes('commercial') || propType.includes('building') || propType.includes('showroom'))) {
       score += weights.type * 0.85
     } else {
-      score += weights.type * 0.1
+      // Disqualifying mismatch: User asked for Villa and got Apartment, or vice versa
+      score += 0
+      penaltyMultiplier *= 0.35
     }
   } else {
     score += weights.type
@@ -1073,20 +1104,66 @@ export function calculateAiMatchScore(prop, criteria) {
   // 2. Action Type (Rent vs Buy) (20%)
   if (criteria.action_type) {
     const expectedAction = String(criteria.action_type).toLowerCase().trim()
-    const isRent = Boolean(prop.isForRent || prop.is_for_rent || String(prop.action_type || prop.listing_type || '').toLowerCase() === 'rent')
+    const isRent = Boolean(
+      prop.isForRent ||
+      prop.is_for_rent ||
+      String(prop.action_type || prop.purpose || prop.purpose_en || prop.listing_type || '').toLowerCase() === 'rent'
+    )
     if ((expectedAction === 'rent' && isRent) || (expectedAction === 'buy' && !isRent)) {
       score += weights.action
     } else {
-      score += weights.action * 0.15
+      // Direct mismatch: User wants to Rent, but property is for Sale (or vice versa)
+      score += 0
+      penaltyMultiplier *= 0.40
     }
   } else {
     score += weights.action
   }
 
-  // 3. Location Hint (20%)
+  // 3. Budget (25%)
+  const price = Number(prop.price) || 0
+  const minB = Number(criteria.min_budget) || 0
+  const maxB = Number(criteria.max_budget) || 0
+
+  if (minB > 0 || maxB > 0) {
+    const effectiveMin = minB > 0 ? minB : 0
+    const effectiveMax = maxB > 0 ? maxB : Infinity
+
+    if (price >= effectiveMin && price <= effectiveMax) {
+      score += weights.budget
+    } else if (effectiveMax !== Infinity) {
+      if (price <= effectiveMax * 1.10) {
+        score += weights.budget * 0.80 // up to 10% above budget
+      } else if (price <= effectiveMax * 1.25) {
+        score += weights.budget * 0.50 // up to 25% above budget
+      } else if (price <= effectiveMax * 1.50) {
+        score += weights.budget * 0.20 // up to 50% above budget
+      } else {
+        // Price exceeds budget by > 50% (e.g. 55M when budget is 150k)
+        score += 0
+        const ratio = price / effectiveMax
+        if (ratio > 2) {
+          penaltyMultiplier *= Math.max(0.15, 1 / ratio)
+        } else {
+          penaltyMultiplier *= 0.45
+        }
+      }
+    } else if (effectiveMin > 0) {
+      if (price >= effectiveMin * 0.85) {
+        score += weights.budget * 0.75
+      } else {
+        score += weights.budget * 0.25
+      }
+    }
+  } else {
+    score += weights.budget
+  }
+
+  // 4. Location Hint (15%)
   if (criteria.location_hint) {
     const expectedLoc = String(criteria.location_hint).toLowerCase().trim()
-    const propLoc = `${prop.location || ''} ${prop.area || ''} ${prop.address || ''} ${prop.title || ''}`.toLowerCase()
+    const propLoc = `${prop.location || ''} ${prop.area || ''} ${prop.address || ''} ${prop.address_en || ''} ${prop.title || ''} ${prop.neighborhood_en || ''} ${prop.community_en || ''}`.toLowerCase()
+
     if (propLoc.includes(expectedLoc)) {
       score += weights.location
     } else {
@@ -1095,39 +1172,19 @@ export function calculateAiMatchScore(prop, criteria) {
       if (matched) {
         score += weights.location * 0.75
       } else {
-        score += weights.location * 0.2
+        score += weights.location * 0.15
+        penaltyMultiplier *= 0.85
       }
     }
   } else {
     score += weights.location
   }
 
-  // 4. Budget (15%)
-  const price = Number(prop.price) || 0
-  const minB = Number(criteria.min_budget) || 0
-  const maxB = Number(criteria.max_budget) || 0
-  if (minB > 0 || maxB > 0) {
-    const effectiveMin = minB > 0 ? minB : 0
-    const effectiveMax = maxB > 0 ? maxB : Infinity
-    if (price >= effectiveMin && price <= effectiveMax) {
-      score += weights.budget
-    } else if (effectiveMax !== Infinity && price <= effectiveMax * 1.25) {
-      score += weights.budget * 0.75
-    } else if (effectiveMax !== Infinity && price <= effectiveMax * 1.5) {
-      score += weights.budget * 0.45
-    } else if (effectiveMin > 0 && price >= effectiveMin * 0.75) {
-      score += weights.budget * 0.75
-    } else {
-      score += weights.budget * 0.15
-    }
-  } else {
-    score += weights.budget
-  }
-
   // 5. Bedrooms (10%)
   const beds = Number(prop.beds ?? prop.bedrooms) || 0
   const minBeds = criteria.min_bedrooms !== null && criteria.min_bedrooms !== undefined ? Number(criteria.min_bedrooms) : null
   const maxBeds = criteria.max_bedrooms !== null && criteria.max_bedrooms !== undefined ? Number(criteria.max_bedrooms) : null
+
   if (minBeds !== null || maxBeds !== null) {
     const low = minBeds !== null ? minBeds : 0
     const high = maxBeds !== null ? maxBeds : 99
@@ -1136,13 +1193,14 @@ export function calculateAiMatchScore(prop, criteria) {
     } else if (minBeds !== null && Math.abs(beds - minBeds) === 1) {
       score += weights.bedrooms * 0.6
     } else {
-      score += weights.bedrooms * 0.2
+      score += 0
+      penaltyMultiplier *= 0.85
     }
   } else {
     score += weights.bedrooms
   }
 
-  // 6. Vibe Tags & Amenities (10%)
+  // 6. Vibe Tags & Amenities (5%)
   const tags = [...(criteria.vibe_tags || []), ...(criteria.required_amenities || [])]
   if (tags.length > 0) {
     const textCorpus = `${prop.description || ''} ${prop.summary || ''} ${prop.title || ''} ${(prop.features || []).map(f => f.name || f).join(' ')} ${(prop.tags || []).join(' ')}`.toLowerCase()
@@ -1152,14 +1210,113 @@ export function calculateAiMatchScore(prop, criteria) {
       if (tNorm && textCorpus.includes(tNorm)) matches++
     })
     const ratio = Math.min(1, matches / tags.length)
-    score += weights.vibeAndAmenities * (0.3 + 0.7 * ratio)
+    score += weights.vibeAndAmenities * (0.2 + 0.8 * ratio)
   } else {
     score += weights.vibeAndAmenities
   }
 
-  // Scale by model confidence
+  // Apply penalty multiplier and model confidence
   const conf = criteria.confidence !== undefined && criteria.confidence !== null ? Math.max(0.85, Number(criteria.confidence)) : 0.95
-  return Math.min(99, Math.max(45, Math.round(score * conf)))
+  const finalScore = Math.round(score * penaltyMultiplier * conf)
+
+  return Math.min(99, Math.max(15, finalScore))
+}
+
+export const TYPE_LABEL_BY_ID = {
+  1: 'Apartment', 2: 'Villa', 3: 'Penthouse', 4: 'Townhouse', 5: 'House', 6: 'Office', 7: 'Warehouse',
+  8: 'Land', 9: 'Restaurant', 10: 'Hotel', 11: 'Full Building', 12: 'Commercial', 13: 'Clinic',
+  14: 'School', 15: 'Showroom', 16: 'Cafe',
+}
+
+const TYPE_KEYWORDS = [
+  ['Penthouse', /penthouse/], ['Townhouse', /townhouse/], ['Villa', /villa/],
+  ['Apartment', /apartment|flat|studio/], ['House', /house/], ['Land', /\bland\b|plot/],
+  ['Office', /office/], ['Warehouse', /warehouse/], ['Restaurant', /restaurant/], ['Hotel', /hotel/],
+  ['Full Building', /building/], ['Clinic', /clinic/], ['School', /school/],
+  ['Commercial', /shop|commercial/], ['Showroom', /showroom/], ['Cafe', /caf[eé]/],
+]
+
+function matchTypeKeywords(text) {
+  for (const [label, re] of TYPE_KEYWORDS) if (re.test(text)) return label
+  return null
+}
+
+export function inferTypeLabel(raw) {
+  const byId = TYPE_LABEL_BY_ID[Number(raw.type_id)]
+  if (byId) return byId
+  const explicit = raw.property_type_en || raw.category_en || raw.property_type
+  if (explicit) {
+    const hit = matchTypeKeywords(String(explicit).toLowerCase())
+    if (hit) return hit
+  }
+  // العنوان آخر حل، والجزء قبل " in " فقط (اسم الحي ممكن يحتوي Villas أو Land)
+  const head = String(raw.title || raw.title_en || '').toLowerCase().split(' in ')[0]
+  return matchTypeKeywords(head) || 'Apartment'
+}
+
+export function toLatinDigits(s) {
+  return String(s).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+}
+
+export function parsePlainBudget(text) {
+  const m = toLatinDigits(text).match(/(\d[\d,]{4,})/)   // 5 خانات فأكثر، فما تلتقط سنة مثل 2024
+  return m ? parseInt(m[1].replace(/,/g, ''), 10) : null
+}
+
+export function buildServerFilters(criteria, purpose) {
+  const c = criteria || {}
+  const f = {}
+  if (c.property_type) f.type = c.property_type            // getProperties بيحوّله لـ type_id
+  if (c.min_budget) f.min_price = c.min_budget
+  if (c.max_budget) f.max_price = c.max_budget
+  const action = c.action_type || purpose
+  if (action) f.purpose = action === 'rent' ? 'rent' : 'buy' // getProperties بيحوّله لـ action_type
+  if (c.location_hint) f.search = c.location_hint
+  return f
+}
+
+export async function runServerSideFallback(service, term, lang, options = {}) {
+  const criteria = await service.parseQueryWithAi(term, lang)
+  const filters = buildServerFilters(criteria, options.purpose)
+
+  let res = await service.getProperties({ ...filters, per_page: 100 })
+  let source = 'ai_fallback'
+  if (res.success !== false && (res.data || []).length === 0 && filters.search) {
+    const { search, ...withoutLocation } = filters          // نخفّف الموقع فقط. النوع والسعر ثابتين
+    res = await service.getProperties({ ...withoutLocation, per_page: 100 })
+    source = 'ai_fallback_relaxed'
+  }
+  if (res.success === false) {
+    return { success: false, data: [], properties: [], ai_understanding: criteria, error: res.error, source: 'ai_fallback_error' }
+  }
+
+  let items = res.data || []
+  if (criteria?.min_bedrooms !== null && criteria?.min_bedrooms !== undefined) {
+    items = items.filter((p) => Number(p.beds ?? p.bedrooms ?? 0) >= Number(criteria.min_bedrooms))
+  }
+
+  const scored = items
+    .map((p) => {
+      const s = calculateAiMatchScore(p, criteria)
+      return { ...p, matchScore: s, aiMatch: s, aiCriteria: criteria }
+    })
+    .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+
+  console.log('[AI Search] source:', source, '| criteria:', criteria)
+  if (typeof console.table === 'function') {
+    console.table(scored.slice(0, 8).map((p) => ({ id: p.id, title: p.title, price: p.price, matchScore: p.matchScore })))
+  }
+
+  return {
+    success: true,
+    data: scored,
+    properties: scored,
+    ai_understanding: criteria,
+    nearby_amenities: [],
+    total_results: res.pagination?.total ?? scored.length,
+    returned_results: scored.length,
+    source: scored.length ? source : 'ai_fallback_empty',
+  }
 }
 
 /**
@@ -1231,6 +1388,7 @@ function fallbackParseCriteria(term, lang = 'en') {
     if (kMatch) {
       max_budget = parseFloat(kMatch[1]) * 1000
     }
+    if (max_budget === null) max_budget = parsePlainBudget(term)
   }
 
   // Vibe tags & amenities

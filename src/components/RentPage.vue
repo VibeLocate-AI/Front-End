@@ -479,12 +479,11 @@ const toCatalogProperty = (property) => {
     price: Number(norm.price) || 0,
     sqft: norm.area_sqft ? Number(norm.area_sqft).toLocaleString() : (norm.size || 'N/A'),
     matchScore: norm.matchScore || norm.aiMatch || (() => {
-      let score = 87
+      let score = 88
       if (norm.is_verified || norm.verified) score += 4
-      if (norm.rating && norm.rating >= 4.7) score += 3
-      const nameSum = (norm.title || '').length
-      score += (nameSum % 7) - 2
-      return Math.min(98, Math.max(82, score))
+      if (norm.rating && Number(norm.rating) >= 4.7) score += 3
+      if (Array.isArray(norm.features) && norm.features.length >= 3) score += 2
+      return Math.min(97, Math.max(85, score))
     })(),
     image: norm.image || '/images/photo-1512917774080-9991f1c4c750.jfif'
   }

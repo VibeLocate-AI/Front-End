@@ -1197,7 +1197,9 @@ const runSearch = async () => {
     }
 
     if (query) {
-      const result = await propertyService.searchWithAi(query)
+      const lang = isRtl.value ? 'ar' : 'en'
+      const purposeOpt = filters.value.purpose !== 'all' ? filters.value.purpose : (route.query.purpose || undefined)
+      const result = await propertyService.searchWithAi(query, lang, { purpose: purposeOpt })
       if (result.success && result.data && result.data.length > 0) {
         isAiSearch.value = true
         aiUnderstanding.value = result.ai_understanding || null
@@ -1212,6 +1214,8 @@ const runSearch = async () => {
         aiUnderstanding.value = understanding
         let fallback = understanding ? await fetchRelaxedAiMatches(understanding) : []
         if (fallback.length > 0) {
+          isAiSearch.value = true
+          sortBy.value = 'ai-match'
           showToast(isRtl.value
             ? `لا يوجد تطابق تام، نعرض ${fallback.length} عقار قريب من طلبك`
             : `No exact match — showing ${fallback.length} close matches`)
@@ -1274,6 +1278,12 @@ const fetchRelaxedAiMatches = async (u) => {
       })
       .sort((a, b) => Math.abs((Number(a.price) || 0) - target) - Math.abs((Number(b.price) || 0) - target))
   }
+
+  // Calculate real AI Match Score for relaxed matches
+  list = list.map(p => {
+    const s = propertyService.calculateAiMatchScore(p, u)
+    return { ...p, matchScore: s, aiMatch: s, aiCriteria: u }
+  }).sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
 
   return list
 }
