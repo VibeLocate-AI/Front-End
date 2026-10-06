@@ -1216,8 +1216,53 @@ const processPayment = () => {
 
   setTimeout(() => {
     isProcessing.value = false
+    transactionId.value = 'VIBE-BK-' + Math.floor(100000 + Math.random() * 900000)
     currentStep.value = 3
     window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    // Save booking to localStorage
+    try {
+      const newBooking = {
+        id: transactionId.value,
+        propertyTitle: isRtl.value ? propertyData.value.arTitle : propertyData.value.title,
+        propertyLocation: propertyData.value.location,
+        propertyImage: propertyData.value.image,
+        date: selectedDate.value,
+        timeSlot: selectedTimeSlot.value,
+        depositAmount: totalDueToday.value,
+        clientName: customerForm.value.fullName,
+        clientPhone: customerForm.value.phone,
+        clientEmail: customerForm.value.email,
+        agentName: propertyData.value.agent?.name || 'Verified Luxury Consultant',
+        status: 'Confirmed',
+        createdAt: new Date().toISOString()
+      }
+      const existing = JSON.parse(localStorage.getItem('vibelocate_bookings') || '[]')
+      existing.unshift(newBooking)
+      localStorage.setItem('vibelocate_bookings', JSON.stringify(existing))
+
+      // Also create a notification for the user
+      const newNotification = {
+        id: Date.now(),
+        type: 'tour',
+        icon: 'fa-regular fa-calendar-check',
+        read: false,
+        title: `Viewing confirmed for ${newBooking.propertyTitle}`,
+        arTitle: `تم تأكيد موعد معاينة ${newBooking.propertyTitle}`,
+        text: `Your private appointment is booked for ${newBooking.date} at ${newBooking.timeSlot}. Ref: ${transactionId.value}`,
+        arText: `تم حجز موعدك الخاص بنجاح بتاريخ ${newBooking.date} الساعة ${newBooking.timeSlot}. الرقم المرجعي: ${transactionId.value}`,
+        time: 'Just now',
+        arTime: 'الآن',
+        action: 'View booking',
+        arAction: 'عرض الحجز'
+      }
+      const notifs = JSON.parse(localStorage.getItem('vibe_notifications') || '[]')
+      notifs.unshift(newNotification)
+      localStorage.setItem('vibe_notifications', JSON.stringify(notifs))
+    } catch (e) {
+      console.warn('Could not persist booking:', e)
+    }
+
     showToast(
       isRtl.value 
         ? `تم سداد العربون ($${totalDueToday.value}) وتأكيد موعد المعاينة بنجاح!` 
@@ -1229,12 +1274,101 @@ const processPayment = () => {
 
 // Download Receipt / Inspection Pass
 const downloadReceipt = () => {
-  showToast(isRtl.value ? `تم تحميل تصريح المعاينة وإيصال العربون (${transactionId.value})` : `Viewing pass downloaded (${transactionId.value})`)
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    showToast(isRtl.value ? 'يرجى السماح بالنوافذ المنبثقة لتحميل الإيصال' : 'Please allow popups to download pass', 'error')
+    return
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html dir="${isRtl.value ? 'rtl' : 'ltr'}">
+    <head>
+      <title>VibeLocate AI - Viewing Pass & Payment Receipt</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #0f172a; background: #fff; line-height: 1.5; }
+        .pass-card { max-width: 680px; margin: 0 auto; border: 2px solid #0284c7; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .pass-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 20px; margin-bottom: 20px; }
+        .logo-title { font-size: 24px; font-weight: 800; color: #0284c7; }
+        .badge-verified { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 99px; font-weight: bold; font-size: 12px; }
+        .prop-row { display: flex; gap: 20px; margin-bottom: 25px; align-items: center; }
+        .prop-img { width: 120px; height: 90px; border-radius: 10px; object-fit: cover; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        .val { font-size: 15px; font-weight: 700; color: #1e293b; margin-top: 3px; }
+        .barcode { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #cbd5e1; font-family: monospace; font-size: 20px; letter-spacing: 5px; color: #475569; }
+      </style>
+    </head>
+    <body>
+      <div class="pass-card">
+        <div class="pass-header">
+          <div>
+            <div class="logo-title">VibeLocate AI</div>
+            <small style="color: #64748b;">Official Property Viewing Pass &amp; Receipt</small>
+          </div>
+          <span class="badge-verified">✓ CONFIRMED &amp; VERIFIED</span>
+        </div>
+
+        <div class="prop-row">
+          <img class="prop-img" src="${propertyData.value.image}" alt="Property" />
+          <div>
+            <h2 style="margin: 0 0 5px; font-size: 18px;">${propertyData.value.title}</h2>
+            <p style="margin: 0; color: #64748b; font-size: 13px;">📍 ${propertyData.value.location}</p>
+          </div>
+        </div>
+
+        <div class="details-grid">
+          <div><div class="label">Pass / Booking Ref</div><div class="val" style="color: #0284c7;">${transactionId.value}</div></div>
+          <div><div class="label">Deposit Amount</div><div class="val">$${totalDueToday.value} USD (Paid)</div></div>
+          <div><div class="label">Viewing Date</div><div class="val">${selectedDate.value}</div></div>
+          <div><div class="label">Time Slot</div><div class="val">${selectedTimeSlot.value}</div></div>
+          <div><div class="label">Visitor Name</div><div class="val">${customerForm.value.fullName || 'Verified Client'}</div></div>
+          <div><div class="label">Consultant</div><div class="val">${propertyData.value.agent?.name || 'Exclusive Luxury Agent'}</div></div>
+        </div>
+
+        <div class="barcode">
+          ||||| |||||| | ||||| |||| ||||||| ${transactionId.value}
+        </div>
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `)
+  printWindow.document.close()
+  showToast(isRtl.value ? `تم فتح تصريح المعاينة وإيصال العربون (${transactionId.value})` : `Viewing pass opened (${transactionId.value})`)
 }
 
 // Add to Calendar
 const addToCalendar = () => {
-  showToast(isRtl.value ? 'تمت إضافة الموعد إلى الروزنامة الخاصة بك بنجاح' : 'Viewing appointment added to your calendar')
+  try {
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//VibeLocate AI//Property Viewing Pass//EN',
+      'BEGIN:VEVENT',
+      `SUMMARY:VibeLocate Inspection: ${propertyData.value.title}`,
+      `DESCRIPTION:Viewing appointment for ${propertyData.value.title} with luxury consultant. Ref: ${transactionId.value}`,
+      `LOCATION:${propertyData.value.location}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n')
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.setAttribute('download', `inspection-${transactionId.value}.ics`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    showToast(isRtl.value ? 'تم تنزيل ملف الروزنامة (iCalendar) وإضافته بنجاح' : 'Calendar event file downloaded successfully')
+  } catch {
+    showToast(isRtl.value ? 'تمت إضافة الموعد إلى الروزنامة' : 'Appointment added to your calendar')
+  }
 }
 
 // Back Navigation

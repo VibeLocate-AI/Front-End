@@ -467,27 +467,24 @@
             <button
               class="modal-btn-contact"
               type="button"
-              @click="
-                showAlert(
-                  'Connecting you with the verified luxury consultant in Dubai...',
-                )
-              "
+              @click="contactVerifiedAgent"
             >
-              <i class="fa-solid fa-phone"></i
-              ><span>Contact Verified Agent</span>
+              <i class="fa-solid fa-phone"></i>
+              <span>{{ isRtl ? 'تواصل مع الوكيل المعتمد' : 'Contact Verified Agent' }}</span>
             </button>
             <button
               id="modal-btn-directions"
               class="modal-btn-directions"
               type="button"
             >
-              <i class="fa-solid fa-diamond-turn-right"></i
-              ><span>تخطيط الاتجاهات والمسار</span>
+              <i class="fa-solid fa-diamond-turn-right"></i>
+              <span>{{ isRtl ? 'تخطيط الاتجاهات والمسار' : 'Get Route & Directions' }}</span>
             </button>
             <button
               class="modal-btn-share"
               type="button"
-              @click="showAlert('Property link copied to clipboard!')"
+              :title="isRtl ? 'مشاركة رابط العقار' : 'Share property link'"
+              @click="sharePropertyLink"
             >
               <i class="fa-solid fa-share-nodes"></i>
             </button>
@@ -550,6 +547,33 @@ const handleOpenSavedProp = (prop) => {
     openPropertyModal(prop.id);
   } else {
     router.push("/home#featured");
+  }
+};
+
+const contactVerifiedAgent = () => {
+  const activeId = window.__vibeMap?._activeModalPropId;
+  const prop = currentProperties.find((p) => p.id === activeId);
+  closePropertyModal();
+  if (prop) {
+    try {
+      sessionStorage.setItem('vibelocate:selected-property', JSON.stringify(prop));
+    } catch {}
+    router.push({ path: '/agent-contact', query: { propertyId: prop.id, agent: prop.title } });
+  } else {
+    router.push('/agent-contact');
+  }
+};
+
+const sharePropertyLink = async () => {
+  const activeId = window.__vibeMap?._activeModalPropId;
+  const url = activeId ? `${window.location.origin}/property/${activeId}` : window.location.href;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    }
+    showToast(isRtl.value ? '✅ تم نسخ رابط العقار إلى الحافظة بنجاح!' : '✅ Property link copied to clipboard!');
+  } catch {
+    showToast(url);
   }
 };
 
@@ -656,7 +680,7 @@ const handleDocumentClick = (e) => {
   }
 };
 
-const showAlert = (msg) => alert(msg);
+const showAlert = (msg) => showToast(msg);
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 20;
 };
@@ -1734,12 +1758,30 @@ function triggerAiRadarScan() {
   setTimeout(() => {
     if (btn) btn.classList.remove("scanning");
     if (overlay) overlay.classList.remove("active");
-    applyFilters();
-    showToast(
-      isRtl.value
-        ? `❆ اكتمل المسح: تم العثور على ${filteredProperties.length} عقاراً متطابقاً!`
-        : `❆ Radar Scan Complete: ${filteredProperties.length} high-match properties detected!`,
-    );
+    
+    // Sort by AI match score
+    const sortEl = document.getElementById("sort-select");
+    if (sortEl) sortEl.value = "ai-match";
+    sortProperties();
+    renderMarkers(filteredProperties);
+    renderSidebarList(filteredProperties);
+
+    const topProp = filteredProperties[0] || currentProperties[0];
+    if (topProp && mapInstance) {
+      selectProperty(topProp.id);
+      mapInstance.flyTo([topProp.lat, topProp.lng], 14, { duration: 1.5 });
+      showToast(
+        isRtl.value
+          ? `❆ أفضل تطابق ذكي: ${topProp.title} بنسبة ${topProp.aiScore}%!`
+          : `❆ Top AI Match Detected: ${topProp.title} (${topProp.aiScore}% Match)!`,
+      );
+    } else {
+      showToast(
+        isRtl.value
+          ? `❆ اكتمل المسح: تم العثور على ${filteredProperties.length} عقاراً!`
+          : `❆ Radar Scan Complete: ${filteredProperties.length} properties detected!`,
+      );
+    }
   }, 1200);
 }
 

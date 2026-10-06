@@ -90,6 +90,13 @@
                   <option value="Apartment">{{ t('apartment') }}</option>
                   <option value="Villa">{{ t('villa') }}</option>
                   <option value="Penthouse">{{ t('penthouse') }}</option>
+                  <option value="Townhouse">{{ t('townhouse') }}</option>
+                  <option value="Office">{{ isRtl ? 'مكتب' : 'Office' }}</option>
+                  <option value="Full Building">{{ isRtl ? 'مبنى بالكامل' : 'Full Building' }}</option>
+                  <option value="Land">{{ isRtl ? 'أرض' : 'Land/Plot' }}</option>
+                  <option value="House">{{ isRtl ? 'منزل' : 'House' }}</option>
+                  <option value="Commercial">{{ isRtl ? 'تجاري' : 'Commercial' }}</option>
+                  <option value="Hotel">{{ isRtl ? 'فندق' : 'Hotel' }}</option>
                 </select>
                 <i class="fa-solid fa-chevron-down select-chevron"></i>
               </div>
@@ -103,6 +110,8 @@
               <div class="search-input-inner">
                 <select v-model="filterState.priceRange" class="search-select">
                   <option value="Any">{{ t('anyBudget') }}</option>
+                  <option value="under-2m">{{ isRtl ? 'أقل من 2 مليون' : 'Under AED 2M' }}</option>
+                  <option value="2m-5m">{{ isRtl ? '2 - 5 مليون' : 'AED 2M - 5M' }}</option>
                   <option value="under-5m">{{ isRtl ? 'أقل من 5 مليون' : 'Under AED 5M' }}</option>
                   <option value="5m-10m">{{ isRtl ? '5 - 10 مليون' : 'AED 5M - 10M' }}</option>
                   <option value="10m-plus">{{ isRtl ? 'أكثر من 10 مليون' : 'AED 10M+' }}</option>
@@ -119,7 +128,9 @@
               <div class="search-input-inner">
                 <select v-model="filterState.bedrooms" class="search-select">
                   <option value="Any">{{ t('anyBedroomCount') }}</option>
+                  <option value="1">1</option>
                   <option value="2">2</option>
+                  <option value="3">3</option>
                   <option value="4">4</option>
                   <option value="5+">5+</option>
                 </select>
@@ -185,6 +196,7 @@
             <button
               type="button"
               class="btn-view-toggle active"
+              @click="showToast(isRtl ? 'عرض الشبكة مفعل' : 'Grid view active')"
             >
               <i class="fa-solid fa-border-all"></i>
               <span>{{ t('grid') }}</span>
@@ -442,7 +454,7 @@
         </div>
 
         <div class="why-buy-cta">
-          <button type="button" class="btn-start-buying">
+          <button type="button" class="btn-start-buying" @click="startBuyingJourney">
             <span>{{ t('startBuyingJourney') }}</span>
             <i class="fa-solid" :class="isRtl ? 'fa-arrow-left' : 'fa-arrow-right'"></i>
           </button>
@@ -622,20 +634,23 @@ const filterByLocation = (loc) => {
 
 const applyFilters = () => {
   showToast(isRtl.value ? 'تم تطبيق نتائج البحث' : 'Filters applied!')
+  const el = document.querySelector('.buy-main-catalog')
+  if (el) el.scrollIntoView({ behavior: 'smooth' })
 }
 
 const displayProperties = computed(() => {
   let list = [...buyProperties.value]
 
   if (selectedCategory.value !== 'All Properties') {
-    const cat = selectedCategory.value.toLowerCase()
+    const cat = selectedCategory.value.toLowerCase().trim()
     if (cat.includes('apartment')) list = list.filter(p => (p.type || '').toLowerCase().includes('apartment'))
     else if (cat.includes('villa')) list = list.filter(p => (p.type || '').toLowerCase().includes('villa'))
     else if (cat.includes('penthouse')) list = list.filter(p => (p.type || '').toLowerCase().includes('penthouse'))
     else if (cat.includes('commercial') || cat.includes('تجاري')) list = list.filter(p => ['office', 'warehouse', 'showroom', 'cafe', 'restaurant', 'hotel', 'building', 'commercial'].some(t => (p.type || '').toLowerCase().includes(t)))
-    else if (cat.includes('waterfront')) list = list.filter(p => (p.location && (p.location.includes('Marina') || p.location.includes('Palm') || p.location.includes('Harbour') || p.location.includes('Beach') || p.location.includes('Waterfront'))))
-    else if (cat.includes('off-plan')) list = list.filter(p => p.isOffPlan === true)
-    else if (cat.includes('ready')) list = list.filter(p => p.isOffPlan === false)
+    else if (cat.includes('waterfront')) list = list.filter(p => (p.location && (p.location.includes('Marina') || p.location.includes('Palm') || p.location.includes('Harbour') || p.location.includes('Beach') || p.location.includes('Waterfront') || p.location.includes('Creek'))))
+    else if (cat.includes('off-plan')) list = list.filter(p => Boolean(p.isOffPlan || p.property_condition === 'off_plan'))
+    else if (cat.includes('ready')) list = list.filter(p => !p.isOffPlan && p.property_condition !== 'off_plan')
+    else list = list.filter(p => (p.type || '').toLowerCase() === cat || (p.type || '').toLowerCase().includes(cat))
   }
 
   if (filterState.value.location && filterState.value.location !== 'All') {
@@ -657,9 +672,22 @@ const displayProperties = computed(() => {
   }
 
   if (filterState.value.priceRange && filterState.value.priceRange !== 'Any') {
-    if (filterState.value.priceRange === 'under-5m') list = list.filter(p => p.price < 5000000)
+    if (filterState.value.priceRange === 'under-2m') list = list.filter(p => p.price < 2000000)
+    else if (filterState.value.priceRange === '2m-5m') list = list.filter(p => p.price >= 2000000 && p.price <= 5000000)
+    else if (filterState.value.priceRange === 'under-5m') list = list.filter(p => p.price < 5000000)
     else if (filterState.value.priceRange === '5m-10m') list = list.filter(p => p.price >= 5000000 && p.price <= 10000000)
     else if (filterState.value.priceRange === '10m-plus') list = list.filter(p => p.price > 10000000)
+  }
+
+  if (filterState.value.lifestyle && filterState.value.lifestyle !== 'Any') {
+    const life = filterState.value.lifestyle.toLowerCase()
+    if (life.includes('waterfront')) {
+      list = list.filter(p => (p.location || '').match(/marina|palm|harbour|beach|waterfront|creek|island/i))
+    } else if (life.includes('pool')) {
+      list = list.filter(p => (p.description || '').toLowerCase().includes('pool') || (p.specs?.amenities || []).some(a => a.toLowerCase().includes('pool')))
+    } else if (life.includes('ready')) {
+      list = list.filter(p => !p.isOffPlan && p.property_condition !== 'off_plan')
+    }
   }
 
   if (sortBy.value === 'price-asc') {
@@ -725,46 +753,53 @@ const loadApiProperties = async (page = 1) => {
   try {
     const langKey = isRtl.value ? 'ar' : 'en'
     const [res, areasRes, recRes] = await Promise.allSettled([
-      propertyService.getProperties({ page }),
+      propertyService.getProperties({ page, per_page: 200, action_type: 'buy' }),
       propertyService.getPopularAreas(langKey),
       propertyService.getRecommendedProperties(langKey)
     ])
 
     if (res.status === 'fulfilled' && res.value?.data?.length > 0) {
-      const sales = res.value.data.filter(p => {
-        const action = String(p.action_type || p.purpose || p.listing_purpose || '').toLowerCase()
-        return action === 'buy' || action === 'sale' || (!p.isForRent && action !== 'rent')
-      })
+      const formatted = res.value.data.map((p, idx) => {
+        let dynamicScore = p.matchScore || p.aiMatch
+        if (!dynamicScore || dynamicScore < 40) {
+          let score = 88
+          if (p.is_verified || p.verified) score += 3
+          if (p.isOffPlan || p.property_condition === 'off_plan') score += 2
+          if (p.rating && p.rating >= 4.8) score += 3
+          const charSum = (p.title || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+          score += ((charSum + idx) % 7) - 2
+          dynamicScore = Math.min(99, Math.max(82, score))
+        }
 
-      if (sales.length > 0) {
-        const formatted = sales.map((p, idx) => ({
-          id: p.id || (page - 1) * 20 + idx + 1,
+        return {
+          id: p.id || (page - 1) * 200 + idx + 1,
           title: p.title || 'Dubai Luxury Property',
           location: p.location || p.area || 'Dubai, UAE',
-          price: Number(p.price) || 3500000,
-          type: p.type || 'Commercial',
+          price: Number(p.price) || 0,
+          type: p.type || 'Apartment',
           beds: p.beds ?? 0,
           baths: p.baths ?? 0,
-          sqft: p.sqft || p.size || '1,450',
-          matchScore: p.aiMatch || Math.min(99, 98 - (idx % 12)),
+          sqft: p.sqft || p.size || 'N/A',
+          matchScore: dynamicScore,
           isOffPlan: Boolean(p.isOffPlan || p.property_condition === 'off_plan'),
           image: p.image || (p.images && p.images[0]) || '/images/photo-1600210492486-724fe5c67fb0.jfif',
           images: p.images || [p.image],
           description: p.description || p.summary || '',
+          area: p.area || p.location || 'Dubai, UAE',
           specs: p.specs
-        }))
-
-        if (page === 1) {
-          buyProperties.value = formatted
-        } else {
-          const existingIds = new Set(buyProperties.value.map(item => String(item.id)))
-          const newItems = formatted.filter(item => !existingIds.has(String(item.id)))
-          buyProperties.value = [...buyProperties.value, ...newItems]
         }
+      })
 
-        const totalPages = res.value.pagination?.total_pages || res.value.pagination?.last_page || 36
-        hasMorePages.value = page < totalPages
+      if (page === 1) {
+        buyProperties.value = formatted
+      } else {
+        const existingIds = new Set(buyProperties.value.map(item => String(item.id)))
+        const newItems = formatted.filter(item => !existingIds.has(String(item.id)))
+        buyProperties.value = [...buyProperties.value, ...newItems]
       }
+
+      const totalPages = res.value.pagination?.total_pages || res.value.pagination?.last_page || 1
+      hasMorePages.value = page < totalPages
     }
 
     if (areasRes.status === 'fulfilled' && areasRes.value.data?.length) {
@@ -785,6 +820,13 @@ const loadApiProperties = async (page = 1) => {
 const loadMoreProperties = () => {
   currentPage.value += 1
   loadApiProperties(currentPage.value)
+}
+
+const startBuyingJourney = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  const searchInput = document.querySelector('.hero-search-input')
+  if (searchInput) searchInput.focus()
+  showToast(isRtl.value ? 'حدد متطلباتك للبحث عن عقار أحلامك للشراء في دبي' : 'Ready to start! Enter your preferences to find your dream property.')
 }
 
 onMounted(() => {

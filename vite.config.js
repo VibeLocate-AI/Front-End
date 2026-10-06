@@ -11,6 +11,12 @@ export default defineConfig({
         target: 'https://vibelocate-laravel.onrender.com',
         changeOrigin: true,
         secure: false,
+      },
+      '/ai-service': {
+        target: 'https://ai1-j8rp.onrender.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/ai-service/, '')
       }
     }
   }

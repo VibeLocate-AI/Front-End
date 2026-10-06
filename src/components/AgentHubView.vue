@@ -454,7 +454,7 @@
                   <button class="btn-req-accept" @click="handleApproveProperty(prop.id)">
                     <i class="fa-solid fa-check"></i> {{ isRtl ? 'اعتماد' : 'Approve' }}
                   </button>
-                  <button class="btn-req-reject" @click="handleRejectProperty(prop.id)">
+                  <button class="btn-req-reject" @click="openRejectModal(prop.id)">
                     <i class="fa-solid fa-xmark"></i> {{ isRtl ? 'رفض' : 'Reject' }}
                   </button>
                 </template>
@@ -939,6 +939,37 @@
           </form>
         </div>
       </div>
+      <!-- Modal for Rejecting Property -->
+      <div v-if="showRejectModal" class="agent-modal-backdrop" @click.self="showRejectModal = false">
+        <div class="agent-modal-card">
+          <div class="agent-modal-header">
+            <h3>{{ isRtl ? 'رفض إدراج العقار' : 'Reject Property Listing' }}</h3>
+            <button class="btn-close-modal" @click="showRejectModal = false"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form @submit.prevent="confirmRejectProperty" class="poi-form-grid">
+            <div class="verif-field-group">
+              <label class="field-label">{{ isRtl ? 'سبب الرفض (سيتم إرساله للمالك):' : 'Rejection Reason (will be sent to owner):' }}</label>
+              <textarea 
+                v-model="rejectReason" 
+                required 
+                class="verif-input" 
+                rows="4" 
+                style="resize: vertical; min-height: 80px;"
+                :placeholder="isRtl ? 'وضح سبب الرفض بالتفصيل...' : 'Explain the reason for rejection...'"
+              ></textarea>
+            </div>
+            <div class="form-submit-row" style="display: flex; gap: 10px; justify-content: flex-end;">
+              <button type="button" class="filter-pill-btn" @click="showRejectModal = false">
+                {{ isRtl ? 'إلغاء' : 'Cancel' }}
+              </button>
+              <button type="submit" class="btn-req-reject" :disabled="isRejecting" style="padding: 10px 20px;">
+                <i class="fa-solid fa-ban"></i>
+                <span>{{ isRejecting ? (isRtl ? 'جاري الرفض...' : 'Rejecting...') : (isRtl ? 'تأكيد الرفض' : 'Confirm Rejection') }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1105,20 +1136,34 @@ const handleApproveProperty = async (propId) => {
   }
 }
 
-const handleRejectProperty = async (propId) => {
-  const reason = prompt(
-    props.isRtl ? 'أدخل سبب رفض العقار:' : 'Enter rejection reason:', 
-    props.isRtl ? 'بيانات العقار غير مكتملة' : 'Incomplete property details'
-  )
-  if (!reason) return
+const showRejectModal = ref(false)
+const rejectPropId = ref(null)
+const rejectReason = ref('')
+const isRejecting = ref(false)
 
+const openRejectModal = (propId) => {
+  rejectPropId.value = propId
+  rejectReason.value = props.isRtl ? 'بيانات العقار غير مكتملة أو المستندات ناقصة' : 'Incomplete property details or missing documentation'
+  showRejectModal.value = true
+}
+
+const confirmRejectProperty = async () => {
+  if (!rejectReason.value.trim() || !rejectPropId.value) return
+  isRejecting.value = true
   notify(props.isRtl ? 'جاري رفض العقار...' : 'Rejecting listing...', 'info')
-  const res = await agentService.rejectProperty(propId, reason)
-  if (res.success) {
-    notify(props.isRtl ? 'تم رفض العقار وإشعار المالك' : 'Property rejected', 'warning')
-    await loadModerationQueue()
-  } else {
-    notify(res.error || (props.isRtl ? 'تعذر رفض العقار' : 'Rejection failed'), 'error')
+  try {
+    const res = await agentService.rejectProperty(rejectPropId.value, rejectReason.value.trim())
+    if (res.success) {
+      notify(props.isRtl ? 'تم رفض العقار وإشعار المالك' : 'Property rejected', 'warning')
+      showRejectModal.value = false
+      await loadModerationQueue()
+    } else {
+      notify(res.error || (props.isRtl ? 'تعذر رفض العقار' : 'Rejection failed'), 'error')
+    }
+  } catch (err) {
+    notify(props.isRtl ? 'حدث خطأ أثناء الرفض' : 'Error rejecting property', 'error')
+  } finally {
+    isRejecting.value = false
   }
 }
 

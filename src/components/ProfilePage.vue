@@ -899,9 +899,9 @@
             <div v-else-if="activeTab === 'alerts'" class="tab-view-container fade-in">
               <div class="alerts-card">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                  <h3 class="card-title">Active Search Alerts</h3>
-                  <button class="btn-save-primary" @click="showToast('Alert creation modal opening...')">
-                    <i class="fa-solid fa-plus"></i> Create New Alert
+                  <h3 class="card-title">{{ isRtl ? 'تنبيهات البحث النشطة' : 'Active Search Alerts' }}</h3>
+                  <button class="btn-save-primary" @click="openCreateAlertModal">
+                    <i class="fa-solid fa-plus"></i> {{ isRtl ? 'إنشاء تنبيه جديد' : 'Create New Alert' }}
                   </button>
                 </div>
 
@@ -914,13 +914,13 @@
                     <div class="alert-info">
                       <div class="alert-title-row">
                         <h4 class="alert-name">{{ alert.name }}</h4>
-                        <span class="status-badge-active">{{ alert.status }}</span>
+                        <span :class="alert.status === 'Paused' ? 'status-badge-paused' : 'status-badge-active'">{{ alert.status }}</span>
                       </div>
                       <p class="alert-details">{{ alert.details }}</p>
                     </div>
                     <div class="alert-actions">
-                      <button class="btn-icon-action" title="Settings" @click="showToast('Alert preferences updated.')"><i class="fa-solid fa-sliders"></i></button>
-                      <button class="btn-icon-action text-danger" title="Remove Alert" @click="removeAlert(alert)"><i class="fa-solid fa-trash-can"></i></button>
+                      <button class="btn-icon-action" :title="isRtl ? 'إعدادات التنبيه' : 'Settings'" @click="openEditAlertModal(alert)"><i class="fa-solid fa-sliders"></i></button>
+                      <button class="btn-icon-action text-danger" :title="isRtl ? 'حذف التنبيه' : 'Remove Alert'" @click="removeAlert(alert)"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                   </div>
                 </div>
@@ -1124,11 +1124,11 @@
                 <div class="session-card-row">
                   <div class="d-flex align-items-center gap-3">
                     <div class="session-device-icon">
-                      <i class="fa-solid fa-desktop"></i>
+                      <i :class="isMobileDevice ? 'fa-solid fa-mobile-screen' : 'fa-solid fa-desktop'"></i>
                     </div>
                     <div>
-                      <div class="fw-bold">{{ isRtl ? 'المتصفح الحالي (Web Session)' : 'Current Web Session' }}</div>
-                      <small class="text-muted">Dubai, UAE • {{ isRtl ? 'نشط الآن' : 'Active now' }}</small>
+                      <div class="fw-bold">{{ currentSessionInfo.browser }} on {{ currentSessionInfo.os }}</div>
+                      <small class="text-muted">{{ currentSessionInfo.location }} • {{ isRtl ? 'نشط الآن' : 'Active now' }}</small>
                     </div>
                   </div>
                   <span class="badge-this-device">{{ isRtl ? 'هذا الجهاز' : 'This Device' }}</span>
@@ -1246,6 +1246,122 @@
         </div>
 
       </div>
+      <!-- ==================== CREATE SEARCH ALERT MODAL ==================== -->
+      <transition name="modal-fade">
+        <div v-if="isCreateAlertModalOpen" class="support-modal-backdrop" @click.self="isCreateAlertModalOpen = false">
+          <div class="support-modal-dialog" style="max-width: 520px;">
+            <div class="support-modal-header">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #f8fafc;">
+                <i class="fa-solid fa-bell me-2" style="color: #38bdf8;"></i>
+                {{ isRtl ? 'إنشاء تنبيه بحث عقاري ذكي' : 'Create New Search Alert' }}
+              </h3>
+              <button class="support-close-btn" @click="isCreateAlertModalOpen = false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form @submit.prevent="saveNewAlert" class="support-modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">
+                  {{ isRtl ? 'اسم التنبيه' : 'Alert Name' }}
+                </label>
+                <input 
+                  type="text" 
+                  v-model="newAlertForm.name" 
+                  class="profile-input" 
+                  :placeholder="isRtl ? 'مثال: شقة غرفتين مارينا إطلالة بحر' : 'e.g., Dubai Marina 2-Bed Luxury'" 
+                  required
+                />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div>
+                  <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">
+                    {{ isRtl ? 'المنطقة' : 'Target Area' }}
+                  </label>
+                  <input type="text" v-model="newAlertForm.area" class="profile-input" :placeholder="isRtl ? 'دبي مارينا' : 'Dubai Marina'" required />
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">
+                    {{ isRtl ? 'نوع العقار' : 'Property Type' }}
+                  </label>
+                  <select v-model="newAlertForm.type" class="profile-input">
+                    <option value="Apartment">Apartment</option>
+                    <option value="Villa">Villa</option>
+                    <option value="Penthouse">Penthouse</option>
+                    <option value="Townhouse">Townhouse</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div>
+                  <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">
+                    {{ isRtl ? 'الحد الأقصى للميزانية' : 'Max Budget' }}
+                  </label>
+                  <input type="text" v-model="newAlertForm.maxPrice" class="profile-input" placeholder="AED 2,500,000" />
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">
+                    {{ isRtl ? 'تكرار الإشعار' : 'Frequency' }}
+                  </label>
+                  <select v-model="newAlertForm.frequency" class="profile-input">
+                    <option value="Daily">Daily</option>
+                    <option value="Instant">Instant (Real-time)</option>
+                    <option value="Weekly">Weekly</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+                <button type="button" class="btn-cancel" @click="isCreateAlertModalOpen = false">
+                  {{ isRtl ? 'إلغاء' : 'Cancel' }}
+                </button>
+                <button type="submit" class="btn-save-primary">
+                  <i class="fa-solid fa-check me-1"></i> {{ isRtl ? 'حفظ التنبيه' : 'Save Alert' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </transition>
+
+      <!-- ==================== EDIT SEARCH ALERT MODAL ==================== -->
+      <transition name="modal-fade">
+        <div v-if="isEditAlertModalOpen" class="support-modal-backdrop" @click.self="isEditAlertModalOpen = false">
+          <div class="support-modal-dialog" style="max-width: 480px;">
+            <div class="support-modal-header">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #f8fafc;">
+                <i class="fa-solid fa-sliders me-2" style="color: #38bdf8;"></i>
+                {{ isRtl ? 'تعديل تفضيلات التنبيه' : 'Alert Preferences' }}
+              </h3>
+              <button class="support-close-btn" @click="isEditAlertModalOpen = false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form v-if="editingAlert" @submit.prevent="saveEditAlert" class="support-modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">{{ isRtl ? 'اسم التنبيه' : 'Alert Name' }}</label>
+                <input type="text" v-model="editingAlert.name" class="profile-input" required />
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">{{ isRtl ? 'حالة التنبيه' : 'Status' }}</label>
+                <select v-model="editingAlert.status" class="profile-input">
+                  <option value="Active">Active (نشط)</option>
+                  <option value="Paused">Paused (موقوف مؤقتاً)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">{{ isRtl ? 'تفاصيل ومعايير التنبيه' : 'Criteria Details' }}</label>
+                <input type="text" v-model="editingAlert.details" class="profile-input" />
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+                <button type="button" class="btn-cancel" @click="isEditAlertModalOpen = false">{{ isRtl ? 'إلغاء' : 'Cancel' }}</button>
+                <button type="submit" class="btn-save-primary">{{ isRtl ? 'تحديث' : 'Update' }}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </transition>
+
     </main>
   </div>
 </template>
@@ -1569,6 +1685,90 @@ const removeAlert = (alert) => {
   stats.value.searchAlerts = searchAlertsList.value.length
   showToast(`Alert "${alert.name}" removed successfully.`)
 }
+
+// Search Alert Modals State & Handlers
+const isCreateAlertModalOpen = ref(false)
+const isEditAlertModalOpen = ref(false)
+const editingAlert = ref(null)
+const newAlertForm = ref({
+  name: '',
+  area: '',
+  type: 'Apartment',
+  maxPrice: '',
+  frequency: 'Daily'
+})
+
+const openCreateAlertModal = () => {
+  newAlertForm.value = {
+    name: '',
+    area: '',
+    type: 'Apartment',
+    maxPrice: 'AED 2,500,000',
+    frequency: 'Daily'
+  }
+  isCreateAlertModalOpen.value = true
+}
+
+const saveNewAlert = () => {
+  const newAlert = {
+    id: Date.now(),
+    name: newAlertForm.value.name,
+    status: 'Active',
+    details: `${newAlertForm.value.type} in ${newAlertForm.value.area} • Max ${newAlertForm.value.maxPrice || 'Any'} • ${newAlertForm.value.frequency}`
+  }
+  searchAlertsList.value.unshift(newAlert)
+  try {
+    localStorage.setItem('vibe_search_alerts', JSON.stringify(searchAlertsList.value))
+  } catch (e) {}
+  stats.value.searchAlerts = searchAlertsList.value.length
+  isCreateAlertModalOpen.value = false
+  showToast(isRtl.value ? 'تم إنشاء وحفظ تنبيه البحث بنجاح!' : 'New search alert created successfully!')
+}
+
+const openEditAlertModal = (alert) => {
+  editingAlert.value = { ...alert }
+  isEditAlertModalOpen.value = true
+}
+
+const saveEditAlert = () => {
+  if (!editingAlert.value) return
+  const idx = searchAlertsList.value.findIndex(a => a.id === editingAlert.value.id)
+  if (idx !== -1) {
+    searchAlertsList.value[idx] = { ...editingAlert.value }
+    try {
+      localStorage.setItem('vibe_search_alerts', JSON.stringify(searchAlertsList.value))
+    } catch (e) {}
+    showToast(isRtl.value ? 'تم تحديث تفضيلات التنبيه بنجاح' : 'Alert preferences updated successfully.')
+  }
+  isEditAlertModalOpen.value = false
+}
+
+// Dynamic Session Info
+const isMobileDevice = computed(() => {
+  if (typeof navigator === 'undefined') return false
+  return /Mobi|Android|iPhone/i.test(navigator.userAgent)
+})
+
+const currentSessionInfo = computed(() => {
+  if (typeof navigator === 'undefined') return { browser: 'Chrome', os: 'Windows', location: 'Dubai, UAE' }
+  const ua = navigator.userAgent
+  let browser = 'Chrome'
+  if (ua.includes('Firefox')) browser = 'Firefox'
+  else if (ua.includes('Edg')) browser = 'Edge'
+  else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari'
+
+  let os = 'Windows 11'
+  if (ua.includes('Macintosh') || ua.includes('Mac OS')) os = 'macOS'
+  else if (ua.includes('iPhone')) os = 'iOS'
+  else if (ua.includes('Android')) os = 'Android'
+  else if (ua.includes('Linux')) os = 'Linux'
+
+  return {
+    browser,
+    os,
+    location: 'Dubai, UAE'
+  }
+})
 
 // Tab titles and descriptions
 const tabTitlesEn = {

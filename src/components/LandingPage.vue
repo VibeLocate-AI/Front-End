@@ -147,9 +147,9 @@
           <a href="#rentals" class="btn btn-accent btn-lg" @click.prevent="scrollTo('rentals')">
             <i class="fa-solid fa-house"></i> Explore Rentals
           </a>
-          <a href="#about" class="btn btn-outline btn-lg" @click.prevent="scrollTo('about')">
+          <button type="button" class="btn btn-outline btn-lg" @click="openTourModal">
             <i class="fa-solid fa-play"></i> Watch Tour
-          </a>
+          </button>
         </div>
 
 
@@ -426,10 +426,10 @@
             Empowering modern real estate with artificial intelligence, verified luxury listings, and tailored leasing experiences worldwide.
           </p>
           <div class="social-links">
-            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61594702439169&locale=ar_AR" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="https://x.com/VibeLocateAI" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://www.instagram.com/vibelocate.ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.linkedin.com/company/vibelocate-ai" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
           </div>
         </div>
 
@@ -447,10 +447,10 @@
         <div class="footer-links-col">
           <h4 class="footer-heading">Support</h4>
           <ul>
-            <li><a href="#">Help Center</a></li>
-            <li><a href="#">Safety &amp; Security</a></li>
-            <li><a href="#">Terms &amp; Conditions</a></li>
-            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#help" @click.prevent="openLandingSupport('help')">Help Center</a></li>
+            <li><a href="#safety" @click.prevent="openLandingSupport('safety')">Safety &amp; Security</a></li>
+            <li><a href="#terms" @click.prevent="openLandingSupport('terms')">Terms &amp; Conditions</a></li>
+            <li><a href="#privacy" @click.prevent="openLandingSupport('privacy')">Privacy Policy</a></li>
           </ul>
         </div>
 
@@ -532,6 +532,38 @@
               </a>
               <button class="btn btn-outline-dark" @click="closeModal">Close</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TOUR VIDEO MODAL ==================== -->
+    <div v-if="tourModalOpen" class="modal-backdrop" @click.self="closeTourModal">
+      <div class="modal-dialog video-tour-dialog">
+        <button class="modal-close" @click="closeTourModal">&times;</button>
+        <div class="video-modal-content">
+          <div class="video-header">
+            <h3><i class="fa-solid fa-play" style="color: var(--cyan-accent); margin-right: 8px;"></i> VibeLocate AI Luxury Experience Tour</h3>
+            <p>Experience how our AI curates Dubai's most exclusive estates and waterfront residences.</p>
+          </div>
+          <div class="video-player-wrap">
+            <video 
+              controls 
+              autoplay 
+              muted 
+              loop
+              playsinline
+              poster="/images/photo-1600210492486-724fe5c67fb0.jfif" 
+              class="luxury-tour-video"
+            >
+              <source src="https://assets.mixkit.co/videos/preview/mixkit-living-room-of-a-luxurious-modern-house-41506-large.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div class="video-footer">
+            <button class="btn btn-accent" @click="closeTourModal(); scrollTo('rentals')">
+              <i class="fa-solid fa-magnifying-glass"></i> Explore Featured Listings
+            </button>
           </div>
         </div>
       </div>
@@ -749,8 +781,41 @@ const testimonials = [
 // ========== BOOKING FORM ==========
 const bookingForm = ref({ name: '', email: '', phone: '' })
 const submitBooking = () => {
+  const newLead = {
+    id: Date.now(),
+    name: bookingForm.value.name || 'VIP Client',
+    email: bookingForm.value.email,
+    phone: bookingForm.value.phone,
+    property: 'VIP Consultation - Dubai Luxury Estate',
+    type: 'VIP Consultation',
+    time: 'Just now',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    status: 'New'
+  }
+  
+  try {
+    const existing = JSON.parse(localStorage.getItem('vibelocate_inquiries') || '[]')
+    existing.unshift(newLead)
+    localStorage.setItem('vibelocate_inquiries', JSON.stringify(existing))
+  } catch {}
+
   showToast('🎉 Thank you! Your VIP private tour request has been received. Our concierge will contact you shortly.')
   bookingForm.value = { name: '', email: '', phone: '' }
+}
+
+// ========== TOUR VIDEO MODAL ==========
+const tourModalOpen = ref(false)
+const openTourModal = () => {
+  tourModalOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+const closeTourModal = () => {
+  tourModalOpen.value = false
+  document.body.style.overflow = ''
+}
+
+const openLandingSupport = (tab) => {
+  router.push('/about#' + tab)
 }
 
 // ========== MODAL ==========
@@ -765,6 +830,7 @@ const openModal = (property) => {
 
 const closeModal = () => {
   modalOpen.value = false
+  tourModalOpen.value = false
   document.body.style.overflow = ''
 }
 
@@ -959,5 +1025,57 @@ onUnmounted(() => {
 
 .btn-load-more:hover i {
   transform: translateY(3px);
+}
+
+/* Video Tour Dialog */
+.video-tour-dialog {
+  max-width: 800px;
+  background: #070d19;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 0;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.video-modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-header {
+  padding: 1.5rem 1.8rem 1rem;
+}
+
+.video-header h3 {
+  font-size: 1.25rem;
+  color: #fff;
+  margin-bottom: 0.35rem;
+}
+
+.video-header p {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.video-player-wrap {
+  width: 100%;
+  background: #000;
+  display: flex;
+}
+
+.luxury-tour-video {
+  width: 100%;
+  max-height: 440px;
+  object-fit: cover;
+}
+
+.video-footer {
+  padding: 1rem 1.8rem;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 </style>

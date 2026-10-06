@@ -105,7 +105,10 @@
             <p class="card-location">
               <i class="fa-solid fa-location-dot"></i> {{ prop.location || 'Dubai, UAE' }}
             </p>
-            <div class="card-price">{{ prop.price }}</div>
+            <div class="card-price">
+              <span class="price-amount">{{ formatPrice(prop.price) }}</span>
+              <span v-if="prop.period || prop.rent_frequency" class="price-period">{{ prop.period || (prop.rent_frequency ? `/${prop.rent_frequency}` : '') }}</span>
+            </div>
 
             <div class="card-specs">
               <span><i class="fa-solid fa-bed"></i> {{ prop.beds || 2 }} {{ isRtl ? 'غرف' : 'Beds' }}</span>
@@ -231,6 +234,21 @@ const viewDetails = (prop) => {
 
 const onImgError = (e) => {
   e.target.src = '/images/photo-1545324418-cc1a3fa10c00.avif'
+}
+
+const formatPrice = (price) => {
+  const num = Number(price) || 0
+  if (num >= 1000000) {
+    const m = (num / 1000000).toFixed(1)
+    return isRtl.value ? `${m} مليون درهم` : `AED ${m}M`
+  }
+  if (num >= 1000) {
+    return isRtl.value ? `${num.toLocaleString()} درهم` : `AED ${num.toLocaleString()}`
+  }
+  if (num > 0) return isRtl.value ? `${num.toLocaleString()} درهم` : `AED ${num.toLocaleString()}`
+  // Maybe it's already a formatted string
+  if (typeof price === 'string' && price.trim()) return price
+  return isRtl.value ? 'غير محدد' : 'Price on Request'
 }
 
 onMounted(async () => {
@@ -540,6 +558,21 @@ onMounted(async () => {
   font-weight: 800;
   color: #00d2ff;
   margin-bottom: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.price-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #00d2ff;
+}
+
+.price-period {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(240, 246, 255, 0.5);
 }
 
 .card-specs {

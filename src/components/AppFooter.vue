@@ -18,7 +18,7 @@
             <a href="https://www.facebook.com/profile.php?id=61594702439169&locale=ar_AR" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
             <a href="https://x.com/VibeLocateAI" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
             <a href="https://www.instagram.com/vibelocate.ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="www.linkedin.com/in/vibelocateai-undefined-a6926043a" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="https://www.linkedin.com/company/vibelocate-ai" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
           </div>
         </div>
 
@@ -39,10 +39,10 @@
         <div class="footer-links-col">
           <h4 class="footer-heading">{{ isRtl ? 'الدعم' : 'Support' }}</h4>
           <ul class="footer-nav-list">
-            <li><a href="#help" @click.prevent="showNotice(isRtl ? 'مركز المساعدة قريباً' : 'Help Center is coming soon')">{{ isRtl ? 'مركز المساعدة' : 'Help Center' }}</a></li>
-            <li><a href="#safety" @click.prevent="showNotice(isRtl ? 'معلومات الأمان والسلامة' : 'Safety & Security information')">{{ isRtl ? 'الأمان والسلامة' : 'Safety & Security' }}</a></li>
-            <li><a href="#terms" @click.prevent="showNotice(isRtl ? 'الشروط والأحكام' : 'Terms & Conditions')">{{ isRtl ? 'الشروط والأحكام' : 'Terms & Conditions' }}</a></li>
-            <li><a href="#privacy" @click.prevent="showNotice(isRtl ? 'سياسة الخصوصية' : 'Privacy Policy')">{{ isRtl ? 'سياسة الخصوصية' : 'Privacy Policy' }}</a></li>
+            <li><a href="#help" @click.prevent="openSupportModal('help')">{{ isRtl ? 'مركز المساعدة' : 'Help Center' }}</a></li>
+            <li><a href="#safety" @click.prevent="openSupportModal('safety')">{{ isRtl ? 'الأمان والسلامة' : 'Safety & Security' }}</a></li>
+            <li><a href="#terms" @click.prevent="openSupportModal('terms')">{{ isRtl ? 'الشروط والأحكام' : 'Terms & Conditions' }}</a></li>
+            <li><a href="#privacy" @click.prevent="openSupportModal('privacy')">{{ isRtl ? 'سياسة الخصوصية' : 'Privacy Policy' }}</a></li>
           </ul>
         </div>
 
@@ -81,6 +81,110 @@
         <span>{{ toastMessage }}</span>
       </div>
     </transition>
+
+    <!-- Support Modal (Help, Safety, Terms, Privacy) -->
+    <transition name="modal-fade">
+      <div v-if="isSupportModalOpen" class="support-modal-backdrop" @click.self="closeSupportModal">
+        <div class="support-modal-dialog" role="dialog" aria-modal="true">
+          <div class="support-modal-header">
+            <div class="support-tabs-nav">
+              <button 
+                type="button" 
+                :class="{ active: activeSupportTab === 'help' }" 
+                @click="activeSupportTab = 'help'"
+              >
+                <i class="fa-solid fa-circle-question"></i>
+                <span>{{ isRtl ? 'مركز المساعدة' : 'Help Center' }}</span>
+              </button>
+              <button 
+                type="button" 
+                :class="{ active: activeSupportTab === 'safety' }" 
+                @click="activeSupportTab = 'safety'"
+              >
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>{{ isRtl ? 'الأمان والسلامة' : 'Safety' }}</span>
+              </button>
+              <button 
+                type="button" 
+                :class="{ active: activeSupportTab === 'terms' }" 
+                @click="activeSupportTab = 'terms'"
+              >
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>{{ isRtl ? 'الشروط والأحكام' : 'Terms' }}</span>
+              </button>
+              <button 
+                type="button" 
+                :class="{ active: activeSupportTab === 'privacy' }" 
+                @click="activeSupportTab = 'privacy'"
+              >
+                <i class="fa-solid fa-user-lock"></i>
+                <span>{{ isRtl ? 'سياسة الخصوصية' : 'Privacy' }}</span>
+              </button>
+            </div>
+            <button class="support-close-btn" @click="closeSupportModal" aria-label="Close">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="support-modal-body">
+            <!-- 1. HELP CENTER -->
+            <div v-if="activeSupportTab === 'help'" class="support-tab-content">
+              <h3>{{ isRtl ? 'مركز المساعدة والدعم الفني' : 'VibeLocate AI Help Center' }}</h3>
+              <p>{{ isRtl ? 'نحن هنا لمساعدتك في كل خطوة خلال رحلتك العقارية المدعومة بالذكاء الاصطناعي.' : 'We are here to assist you at every step of your AI-powered real estate journey.' }}</p>
+              
+              <div class="faq-list">
+                <div class="faq-item">
+                  <strong>{{ isRtl ? 'كيف يتم احتساب نسبة تطابق الذكاء الاصطناعي (AI Match %)' : 'How is the AI Match % calculated?' }}</strong>
+                  <p>{{ isRtl ? 'تقوم خوارزميات VibeLocate AI بتحليل متطلباتك وميزانيتك ونمط الحياة المفضل وتطابقها مع بيانات العقار والموقع والخدمات المحيطة.' : 'Our AI evaluates your requirements, budget, lifestyle preferences, and cross-references them against property specs, location amenities, and real market data.' }}</p>
+                </div>
+                <div class="faq-item">
+                  <strong>{{ isRtl ? 'كيف أقوم بحجز موعد معاينة عقار؟' : 'How do I schedule a property inspection?' }}</strong>
+                  <p>{{ isRtl ? 'انتقل إلى صفحة تفاصيل أي عقار واضغط على "حجز موعد معاينة"، وحدد التاريخ المناسب ثم أكد الحجز.' : 'Go to any property page, click "Schedule Viewing", select your preferred date/time slot, and confirm your inspection.' }}</p>
+                </div>
+                <div class="faq-item">
+                  <strong>{{ isRtl ? 'كيف يمكنني التواصل مع خدمة العملاء؟' : 'How can I contact customer support directly?' }}</strong>
+                  <p>{{ isRtl ? 'يمكنك التواصل عبر البريد: contact@vibelocate.ai أو الاتصال بالهاتف: +1 (800) 456-7890 (متاح 24/7).' : 'Email us at contact@vibelocate.ai or call +1 (800) 456-7890 (available 24/7).' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. SAFETY -->
+            <div v-else-if="activeSupportTab === 'safety'" class="support-tab-content">
+              <h3>{{ isRtl ? 'الأمان والتحقق الموثوق' : 'Safety & Verified Listings' }}</h3>
+              <p>{{ isRtl ? 'جميع العقارات والوكلاء في VibeLocate يخضعون لتدقيق صارم لضمان بيئة آمنة وخالية من الاحتيال.' : 'All properties and agents on VibeLocate AI undergo rigorous verification to provide a safe, fraud-free experience.' }}</p>
+              
+              <ul class="safety-points">
+                <li><i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'عقارات موثقة 100% مع سندات الملكية المعتمدة رسمياً.' : '100% verified properties matched with official title deeds.' }}</li>
+                <li><i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'وكلاء عقاريون معتمدون ومرخصون من دائرة الأراضي والأملاك (RERA).' : 'RERA-certified and licensed real estate brokers.' }}</li>
+                <li><i class="fa-solid fa-circle-check"></i> {{ isRtl ? 'تشفير كامل لكافة المعاملات المالية والبيانات الحساسة (SSL 256-bit).' : 'End-to-end 256-bit SSL encryption for all data and financial transactions.' }}</li>
+              </ul>
+            </div>
+
+            <!-- 3. TERMS -->
+            <div v-else-if="activeSupportTab === 'terms'" class="support-tab-content">
+              <h3>{{ isRtl ? 'الشروط والأحكام' : 'Terms & Conditions' }}</h3>
+              <p>{{ isRtl ? 'باستخدامك لمنصة VibeLocate AI، فإنك توافق على الالتزام بشروط الاستخدام والخدمة.' : 'By accessing and using VibeLocate AI, you agree to comply with our Terms of Service.' }}</p>
+              <div class="legal-text">
+                <p>1. {{ isRtl ? 'دقة البيانات: نحرص على تقديم أدق معلومات العقارات والأسعار المتاحة من السجلات الرسمية.' : 'Data Accuracy: We provide authentic real estate listings and pricing derived from official registries.' }}</p>
+                <p>2. {{ isRtl ? 'الحجوزات: عربون حجز المعاينة يضمن حجز الموعد الحصري مع الوكيل ويخضع لسياسة الاسترداد.' : 'Bookings: Inspection reservation deposits guarantee an exclusive agent tour and are refundable under standard policy.' }}</p>
+                <p>3. {{ isRtl ? 'الاستخدام العادل لتقنيات الذكاء الاصطناعي: محرك البحث الذكي مخصص للأغراض العقارية الفردية والمؤسسية.' : 'Fair Use of AI: Our AI contextual search tools are designated for individual and verified commercial real estate activities.' }}</p>
+              </div>
+            </div>
+
+            <!-- 4. PRIVACY -->
+            <div v-else class="support-tab-content">
+              <h3>{{ isRtl ? 'سياسة الخصوصية' : 'Privacy Policy' }}</h3>
+              <p>{{ isRtl ? 'نحن نولي خصوصية بياناتك اهتماماً بالغاً ونلتزم بأعلى معايير حماية البيانات العالمية (GDPR).' : 'We take data privacy seriously and adhere to the highest international data protection standards (GDPR compliant).' }}</p>
+              <div class="legal-text">
+                <p>• {{ isRtl ? 'لا نقوم ببيع أو تأجير بياناتك الشخصية لأي طرف ثالث على الإطلاق.' : 'We never sell or rent your personal information to third parties.' }}</p>
+                <p>• {{ isRtl ? 'بيانات البحث والتفضيلات تُستخدم حصرياً لتحسين دقة توصيات الذكاء الاصطناعي لك.' : 'Search history and preferences are used solely to personalize your AI match recommendations.' }}</p>
+                <p>• {{ isRtl ? 'يحق لك في أي وقت طلب حذف حسابك وبياناتك المخزنة بشكل كامل عبر إعدادات الملف الشخصي.' : 'You have the right to request full erasure of your account and personal data at any time.' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </footer>
 </template>
 
@@ -92,6 +196,20 @@ const { isRtl, theme: currentTheme } = useThemeAndLanguage()
 
 const toastMessage = ref('')
 let toastTimer = null
+
+const isSupportModalOpen = ref(false)
+const activeSupportTab = ref('help')
+
+const openSupportModal = (tab = 'help') => {
+  activeSupportTab.value = tab
+  isSupportModalOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closeSupportModal = () => {
+  isSupportModalOpen.value = false
+  document.body.style.overflow = ''
+}
 
 const showNotice = (msg) => {
   toastMessage.value = msg
@@ -405,5 +523,179 @@ const showNotice = (msg) => {
   .footer-container {
     padding: 0 1.25rem;
   }
+}
+
+/* Support Modal Styles */
+.support-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 9, 20, 0.78);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.support-modal-dialog {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  max-width: 720px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.support-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.support-tabs-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.support-tabs-nav button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.support-tabs-nav button:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.support-tabs-nav button.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.support-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  color: #94a3b8;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.support-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.support-modal-body {
+  padding: 1.5rem 1.8rem;
+  overflow-y: auto;
+}
+
+.support-tab-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #f8fafc;
+}
+
+.support-tab-content p {
+  color: #94a3b8;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.faq-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.faq-item strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  margin-bottom: 0.4rem;
+}
+
+.faq-item p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.safety-points {
+  list-style: none;
+  padding: 0;
+  margin: 1.2rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.safety-points li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.92rem;
+  color: #e2e8f0;
+}
+
+.safety-points li i {
+  color: #34d399;
+}
+
+.legal-text {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.legal-text p {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border-inline-start: 3px solid #38bdf8;
+  margin: 0;
 }
 </style>

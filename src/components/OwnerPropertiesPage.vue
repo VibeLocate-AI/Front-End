@@ -361,7 +361,7 @@
                   <i class="fa-solid fa-plus"></i>
                   <span>{{ isRtl ? 'إدراج عقار جديد' : 'List New Property' }}</span>
                 </button>
-                <button class="shortcut-btn" @click="showToast(isRtl ? 'جاري تصدير ملف التقرير العقاري...' : 'Exporting portfolio analytics report...')">
+                <button class="shortcut-btn" @click="exportPdfReport">
                   <i class="fa-solid fa-file-arrow-down"></i>
                   <span>{{ isRtl ? 'تصدير التقرير (PDF)' : 'Export Report (PDF)' }}</span>
                 </button>
@@ -447,7 +447,7 @@ const statusTabs = [
 ]
 
 // Recent inquiries data
-const inquiries = [
+const initialInquiries = [
   {
     name: 'Sarah Johnson',
     initials: 'SJ',
@@ -494,6 +494,30 @@ const inquiries = [
     color: '#ec4899'
   }
 ]
+
+const loadDynamicInquiries = () => {
+  try {
+    const raw = localStorage.getItem('vibelocate_inquiries')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const formatted = parsed.map(lead => ({
+          name: lead.name || 'VIP Client',
+          initials: (lead.name || 'VC').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+          message: `${lead.type || 'Inquiry'} regarding ${lead.property || 'Luxury Property'}`,
+          messageAr: `طلب استفسار عن ${lead.property || 'عقار فاخر'}`,
+          time: lead.time || 'Recently',
+          timeAr: 'مؤخراً',
+          color: '#0284c7'
+        }))
+        return [...formatted, ...initialInquiries]
+      }
+    }
+  } catch {}
+  return initialInquiries
+}
+
+const inquiries = ref(loadDynamicInquiries())
 
 const chartBars = [35, 52, 44, 68, 59, 82, 74, 90, 78, 96, 88, 100]
 
@@ -688,6 +712,95 @@ const scrollToInquiries = () => {
 const logout = async () => {
   await authService.logout()
   router.push('/login')
+}
+
+const exportPdfReport = () => {
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    showToast(isRtl.value ? 'يرجى السماح بالنوافذ المنبثقة لتصدير التقرير' : 'Please allow popups to export report', 'error')
+    return
+  }
+  const propRows = filteredProperties.value.map(p => `
+    <tr>
+      <td>${p.title}</td>
+      <td>${p.location}</td>
+      <td>AED ${Number(p.price || 0).toLocaleString()}</td>
+      <td><span class="status-badge ${p.status}">${p.status.toUpperCase()}</span></td>
+      <td>${p.views || 0}</td>
+      <td>${p.inquiries || 0}</td>
+    </tr>
+  `).join('')
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html dir="${isRtl.value ? 'rtl' : 'ltr'}">
+    <head>
+      <title>VibeLocate AI - Portfolio Analytics Report</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { margin: 0; color: #0f172a; font-size: 24px; }
+        .meta { color: #64748b; font-size: 13px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-val { font-size: 20px; font-weight: bold; color: #0284c7; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 14px; text-align: ${isRtl.value ? 'right' : 'left'}; font-size: 13px; }
+        th { background: #f1f5f9; color: #334155; font-weight: 600; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .active { background: #dcfce7; color: #166534; }
+        .pending { background: #fef3c7; color: #92400e; }
+        .footer { margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1>VibeLocate AI • Portfolio Analytics Report</h1>
+          <div class="meta">${isRtl.value ? 'تقرير المحفظة العقارية الشامل' : 'Comprehensive Owner Property Portfolio'}</div>
+        </div>
+        <div class="meta" style="text-align: ${isRtl.value ? 'left' : 'right'};">
+          <div><b>Date:</b> ${new Date().toLocaleDateString()}</div>
+          <div><b>Owner:</b> ${currentUser.value?.name || 'Verified Owner'}</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box"><div>Total Properties</div><div class="stat-val">${stats.value[0]?.value || 0}</div></div>
+        <div class="stat-box"><div>Portfolio Value</div><div class="stat-val">${stats.value[1]?.value || 'AED 0'}</div></div>
+        <div class="stat-box"><div>Total Views</div><div class="stat-val">${stats.value[2]?.value || 0}</div></div>
+        <div class="stat-box"><div>Inquiries</div><div class="stat-val">${stats.value[3]?.value || 0}</div></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Property Title</th>
+            <th>Location</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Views</th>
+            <th>Inquiries</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${propRows}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Generated by VibeLocate AI Real Estate Intelligence Engine • Confidential Document
+      </div>
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      <\/script>
+    </body>
+    </html>
+  `)
+  printWindow.document.close()
+  showToast(isRtl.value ? 'تم فتح التقرير للطباعة وحفظه كـ PDF!' : 'Report opened for printing and saving as PDF!')
 }
 
 // Data Initialization
