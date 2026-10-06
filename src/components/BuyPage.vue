@@ -763,12 +763,10 @@ const loadApiProperties = async (page = 1) => {
         let dynamicScore = p.matchScore || p.aiMatch
         if (!dynamicScore || dynamicScore < 40) {
           let score = 88
-          if (p.is_verified || p.verified) score += 3
+          if (p.is_verified || p.verified) score += 4
           if (p.isOffPlan || p.property_condition === 'off_plan') score += 2
-          if (p.rating && p.rating >= 4.8) score += 3
-          const charSum = (p.title || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
-          score += ((charSum + idx) % 7) - 2
-          dynamicScore = Math.min(99, Math.max(82, score))
+          if (p.rating && Number(p.rating) >= 4.7) score += 3
+          dynamicScore = Math.min(97, Math.max(85, score))
         }
 
         return {

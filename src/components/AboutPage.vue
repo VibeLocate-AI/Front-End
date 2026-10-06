@@ -193,13 +193,22 @@ const benefits = computed(() => isRtl.value ? [
   position: relative;
   z-index: 2;
   text-align: left;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  margin-inline-start: 0 !important;
+  margin-inline-end: auto !important;
+  align-self: center;
 }
 
 [dir="rtl"] .hero-content {
   padding: 70px 5% 70px 40px;
   text-align: right;
-  margin-left: auto;
-  margin-right: 0;
+  margin: 0 !important;
+  margin-right: 0 !important;
+  margin-left: auto !important;
+  margin-inline-start: 0 !important;
+  margin-inline-end: auto !important;
 }
 
 .eyebrow, .section-label {
